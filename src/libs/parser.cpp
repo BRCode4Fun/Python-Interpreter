@@ -1,4 +1,4 @@
-#include "Include/parser.hpp"
+#include "parser.hpp"
 
 Parser::Parser(const std::vector<Token>& tokens) : tokens(tokens) {}
 
@@ -7,23 +7,18 @@ ProgramNode* Parser::parse() {
 }
 
 Token Parser::consume(TokenType type) {
-    if (match(type)) {
-        return previous();
+    if (match(type)) return previous();
+    else {
+        error("Expected " );
+        return Token(TokenType::Error, "", 0);
     }
-
-    error("Expected " );
-    return Token(TokenType::Error, "", 0);
 }
 
 bool Parser::match(TokenType type) {
-    if (isAtEnd()) {
+    if (isAtEnd() or peek().type != type) {
         return false;
     }
-    if (peek().type != type) {
-        return false;
-    }
-
-    current++;
+    ++current;
     return true;
 }
 
@@ -50,12 +45,15 @@ AstNode* Parser::parseExpr() {
 AstNode* Parser::parsePrimary() {
     if (match(TokenType::Number)) {
         return new NumNode(std::stod(previous().lexeme));
+        
     } else if (match(TokenType::Identifier)) {
         return new NameNode(previous().lexeme);
+    
     } else if (match(TokenType::LeftParen)) {
         auto expr = parseExpr();
         consume(TokenType::RightParen);
         return expr;
+    
     } else {
         error("Expected a primary expression");
         return nullptr;
@@ -84,7 +82,6 @@ AstNode* Parser::parseUnary() {
     } else {
         return parseCall();
     }
-
 }
 
 AstNode* Parser::parseTerm() {
@@ -109,12 +106,12 @@ AstNode* Parser::parseFactor() {
 }
 
 AstNode* Parser::parseStmt() {
+    
     if (match(TokenType::Print)) {
         
         consume(TokenType::LeftParen);
         auto expr = parseExpr();
         consume(TokenType::RightParen);
-
         
         consume(TokenType::Indent);
         return new PrintNode(expr);

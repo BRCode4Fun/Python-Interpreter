@@ -1,12 +1,10 @@
-#ifndef AST_HPP
-#define AST_HPP
+#pragma once
 
 #include <iostream>
 #include <string>
 #include <vector>
 #include <memory>
 #include <unordered_map>
-
 
 using namespace std;
 
@@ -229,5 +227,3 @@ Value evaluateCall(const CallNode* node) {
 };
 
 */
-
-#endif

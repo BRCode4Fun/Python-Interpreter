@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <string>
-#include "Token.hpp"
+#include "token.hpp"
 #include <unordered_map>
 #include <stack>
 
@@ -34,9 +34,5 @@ private:
     int currentIndentLevel = 0; 
     std::stack<int> indentLevels;
 
-    std::unordered_map<std::string, TokenType> keywords; 
-
-
-
-
+    std::unordered_map<std::string, TokenType> keywords;
 };

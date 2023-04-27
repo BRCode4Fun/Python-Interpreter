@@ -1,16 +1,14 @@
-#include "Include/Interpreter.hpp"
+#include "interpreter.hpp"
 
-Value * Interpreter::interpretStmt(ProgramNode* node) {
-    
+Value* Interpreter::interpretStmt(ProgramNode* node) {
     
     for (auto statement : node->statements) {
         interpret(statement);
     }
-
     return new Value(4.0);
 }
 
-Value * Interpreter::interpret(AstNode* node) {
+Value* Interpreter::interpret(AstNode* node) {
     if (dynamic_cast<NumNode*>(node) != nullptr) {
         return new  Value(static_cast<NumNode*>(node)->value);
     } else if (dynamic_cast<AssignNode*>(node) != nullptr) {
@@ -41,20 +39,16 @@ Value * Interpreter::interpret(AstNode* node) {
     }
 }
 
-Value * Interpreter::interpretPrintNode(PrintNode* node) {
+Value* Interpreter::interpretPrintNode(PrintNode* node) {
  
+    Value *argValue = interpret(node->args);
        
-        Value *argValue = interpret(node->args);
-
-
-       
-        std::cout << argValue->toNumber() << std::endl;
+    std::cout << argValue->toNumber() << std::endl;
         
-        return new Value(1.0);
- 
+    return new Value(1.0);
 }
 
-Value * Interpreter::interpretCall(CallNode* node) {
+Value* Interpreter::interpretCall(CallNode* node) {
     std::string functionName = static_cast<NameNode*>(node->name)->name;
     if (functionName == "print") {
         if (node->args.size() != 1) {
@@ -68,25 +62,25 @@ Value * Interpreter::interpretCall(CallNode* node) {
     }
 }
 
-Value * Interpreter::interpretUnaryOp(UnaryOpNode* node) {
+Value* Interpreter::interpretUnaryOp(UnaryOpNode* node) {
     Value operandValue = interpret(node->right);
  
-    if  (node->op.compare("+"))
-            return  new Value(+operandValue.toNumber());
-    else{
-            throw std::runtime_error("Unsupported unary operator");
+    if(node->op.compare("+")) {
+        return  new Value(+operandValue.toNumber());
+    } else {
+        throw std::runtime_error("Unsupported unary operator");
     }
 }
 
-Value * Interpreter::interpretBinaryOp(BinaryOpNode* node) {
+Value* Interpreter::interpretBinaryOp(BinaryOpNode* node) {
     Value *leftValue = interpret(node->left);
     Value *rightValue = interpret(node->right);
    
-      if  (node->op ==  "+"){
-            return new Value(leftValue->toNumber() + rightValue->toNumber());
-      }else if (node->op ==  "-"){
-            return new Value(leftValue->toNumber() - rightValue->toNumber());
-      } else{
-            throw std::runtime_error("Unsupported binary operator");
-       }
+    if(node->op ==  "+"){
+        return new Value(leftValue->toNumber() + rightValue->toNumber());
+    } else if (node->op ==  "-"){
+        return new Value(leftValue->toNumber() - rightValue->toNumber());
+    } else{
+        throw std::runtime_error("Unsupported binary operator");
+    }
 }

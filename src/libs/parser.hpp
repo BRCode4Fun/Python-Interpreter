@@ -1,9 +1,9 @@
-
+#pragma once
 
 #include <vector>
 #include <string>
-#include "Token.hpp"
-#include "Ast.hpp"
+#include "token.hpp"
+#include "ast.hpp"
 
 class Parser {
 public:
