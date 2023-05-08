@@ -37,8 +37,15 @@ Value* Interpreter::interpret(AstNode* node) {
         return interpretBinaryOp(static_cast<BinaryOpNode*>(node));
 
     } else if (dynamic_cast<NameNode*>(node) != nullptr) {
-        return symbolTable[static_cast<NameNode*>(node)->name]; 
-    
+        auto varname = static_cast<NameNode*>(node)->name;
+        auto iter = symbolTable.find(varname);
+
+        if(iter != symbolTable.end()) {
+            return iter->second;
+        } else {
+            throw std::runtime_error("Undeclared variable '" + varname + "'");
+        }
+        
     } else if (dynamic_cast<ProgramNode*>(node) != nullptr) {
         return interpretStmt(static_cast<ProgramNode*>(node));
     
@@ -82,12 +89,20 @@ Value* Interpreter::interpretUnaryOp(UnaryOpNode* node) {
 Value* Interpreter::interpretBinaryOp(BinaryOpNode* node) {
     Value *leftValue = interpret(node->left);
     Value *rightValue = interpret(node->right);
-   
+
     if(node->op ==  "+"){
         return new Value(leftValue->toNumber() + rightValue->toNumber());
     } else if (node->op ==  "-"){
         return new Value(leftValue->toNumber() - rightValue->toNumber());
-    }else{
+    } else if (node->op ==  "*"){
+        return new Value(leftValue->toNumber() * rightValue->toNumber());
+    } else if (node->op ==  "/"){
+        auto right = rightValue->toNumber();
+
+        if(right == 0) throw std::runtime_error("Attempted to divide by zero");
+
+        return new Value(leftValue->toNumber() / right);
+    } else {
         throw std::runtime_error("Unsupported binary operator");
     }
 }

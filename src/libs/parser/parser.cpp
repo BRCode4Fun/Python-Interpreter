@@ -22,14 +22,19 @@ AstNode* Parser::parseStmt() {
         consume(TokenType::LeftParen);
         auto expr = parseExpr();
         consume(TokenType::RightParen);
-        
-        consume(TokenType::Indent);
+
+        if(!isAtEnd())
+              consume(TokenType::Indent); 
+
         return new PrintNode(expr);
 
     } else if (match(TokenType::Identifier)){
+      
         current--;
         auto expr =  parseExpr();
-        consume(TokenType::Indent);
+        if(!isAtEnd())
+             consume(TokenType::Indent);
+        
         return expr;
     } else {
         cout << peek().lexeme << "\n";

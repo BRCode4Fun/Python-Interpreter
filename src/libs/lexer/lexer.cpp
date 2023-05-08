@@ -59,7 +59,6 @@ void Lexer::scanToken() {
             addToken(TokenType::Semicolon);
             break;
         case '*':
-            std::cout << "f" << std::endl; 
             addToken(TokenType::Star);
             break;
         case '!':
@@ -75,15 +74,22 @@ void Lexer::scanToken() {
             addToken(match('=') ? TokenType::GreaterEqual : TokenType::Greater);
             break;
         case '/':
-            if (match('/')) {
-                // A comment goes until the end of the line
-                while (peek() != '\n' && !isAtEnd()) {
-                    advance();
-                }
-            } else {
-                addToken(TokenType::Slash);
-            }
+           
+            addToken(TokenType::Slash);
+            
             break;
+
+         case '#':        
+            
+            while (peek() != '\n' && !isAtEnd()) advance();
+           
+            if(peek() == '\n')
+            {
+              advance();
+              line++; 
+            }
+            
+            break;    
         case ' ':
         case '\r':
         case '\t':
