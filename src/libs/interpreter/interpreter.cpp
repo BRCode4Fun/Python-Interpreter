@@ -1,39 +1,56 @@
 #include "interpreter.hpp"
+#include <stdexcept>
+
+void todo() {
+    throw std::logic_error("Function not implemented yet");
+}
 
 Value* Interpreter::interpretStmt(ProgramNode* node) {
     
+    Value* last_result;
+    
     for (auto statement : node->statements) {
-        interpret(statement);
+        last_result = interpret(statement);
     }
-    return new Value(4.0);
+    return last_result;
 }
 
 Value* Interpreter::interpret(AstNode* node) {
+
     if (dynamic_cast<NumNode*>(node) != nullptr) {
         return new  Value(static_cast<NumNode*>(node)->value);
+        
     } else if (dynamic_cast<AssignNode*>(node) != nullptr) {
         
-        auto *   value = interpret(static_cast<AssignNode*>(node)->value);
-        symbolTable[static_cast<AssignNode*>(node)->name->name] = value;
-       // double t = symbolTable[static_cast<AssignNode*>(node)->name->name]->toNumber();
-        std::cout << static_cast<AssignNode*>(node)->name->name  << std::endl;
-        return new Value(1.0);
+        auto value = interpret(static_cast<AssignNode*>(node)->value);
 
-    }else if (dynamic_cast<BinaryOpNode*>(node) != nullptr) {
-         return interpretBinaryOp(static_cast<BinaryOpNode*>(node));
-    }else if (dynamic_cast<NameNode*>(node) != nullptr) {
-        
+        auto ident = static_cast<AssignNode*>(node)->name;          
 
-      return symbolTable[static_cast<NameNode*>(node)->name]; 
+ //std::cout << (int)static_cast<AssignNode*>(node)->name->type << std::endl; 
+        symbolTable[static_cast<NameNode*>(ident)->name] = value;
+        // double t = symbolTable[static_cast<AssignNode*>(node)->name->name]->toNumber();
+        //std::cout << static_cast<AssignNode*>(node)->name->name  << std::endl;
+       
+        return  value;
 
+    } else if (dynamic_cast<BinaryOpNode*>(node) != nullptr) {
+        return interpretBinaryOp(static_cast<BinaryOpNode*>(node));
+
+    } else if (dynamic_cast<NameNode*>(node) != nullptr) {
+        return symbolTable[static_cast<NameNode*>(node)->name]; 
+    
     } else if (dynamic_cast<ProgramNode*>(node) != nullptr) {
         return interpretStmt(static_cast<ProgramNode*>(node));
+    
     } else if (dynamic_cast<PrintNode*>(node) != nullptr) {
         return interpretPrintNode(static_cast<PrintNode*>(node));
+    
     } else if (dynamic_cast<UnaryOpNode*>(node) != nullptr) {
         return interpretUnaryOp(static_cast<UnaryOpNode*>(node));
+    
     } else if (dynamic_cast<CallNode*>(node) != nullptr) {
         return interpretCall(static_cast<CallNode*>(node));
+    
     } else {
         throw std::runtime_error("Unsupported node type");
     }
@@ -49,17 +66,7 @@ Value* Interpreter::interpretPrintNode(PrintNode* node) {
 }
 
 Value* Interpreter::interpretCall(CallNode* node) {
-    std::string functionName = static_cast<NameNode*>(node->name)->name;
-    if (functionName == "print") {
-        if (node->args.size() != 1) {
-            throw std::runtime_error("Invalid number of arguments for print function");
-        }
-        Value argValue = interpret(node->args[0]);
-        std::cout << argValue.toString() << std::endl;
-        return new Value(1.0);
-    } else {
-        throw std::runtime_error("Unknown function: " + functionName);
-    }
+    todo();
 }
 
 Value* Interpreter::interpretUnaryOp(UnaryOpNode* node) {
@@ -80,7 +87,7 @@ Value* Interpreter::interpretBinaryOp(BinaryOpNode* node) {
         return new Value(leftValue->toNumber() + rightValue->toNumber());
     } else if (node->op ==  "-"){
         return new Value(leftValue->toNumber() - rightValue->toNumber());
-    } else{
+    }else{
         throw std::runtime_error("Unsupported binary operator");
     }
 }

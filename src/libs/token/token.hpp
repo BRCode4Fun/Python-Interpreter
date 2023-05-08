@@ -1,37 +1,6 @@
 #pragma once
 
-enum TokenType {
-    EndOfFile,
-    Error,
-    LessEqual,
-    EqualEqual,
-    LeftBrace,
-    Print,
-    Less,
-    BangEqual,
-    Bang,
-    Indent,
-    Identifier,
-    Number,
-    Plus,
-    Minus,
-    Multiply,
-    Divide,
-    Equals,
-    LeftParen,
-    GreaterEqual,
-    RightParen,
-    Comma,
-    Semicolon,
-    Dedent,
-    Dot,
-    Greater,
-    Equal,
-    Slash,
-    Star,
-    RightBrace, 
-    Colon
-};
+#include "./tokentype.hpp"
 
 struct Token {
 
@@ -52,12 +21,12 @@ struct Token {
                 return "Plus";
             case TokenType::Minus:
                 return "Minus";
-            case TokenType::Equal:
+            case TokenType::Equals:
                 return "Assign";
-            case TokenType::Multiply:
-                return "Multiply";
-            case TokenType::Divide:
-                return "Divide";
+            case TokenType::Star:
+                return "Star";
+            case TokenType::Slash:
+                return "Slash";
             case TokenType::Semicolon:
                 return "Semicolon";
             case TokenType::Number:

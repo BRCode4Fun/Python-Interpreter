@@ -16,7 +16,6 @@ class Value {
           String,
           List
       };
-
       Value() : type(Type::Undefined) {}
       Value(double v) : type(Type::Number), numberValue(v) {}
       Value(bool v) : type(Type::Boolean), booleanValue(v) {}
@@ -54,7 +53,6 @@ class Value {
           }
           return listValue;
       }
-
       Type type;
       double numberValue;
       bool booleanValue;

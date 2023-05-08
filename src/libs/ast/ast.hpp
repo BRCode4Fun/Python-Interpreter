@@ -30,7 +30,8 @@ public:
 
 class PrintNode : public AstNode {
 public:
-    PrintNode(AstNode* args) : AstNode(AstNodeType::Print),  args(args) {}
+    PrintNode(AstNode* args) 
+      : AstNode(AstNodeType::Print),  args(args) {}
 
     //NameNode* name;
     AstNode* args;
@@ -38,7 +39,8 @@ public:
 
 class ProgramNode : public AstNode {
 public:
-    ProgramNode(std::vector<AstNode*> statements) : AstNode(AstNodeType::Program) , statements(statements) {}
+    ProgramNode(std::vector<AstNode*> statements) 
+      : AstNode(AstNodeType::Program) , statements(statements) {}
     virtual ~ProgramNode() {}
 
     std::vector<AstNode*> statements;
@@ -46,14 +48,17 @@ public:
 
 class NumNode : public AstNode {
 public:
-    NumNode(double value) : AstNode(AstNodeType::Number), value(value) {}
+    NumNode(double value) 
+      : AstNode(AstNodeType::Number), value(value) {}
+      
     double value;
 };
 
 class BinaryOpNode : public AstNode {
 public:
 
-    BinaryOpNode(AstNode* left,  std::string  op, AstNode* right) : AstNode(AstNodeType::BinaryOp), left(left), op(op), right(right) {}
+    BinaryOpNode(AstNode* left, std::string op, AstNode* right) 
+      : AstNode(AstNodeType::BinaryOp), left(left), op(op), right(right) {}
 
     AstNode* left;
     std::string op;
@@ -76,9 +81,9 @@ public:
 
 class AssignNode : public AstNode {
 public:
-    AssignNode(NameNode* name, AstNode* value) : AstNode(AstNodeType::Assign), name(name), value(value) {}
+    AssignNode(AstNode* name, AstNode* value) : AstNode(AstNodeType::Assign), name(name), value(value) {}
 
-    NameNode* name;
+    AstNode* name;
     AstNode* value;
 };
 

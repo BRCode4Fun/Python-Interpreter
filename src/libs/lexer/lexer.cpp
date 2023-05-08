@@ -2,7 +2,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <fstream>
-#include "lexer.hpp"
+#include "./lexer.hpp"
 
 Lexer::Lexer(const std::string& source) : source(source), current(0), line(1), currentIndentLevel(0) {
     keywords.insert(std::make_pair("print", TokenType::Print));
@@ -66,7 +66,7 @@ void Lexer::scanToken() {
             addToken(match('=') ? TokenType::BangEqual : TokenType::Bang);
             break;
         case '=':
-            addToken(match('=') ? TokenType::EqualEqual : TokenType::Equal);
+            addToken(match('=') ? TokenType::EqualEqual : TokenType::Equals);
             break;
         case '<':
             addToken(match('=') ? TokenType::LessEqual : TokenType::Less);

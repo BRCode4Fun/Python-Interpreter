@@ -1,17 +1,16 @@
 #include <iostream>
 #include <fstream>
-#include "../libs/lexer.hpp"
-#include "../libs/parser.hpp"
-#include "../libs/ast.hpp"
-#include "../libs/interpreter.hpp"
+#include "../libs/lexer/lexer.hpp"
+#include "../libs/parser/parser.hpp"
+#include "../libs/ast/ast.hpp"
+#include "../libs/interpreter/interpreter.hpp"
 
 #pragma GCC optimize("Ofast")
 #pragma GCC target("avx,avx2,fma")
 
 void show_tokens(std::vector<Token> &tokens){
 
-    for(int i = 0; i < tokens.size(); i++)
-    {
+    for(int i = 0; i < tokens.size(); i++) {
         std::cout <<  tokens[i].getTokenTypeString(tokens[i].type) << " " << tokens[i].lexeme <<  std::endl;
     }
 }
@@ -47,7 +46,8 @@ int main(int argc, char* argv[]) {
 
     Interpreter interpreter; 
 
-    interpreter.interpret(root);
+    Value* ret_value = interpreter.interpret(root);
+
+    return (int) (*ret_value).toNumber();
     
-    return 0;
 }

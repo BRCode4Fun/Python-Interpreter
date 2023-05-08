@@ -1,10 +1,8 @@
 #pragma once
 
-#include <cctype>
-#include <stdexcept>
 #include <unordered_map>
-#include "value.hpp"
-#include "ast.hpp"
+#include "../value/value.hpp"
+#include "../ast/ast.hpp"
 
 class Interpreter {
     public:
