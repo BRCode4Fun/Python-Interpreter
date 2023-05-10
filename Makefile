@@ -14,11 +14,15 @@ CFLAGS += -DDEBUG
 endif
 
 # Build rule
-all: $(OUTPUT)
+build: $(OUTPUT)
 
 # Linking rule
 $(OUTPUT): $(SRCS)
 	$(CC) $(CFLAGS) $(SRCS) -o $(OUTPUT)
+
+test:
+	chmod +x test.sh
+	./test.sh
 
 # Clean rule
 clean:

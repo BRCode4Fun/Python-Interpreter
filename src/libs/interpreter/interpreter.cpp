@@ -7,12 +7,8 @@ void todo() {
 
 Value* Interpreter::interpretStmt(ProgramNode* node) {
     
-    Value* last_result;
-    
-    for (auto statement : node->statements) {
-        last_result = interpret(statement);
-    }
-    return last_result;
+    for (auto statement : node->statements) 
+        interpret(statement);
 }
 
 Value* Interpreter::interpret(AstNode* node) {
