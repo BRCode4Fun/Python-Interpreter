@@ -13,7 +13,7 @@ class Interpreter {
         Value* interpret(AstNode* node);
         Value* interpretPrintNode(PrintNode* node);
         Value* interpretStmt(ProgramNode* node);
-        void interpret(ProgramNode* node);
+        Value* interpret(ProgramNode* node);
     private:
         unordered_map<string, Value*> symbolTable;
 };

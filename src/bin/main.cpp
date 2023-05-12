@@ -10,7 +10,7 @@
 
 void show_tokens(std::vector<Token> &tokens){
 
-    for(int i = 0; i < tokens.size(); i++) {
+    for(unsigned long i = 0; i < tokens.size(); i++) {
         std::cout <<  tokens[i].getTokenTypeString(tokens[i].type) << " " << tokens[i].lexeme <<  std::endl;
     }
 }
@@ -46,8 +46,7 @@ int main(int argc, char* argv[]) {
 
     Interpreter interpreter; 
 
-    Value* ret_value = interpreter.interpret(root);
+    interpreter.interpret(root);
 
-    return (int) (*ret_value).toNumber();
-    
+    return 0;
 }

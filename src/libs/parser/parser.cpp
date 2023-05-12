@@ -24,7 +24,7 @@ AstNode* Parser::parseStmt() {
         consume(TokenType::RightParen);
 
         if(!isAtEnd())
-              consume(TokenType::Indent); 
+            consume(TokenType::Indent); 
 
         return new PrintNode(expr);
 
@@ -33,7 +33,7 @@ AstNode* Parser::parseStmt() {
         current--;
         auto expr =  parseExpr();
         if(!isAtEnd())
-             consume(TokenType::Indent);
+            consume(TokenType::Indent);
         
         return expr;
     } else {
@@ -157,4 +157,5 @@ Token Parser::previous() const {
 
 void Parser::error(const std::string& message) {
     std::cerr << "Error at line " << peek().line << ": " << message << std::endl;
+    exit(EXIT_FAILURE);
 }

@@ -29,8 +29,8 @@ for testfile in tests/test_*.py; do
   if [ "$output" = "$expected" ]; then
     echo -e "${green}Test ${testname}: PASSED${reset}"
   else
-    echo -e "${red}Test ${testname}: FAILED${reset}"
-    echo -e "${red}Expected output:${reset}"
+    echo -e "${red}Test ${testname}: FAILED"
+    echo -e "Expected output:${reset}"
     echo "$expected"
     echo -e "${red}Actual output:${reset}"
     echo "$output"
@@ -40,7 +40,7 @@ done
 
 if [ "$has_failed" = false ]; then
   echo -e "${green}All tests passed!${reset}"
-	exit 0
+  exit 0
 else
   echo -e "${red}Test failure.${reset}"
   exit 1
