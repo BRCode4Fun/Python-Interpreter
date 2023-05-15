@@ -77,10 +77,12 @@ Value* Interpreter::interpretCall(CallNode* node) {
 }
 
 Value* Interpreter::interpretUnaryOp(UnaryOpNode* node) {
-    Value operandValue = *interpret(node->right);
+    Value* operandValue = interpret(node->right);
 
     if(node->op == "-") {
-        return  new Value(-operandValue.getFloat());
+        return  new Value(-operandValue->getFloat());
+    } else if(node->op == "not") {
+        return new Value(!operandValue->isTruthy());
     } else {
         throw std::runtime_error("Unsupported unary operator");
     }
@@ -114,6 +116,22 @@ Value* Interpreter::interpretBinaryOp(BinaryOpNode* node) {
     } else if(node->op == "!=") {
         
         return new Value(!(*leftValue == *rightValue));
+
+    } else if(node->op == "or") {
+        /* try to do short-circuit: if after evaluating the left operand,
+         * the result of the logical expression is known, do not evaluate the right operand 
+        */
+        if(leftValue->isTruthy()) return leftValue;
+
+        return rightValue;
+
+    } else if(node->op == "and") {
+        /* try to do short-circuit: if after evaluating the left operand,
+         * the result of the logical expression is known, do not evaluate the right operand 
+        */
+        if(!(leftValue->isTruthy())) return leftValue;
+
+        return rightValue;
 
     } else {
         throw std::runtime_error("Unsupported binary operator");

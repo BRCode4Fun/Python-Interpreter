@@ -24,6 +24,8 @@ class Parser {
 
         AstNode* parseExpr();
         AstNode* parseAssign();
+        AstNode* parseLogicOr();
+        AstNode* parseLogicAnd();
         AstNode* parseEquality();
         AstNode* parseFactor();
         AstNode* parseTerm();

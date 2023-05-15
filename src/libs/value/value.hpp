@@ -196,6 +196,20 @@ class Value {
             }
             return out;
         }
+
+        bool isTruthy() {
+
+            switch(type) {
+                case ValueType::NONE:
+                    return false; break;
+                case ValueType::BOOLEAN:
+                    return getBoolean(); break;
+                case ValueType::FLOAT:
+                    return getFloat() != 0.0; break;
+                default:
+                    throw runtime_error("Yet not evaluatable object.");
+            }
+        }
     
     private:
         ValueType type;

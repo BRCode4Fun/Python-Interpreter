@@ -9,6 +9,9 @@ Lexer::Lexer(const std::string& source) : source(source), current(0), line(1), c
     keywords.insert(std::make_pair("True", TokenType::True));
     keywords.insert(std::make_pair("False", TokenType::False));
     keywords.insert(std::make_pair("None", TokenType::None));
+    keywords.insert(std::make_pair("and", TokenType::And));
+    keywords.insert(std::make_pair("or", TokenType::Or));
+    keywords.insert(std::make_pair("not", TokenType::Not));
 }
 
 std::vector<Token> Lexer::scanTokens() {
@@ -161,7 +164,7 @@ void Lexer::handleNumber() {
 
 void Lexer::handleIdentifier() {
     
-    while (isalnum(peek())) advance();
+    while (isalnum(peek()) or peek() == '_') advance();
 
     std::string text = source.substr(start, current - start);
     TokenType type = keywords.count(text) ? keywords.at(text) : TokenType::Identifier;

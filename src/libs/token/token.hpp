@@ -30,6 +30,10 @@ public:
                 out << "Slash"; break;
             case TokenType::Equals:
                 out << "Assign"; break;
+            case TokenType::EqualEqual:
+                out << "EqualEqual"; break;
+            case TokenType::BangEqual:
+                out << "BangEqual"; break;
             case TokenType::Semicolon:
                 out << "Semicolon"; break;
             case TokenType::Number:
@@ -44,8 +48,12 @@ public:
                 out << "None"; break;
             case TokenType::Print:
                 out << "Print"; break;
-            case TokenType::EqualEqual:
-                out << "EqualEqual"; break;
+            case TokenType::And:
+                out << "And"; break;
+            case TokenType::Or:
+                out << "Or"; break;
+            case TokenType::Not:
+                out << "Not"; break;
             case TokenType::EndOfFile:
                 out << "EndOfFile"; break;
             default:

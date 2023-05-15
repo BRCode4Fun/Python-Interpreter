@@ -3,6 +3,7 @@
 enum TokenType {
     // Keywords
     Print, True, False, None,
+    And, Or, Not,
     
     // Operators and punctuators
     Plus, Minus, Star, Slash, 

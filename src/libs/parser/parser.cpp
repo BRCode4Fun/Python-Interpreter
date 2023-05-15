@@ -49,12 +49,36 @@ AstNode* Parser::parseExpr() {
 
 AstNode* Parser::parseAssign() {
     
-    auto left = parseEquality();
+    auto left = parseLogicOr();
     
     while (match(TokenType::Equals)) {
         auto op = previous();
         auto right = parseAssign();
         left = new AssignNode(left, right);
+    }
+    return left;
+}
+
+AstNode* Parser::parseLogicOr() {
+    
+    auto left = parseLogicAnd();
+    
+    while (match(TokenType::Or)) {
+        auto op = previous();
+        auto right = parseLogicAnd();
+        left = new BinaryOpNode(left, op.lexeme, right);
+    }
+    return left;
+}
+
+AstNode* Parser::parseLogicAnd() {
+    
+    auto left = parseEquality();
+    
+    while (match(TokenType::And)) {
+        auto op = previous();
+        auto right = parseEquality();
+        left = new BinaryOpNode(left, op.lexeme, right);
     }
     return left;
 }
@@ -97,12 +121,14 @@ AstNode* Parser::parseTerm() {
 
 AstNode* Parser::parseUnary() {
     
-    if (match(TokenType::Minus)) {
+    if (match(TokenType::Minus) || match(TokenType::Not)) {
+        auto op = previous();
         auto right = parseUnary();
-        return new UnaryOpNode("-", right);
+        return new UnaryOpNode(op.lexeme, right);
 
     } else if (match(TokenType::Plus)) {
         return parseUnary();
+    
     } else {
         return parseCall();
     }
