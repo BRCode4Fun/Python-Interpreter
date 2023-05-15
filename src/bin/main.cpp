@@ -11,7 +11,7 @@
 void show_tokens(std::vector<Token> &tokens){
 
     for(unsigned long i = 0; i < tokens.size(); i++) {
-        std::cout <<  tokens[i].getTokenTypeString(tokens[i].type) << " " << tokens[i].lexeme <<  std::endl;
+        std::cout << tokens[i] <<  std::endl;
     }
 }
 
@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
 
     AstNode* root = parser.parseProgram();
 
-    Interpreter interpreter; 
+    Interpreter interpreter;
 
     interpreter.interpret(root);
 

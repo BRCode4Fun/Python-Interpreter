@@ -1,9 +1,11 @@
 #pragma once
 
+#include <iostream>
 #include "./tokentype.hpp"
 
-struct Token {
+class Token {
 
+public:
     TokenType type;
     std::string lexeme;
     int line;
@@ -11,34 +13,46 @@ struct Token {
     Token(TokenType type, const std::string& lexeme, int line)
         : type(type), lexeme(lexeme), line(line) {}
 
-    std::string getTokenTypeString(TokenType type) {
-        switch (type) {
+    friend std::ostream& operator<<(std::ostream& out, Token& token) {
+        
+        switch (token.type) {
             case TokenType::LeftParen:
-                return "LeftParen";
+                out << "LeftParen"; break;
             case TokenType::RightParen:
-                return "RightParen";
+                out << "RightParen"; break;
             case TokenType::Plus:
-                return "Plus";
+                out << "Plus"; break;
             case TokenType::Minus:
-                return "Minus";
-            case TokenType::Equals:
-                return "Assign";
+                out << "Minus"; break;
             case TokenType::Star:
-                return "Star";
+                out << "Star"; break;
             case TokenType::Slash:
-                return "Slash";
+                out << "Slash"; break;
+            case TokenType::Equals:
+                out << "Assign"; break;
             case TokenType::Semicolon:
-                return "Semicolon";
+                out << "Semicolon"; break;
             case TokenType::Number:
-                return "Number";
+                out << "Number"; break;
             case TokenType::Identifier:
-                return "Identifier";
+                out << "Identifier"; break;
+            case TokenType::True:
+                out << "True"; break;
+            case TokenType::False:
+                out << "False"; break;
+            case TokenType::None:
+                out << "None"; break;
             case TokenType::Print:
-                return "Print";
+                out << "Print"; break;
+            case TokenType::EqualEqual:
+                out << "EqualEqual"; break;
             case TokenType::EndOfFile:
-                return "EndOfFile";
+                out << "EndOfFile"; break;
             default:
-                return "Error";
+                out << "Error"; break;
         }
-    } 
+        out << " <- " << "\'" << token.lexeme << "\'";
+
+        return out;
+    }
 };

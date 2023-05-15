@@ -22,13 +22,14 @@ class Parser {
         Token previous() const;
         void error(const std::string& message);
 
-        AstNode* parseEqual();
         AstNode* parseExpr();
-        AstNode* parsePrimary();
-        AstNode* parseCall();
-        AstNode* parseUnary();
-        AstNode* parsePrint();
-        AstNode* parseTerm();
+        AstNode* parseAssign();
+        AstNode* parseEquality();
         AstNode* parseFactor();
+        AstNode* parseTerm();
+        AstNode* parseUnary();
+        AstNode* parseCall();
+        AstNode* parsePrimary();
+        AstNode* parsePrint();
         AstNode* parseStmt();
 };

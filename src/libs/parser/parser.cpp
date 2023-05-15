@@ -18,7 +18,6 @@ ProgramNode* Parser::parseProgram() {
 AstNode* Parser::parseStmt() {
     
     if (match(TokenType::Print)) {
-        
         consume(TokenType::LeftParen);
         auto expr = parseExpr();
         consume(TokenType::RightParen);
@@ -29,9 +28,10 @@ AstNode* Parser::parseStmt() {
         return new PrintNode(expr);
 
     } else if (match(TokenType::Identifier)){
-      
+        
         current--;
         auto expr =  parseExpr();
+
         if(!isAtEnd())
             consume(TokenType::Indent);
         
@@ -44,17 +44,29 @@ AstNode* Parser::parseStmt() {
 
 AstNode* Parser::parseExpr() {
 
-    return parseEqual();
+    return parseAssign();
 }
 
-AstNode* Parser::parseEqual() {
+AstNode* Parser::parseAssign() {
     
-    auto left = parseFactor();
+    auto left = parseEquality();
     
     while (match(TokenType::Equals)) {
         auto op = previous();
-        auto right = parseEqual();
+        auto right = parseAssign();
         left = new AssignNode(left, right);
+    }
+    return left;
+}
+
+AstNode* Parser::parseEquality() {
+    
+    auto left = parseFactor();
+    
+    while (match(TokenType::EqualEqual) || match(TokenType::BangEqual)) {
+        auto op = previous();
+        auto right = parseFactor();
+        left = new BinaryOpNode(left, op.lexeme, right);
     }
     return left;
 }
@@ -84,9 +96,13 @@ AstNode* Parser::parseTerm() {
 }
 
 AstNode* Parser::parseUnary() {
+    
     if (match(TokenType::Minus)) {
         auto right = parseUnary();
         return new UnaryOpNode("-", right);
+
+    } else if (match(TokenType::Plus)) {
+        return parseUnary();
     } else {
         return parseCall();
     }
@@ -114,6 +130,15 @@ AstNode* Parser::parsePrimary() {
     if (match(TokenType::Number)) {
         return new NumNode(std::stod(previous().lexeme));
         
+    } else if(match(TokenType::True)) {
+        return new BooleanNode(true);
+
+    } else if(match(TokenType::False)) {
+        return new BooleanNode(false);
+
+    } else if(match(TokenType::None)) {
+        return new NullNode();
+
     } else if (match(TokenType::Identifier)) {
         return new NameNode(previous().lexeme);
     
@@ -156,6 +181,7 @@ Token Parser::previous() const {
 }
 
 void Parser::error(const std::string& message) {
+    
     std::cerr << "Error at line " << peek().line << ": " << message << std::endl;
     exit(EXIT_FAILURE);
 }

@@ -2,7 +2,7 @@
 
 enum TokenType {
     // Keywords
-    Print,
+    Print, True, False, None,
     
     // Operators and punctuators
     Plus, Minus, Star, Slash, 
@@ -15,6 +15,7 @@ enum TokenType {
     LeftBrace, RightBrace,
     Comma, Colon, Semicolon,
     Indent, Dedent,
+    IF, 
     EndOfFile,
     
     // Identifiers and literals

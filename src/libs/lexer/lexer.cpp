@@ -6,6 +6,9 @@
 
 Lexer::Lexer(const std::string& source) : source(source), current(0), line(1), currentIndentLevel(0) {
     keywords.insert(std::make_pair("print", TokenType::Print));
+    keywords.insert(std::make_pair("True", TokenType::True));
+    keywords.insert(std::make_pair("False", TokenType::False));
+    keywords.insert(std::make_pair("None", TokenType::None));
 }
 
 std::vector<Token> Lexer::scanTokens() {

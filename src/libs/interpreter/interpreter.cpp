@@ -15,8 +15,14 @@ Value* Interpreter::interpretStmt(ProgramNode* node) {
 
 Value* Interpreter::interpret(AstNode* node) {
 
-    if (dynamic_cast<NumNode*>(node) != nullptr) {
+    if (dynamic_cast<NullNode*>(node) != nullptr) {
+        return new Value(); // from an UNDEFINED value
+        
+    } if (dynamic_cast<NumNode*>(node) != nullptr) {
         return new Value(static_cast<NumNode*>(node)->value);
+        
+    } else if (dynamic_cast<BooleanNode*>(node) != nullptr) {
+        return new Value(static_cast<BooleanNode*>(node)->value);
         
     } else if (dynamic_cast<AssignNode*>(node) != nullptr) {
         
@@ -60,11 +66,10 @@ Value* Interpreter::interpret(AstNode* node) {
 
 Value* Interpreter::interpretPrintNode(PrintNode* node) {
  
-    Value *argValue = interpret(node->args);
-       
-    std::cout << argValue->getFloat() << std::endl;
-        
-    return new Value(1.0);
+    Value* argValue = interpret(node->args);
+    
+    // invoke the << operator from the Value class
+    std::cout << *argValue << "\n" << std::flush;
 }
 
 Value* Interpreter::interpretCall(CallNode* node) {
@@ -73,30 +78,43 @@ Value* Interpreter::interpretCall(CallNode* node) {
 
 Value* Interpreter::interpretUnaryOp(UnaryOpNode* node) {
     Value operandValue = *interpret(node->right);
- 
-    if(node->op.compare("+")) {
-        return  new Value(+operandValue.getFloat());
+
+    if(node->op == "-") {
+        return  new Value(-operandValue.getFloat());
     } else {
         throw std::runtime_error("Unsupported unary operator");
     }
 }
 
 Value* Interpreter::interpretBinaryOp(BinaryOpNode* node) {
-    Value *leftValue = interpret(node->left);
-    Value *rightValue = interpret(node->right);
+    
+    Value* leftValue = interpret(node->left);
+    Value* rightValue = interpret(node->right);
 
     if(node->op ==  "+"){
         return new Value(leftValue->getFloat() + rightValue->getFloat());
+    
     } else if (node->op ==  "-"){
         return new Value(leftValue->getFloat() - rightValue->getFloat());
+    
     } else if (node->op ==  "*"){
         return new Value(leftValue->getFloat() * rightValue->getFloat());
+    
     } else if (node->op ==  "/"){
         auto right = rightValue->getFloat();
 
         if(right == 0) throw std::runtime_error("Attempted to divide by zero");
 
         return new Value(leftValue->getFloat() / right);
+
+    } else if (node->op == "==") {
+        
+        return new Value(*leftValue == *rightValue);
+
+    } else if(node->op == "!=") {
+        
+        return new Value(!(*leftValue == *rightValue));
+
     } else {
         throw std::runtime_error("Unsupported binary operator");
     }
