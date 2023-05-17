@@ -109,23 +109,40 @@ Value* Interpreter::interpretBinaryOp(BinaryOpNode* node) {
 
         return new Value(leftValue->getFloat() / right);
 
-    } else if (node->op == "==") {
+    } else if (node->op == "==") { // TODO: replace with __eq__ call
         
         return new Value(*leftValue == *rightValue);
 
-    } else if(node->op == "!=") {
+    } else if(node->op == "!=") { // TODO: replace with __ne__ call
         
         return new Value(!(*leftValue == *rightValue));
 
-    } else if(node->op == "or") {
-        /* try to do short-circuit: if after evaluating the left operand,
-         * the result of the logical expression is known, do not evaluate the right operand 
+    } else if (node->op == "<") { // TODO: replace with __lt__ call
+        
+        return new Value(*leftValue < *rightValue);
+
+    } else if(node->op == ">") { // TODO: replace with __gt__ call
+        
+        return new Value(*leftValue > *rightValue);
+
+    } else if (node->op == "<=") { // TODO: replace with __le__ call
+        
+        return new Value(!(*leftValue > *rightValue));
+
+    } else if(node->op == ">=") { // TODO: replace with __ge__ call
+        
+        return new Value(!(*leftValue < *rightValue));
+
+    } else if(node->op == "or") { // TODO: replace with __or__ call
+        /* 
+         *  try to do short-circuit: if after evaluating the left operand,
+         *  the result of the logical expression is known, do not evaluate the right operand 
         */
         if(leftValue->isTruthy()) return leftValue;
 
         return rightValue;
 
-    } else if(node->op == "and") {
+    } else if(node->op == "and") { // TODO: replace with __and__ call
         /* try to do short-circuit: if after evaluating the left operand,
          * the result of the logical expression is known, do not evaluate the right operand 
         */

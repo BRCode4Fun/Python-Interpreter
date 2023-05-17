@@ -96,22 +96,6 @@ class Value {
             return *getListData();
         }
 
-        const int* getIntData() const {
-            return static_cast<int*>(data);
-        }
-        const double* getFloatData() const {
-            return static_cast<double*>(data);
-        }
-        const bool* getBoolData() const {
-            return static_cast<bool*>(data);
-        }
-        const string* getStringData() const {
-            return static_cast<string*>(data);
-        } 
-        const vector<Value>* getListData() const {
-            return static_cast<vector<Value>*>(data);
-        }
-
         // Copy assignment operator
         Value& operator=(const Value& other) {
             if(this != &other) {
@@ -152,34 +136,67 @@ class Value {
             return *this;
         }
 
-        // TODO: replace with __eq__ later
+        // TODO: replace with call to __eq__ later
         bool operator==(const Value& other) const {
             
             if((*this).is_none()) {
                 if(other.is_none()) return true;
                 else return false; // None is only equal to None
             
-            } else if((*this).is_float() and other.is_bool()) {
-
-              return getFloat() == ((double)other.getBoolean());  
-
-            } else if((*this).is_bool() and other.is_float()) {
-
-              return ((float)getBoolean()) == other.getFloat();  
-
-            } else if(type != other.type) {
-                return false;
-
-            } else if((*this).is_float()){
-                
-                return getFloat() == other.getFloat();
-
-            } else if((*this).is_bool()){
-                
-                return getBoolean() == other.getBoolean();
-
+            } else if((*this).is_float()) {
+                if(other.is_bool()) {
+                    return getFloat() == ((double)other.getBoolean());  
+                } else if(other.is_float()) {
+                    return getFloat() == other.getFloat();
+                }
+            } else if((*this).is_bool()) {
+                if(other.is_float()) {
+                    return ((double)getBoolean()) == other.getFloat(); 
+                } else if(other.is_bool()) {
+                    return getBoolean() == other.getBoolean();
+                }
             } else {
                 throw runtime_error("Unsupported operands for equality.");
+            }
+        }
+
+        // TODO: replace with call to __lt__ later
+        bool operator<(const Value& other) const {
+            
+            if((*this).is_float()) {
+                if(other.is_bool()) {
+                    return getFloat() < ((double)other.getBoolean());  
+                } else if(other.is_float()) {
+                    return getFloat() < other.getFloat();
+                }
+            } else if((*this).is_bool()) {
+                if(other.is_float()) {
+                    return ((double)getBoolean()) < other.getFloat();  
+                } else if(other.is_bool()) {
+                    return getBoolean() < other.getBoolean();
+                }
+            } else {
+                throw runtime_error("Unsupported operands for comparison.");
+            }
+        }
+
+        // TODO: replace with call to __gt__ later
+        bool operator>(const Value& other) const {
+            
+            if((*this).is_float()) {
+                if(other.is_bool()) {
+                    return getFloat() > ((double)other.getBoolean());  
+                } else if(other.is_float()) {
+                    return getFloat() > other.getFloat();
+                }
+            } else if((*this).is_bool()) {
+                if(other.is_float()) {
+                    return ((double)getBoolean()) > other.getFloat();  
+                } else if(other.is_bool()) {
+                    return getBoolean() > other.getBoolean();
+                }
+            } else {
+                throw runtime_error("Unsupported operands for comparison.");
             }
         }
 
@@ -214,6 +231,22 @@ class Value {
     private:
         ValueType type;
         void* data;
+
+        const int* getIntData() const {
+            return static_cast<int*>(data);
+        }
+        const double* getFloatData() const {
+            return static_cast<double*>(data);
+        }
+        const bool* getBoolData() const {
+            return static_cast<bool*>(data);
+        }
+        const string* getStringData() const {
+            return static_cast<string*>(data);
+        } 
+        const vector<Value>* getListData() const {
+            return static_cast<vector<Value>*>(data);
+        }
 
         void deleteData() {
             if(data != nullptr) {

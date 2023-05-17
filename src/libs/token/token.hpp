@@ -34,6 +34,14 @@ public:
                 out << "EqualEqual"; break;
             case TokenType::BangEqual:
                 out << "BangEqual"; break;
+            case TokenType::Less:
+                out << "Less"; break;
+            case TokenType::LessEqual:
+                out << "LessEqual"; break;
+            case TokenType::Greater:
+                out << "Greater"; break;
+            case TokenType::GreaterEqual:
+                out << "GreaterEqual"; break;
             case TokenType::Semicolon:
                 out << "Semicolon"; break;
             case TokenType::Number:

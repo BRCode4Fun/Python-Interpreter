@@ -85,9 +85,22 @@ AstNode* Parser::parseLogicAnd() {
 
 AstNode* Parser::parseEquality() {
     
-    auto left = parseFactor();
+    auto left = parseRelational();
     
     while (match(TokenType::EqualEqual) || match(TokenType::BangEqual)) {
+        auto op = previous();
+        auto right = parseRelational();
+        left = new BinaryOpNode(left, op.lexeme, right);
+    }
+    return left;
+}
+
+AstNode* Parser::parseRelational() {
+    
+    auto left = parseFactor();
+    
+    while (match(TokenType::Less) || match(TokenType::LessEqual) ||
+            match(TokenType::Greater) || match(TokenType::GreaterEqual)) {
         auto op = previous();
         auto right = parseFactor();
         left = new BinaryOpNode(left, op.lexeme, right);

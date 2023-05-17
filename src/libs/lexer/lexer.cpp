@@ -80,20 +80,13 @@ void Lexer::scanToken() {
             addToken(match('=') ? TokenType::GreaterEqual : TokenType::Greater);
             break;
         case '/':
-           
             addToken(TokenType::Slash);
-            
             break;
-
-         case '#':        
+         case '#':
             
             while (peek() != '\n' && !isAtEnd()) advance();
-           
-            if(peek() == '\n')
-            {
-              advance();
-              line++; 
-            }
+
+            if(peek() == '\n'){ advance(); line++; }
             
             break;    
         case ' ':
