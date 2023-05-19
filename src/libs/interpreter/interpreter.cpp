@@ -5,93 +5,31 @@ void todo() {
     throw std::logic_error("Function not implemented yet");
 }
 
-Value* Interpreter::interpretStmt(ProgramNode* node) {
+Value* Interpreter::visitProgramNode(ProgramNode* node) {
     
     for (auto statement : node->statements) 
-        interpret(statement);
+        statement->accept(this);
     
     return new Value(1.0);
 }
 
-Value* Interpreter::interpret(AstNode* node) {
 
-    if (dynamic_cast<NullNode*>(node) != nullptr) {
-        return new Value(); // from an UNDEFINED value
-        
-    } if (dynamic_cast<NumNode*>(node) != nullptr) {
-        return new Value(static_cast<NumNode*>(node)->value);
-        
-    } else if (dynamic_cast<BooleanNode*>(node) != nullptr) {
-        return new Value(static_cast<BooleanNode*>(node)->value);
-        
-    } else if (dynamic_cast<AssignNode*>(node) != nullptr) {
-        
-        auto value = interpret(static_cast<AssignNode*>(node)->value);
-
-        auto ident = static_cast<AssignNode*>(node)->name;          
-
-        symbolTable[static_cast<NameNode*>(ident)->name] = value;
-       
-        return  value;
-
-    } else if (dynamic_cast<BinaryOpNode*>(node) != nullptr) {
-        return interpretBinaryOp(static_cast<BinaryOpNode*>(node));
-
-    } else if (dynamic_cast<NameNode*>(node) != nullptr) {
-        auto varname = static_cast<NameNode*>(node)->name;
-        auto iter = symbolTable.find(varname);
-
-        if(iter != symbolTable.end()) {
-            return iter->second;
-        } else {
-            throw std::runtime_error("Undeclared variable '" + varname + "'");
-        }
-        
-    } else if (dynamic_cast<ProgramNode*>(node) != nullptr) {
-        return interpretStmt(static_cast<ProgramNode*>(node));
-    
-    } else if (dynamic_cast<PrintNode*>(node) != nullptr) {
-        return interpretPrintNode(static_cast<PrintNode*>(node));
-    
-    } else if (dynamic_cast<UnaryOpNode*>(node) != nullptr) {
-        return interpretUnaryOp(static_cast<UnaryOpNode*>(node));
-    
-    } else if (dynamic_cast<CallNode*>(node) != nullptr) {
-        return interpretCall(static_cast<CallNode*>(node));
-    
-    } else {
-        throw std::runtime_error("Unsupported node type");
-    }
-}
-
-Value* Interpreter::interpretPrintNode(PrintNode* node) {
+Value* Interpreter::visitPrintNode(PrintNode* node) {
  
-    Value* argValue = interpret(node->args);
-    
-    // invoke the << operator from the Value class
+    Value* argValue = node->args[0].accept(this);
+  
     std::cout << *argValue << "\n" << std::flush;
-}
-
-Value* Interpreter::interpretCall(CallNode* node) {
-    todo();
-}
-
-Value* Interpreter::interpretUnaryOp(UnaryOpNode* node) {
-    Value* operandValue = interpret(node->right);
-
-    if(node->op == "-") {
-        return  new Value(-operandValue->getFloat());
-    } else if(node->op == "not") {
-        return new Value(!operandValue->isTruthy());
-    } else {
-        throw std::runtime_error("Unsupported unary operator");
-    }
-}
-
-Value* Interpreter::interpretBinaryOp(BinaryOpNode* node) {
     
-    Value* leftValue = interpret(node->left);
-    Value* rightValue = interpret(node->right);
+}
+
+Value* Interpreter::visitNumNode(NumNode* node){
+    return new Value(node->value);
+}
+
+Value* Interpreter::visitBinaryOpNode(BinaryOpNode* node)  {
+    
+    Value* leftValue  = node->left->accept(this);
+    Value* rightValue = node->right->accept(this);
 
     if(node->op ==  "+"){
         return new Value(leftValue->getFloat() + rightValue->getFloat());
@@ -153,4 +91,52 @@ Value* Interpreter::interpretBinaryOp(BinaryOpNode* node) {
     } else {
         throw std::runtime_error("Unsupported binary operator");
     }
+}
+
+Value * Interpreter::visitAssignNode(AssignNode*  node) {
+
+        auto value = node->value->accept(this);
+
+        symbolTable[static_cast<NameNode*>(node->name)->name] = value;
+       
+        return  value;
+}
+
+Value * Interpreter::visitNameNode(NameNode*  node)
+{
+        auto varname = node->name;
+
+        auto iter = symbolTable.find(varname);
+
+        if(iter != symbolTable.end()) {
+            return iter->second;
+        } else {
+            throw std::runtime_error("Undeclared variable '" + varname + "'");
+        }
+}
+
+Value * Interpreter::visitBooleanNode(BooleanNode*  node)
+{    
+      return new Value(node->value);
+}
+
+Value * Interpreter::visitUnaryOpNode(UnaryOpNode*  node)
+{    
+    Value* operandValue = node->right->accept(this);
+     
+    if(node->op == "-") {
+        return  new Value(-operandValue->getFloat());
+    } else if(node->op == "not") {
+        return new Value(!operandValue->isTruthy());
+    } else {
+        throw std::runtime_error("Unsupported unary operator");
+    }
+} 
+
+Value * Interpreter::visitNullNode(NullNode* expr){
+          return new Value(); 
+}
+
+Value* Interpreter::interpret(AstNode* node) {
+    return node->accept(this);
 }
