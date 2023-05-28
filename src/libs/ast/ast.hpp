@@ -32,6 +32,10 @@ enum class AstNodeType {
     BinaryOp, UnaryOp,
     Assign, Call, 
 
+    While, 
+
+    IF,
+
     // Literals
     Number, Boolean, Name, Null
 };
@@ -157,6 +161,31 @@ public:
     AstNode* value;
 };
 
+class WhileNode : public AstNode {
+public:
+
+    WhileNode(AstNode* cond, std::vector<AstNode*> *  stmts) : AstNode(AstNodeType::While), cond(cond), stmts(stmts) {}
+
+
+    AstNode* cond;
+    std::vector<AstNode*> * stmts;
+
+    virtual Value *accept(NodeVisitor * visitor) override;
+};
+
+class IfNode : public AstNode {
+public:
+
+    IfNode(AstNode* cond, std::vector<AstNode*> *  stmts) : AstNode(AstNodeType::IF), cond(cond), stmts(stmts) {}
+
+
+    AstNode* cond;
+    std::vector<AstNode*> * stmts;
+
+    virtual Value *accept(NodeVisitor * visitor) override;
+};
+
+
 
 class NodeVisitor {
 
@@ -171,8 +200,10 @@ public:
     virtual Value * visitNameNode( NameNode* node) = 0;
     virtual Value * visitBooleanNode(BooleanNode* node)  = 0;
     virtual Value * visitUnaryOpNode(UnaryOpNode* node)  = 0;
-    virtual Value * visitNullNode(NullNode* expr) = 0;
+    virtual Value * visitNullNode(NullNode* node) = 0;
+    virtual Value * visitWhileNode(WhileNode* node) = 0;
   //  virtual Value * visitCallNode(const CallNode*  expr) = 0;
     virtual Value * visitAssignNode(AssignNode*  node) = 0;
+    virtual Value * visitIfNode(IfNode* node) =  0;
 };
 

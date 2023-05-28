@@ -17,6 +17,8 @@ ProgramNode* Parser::parseProgram() {
 
 AstNode* Parser::parseStmt() {
     
+    
+      //std::cout << peek() << std::endl;
     if (match(TokenType::Print)) {
         consume(TokenType::LeftParen);
         auto expr = parseExpr();
@@ -36,6 +38,50 @@ AstNode* Parser::parseStmt() {
             consume(TokenType::Indent);
         
         return expr;
+    } else if (match(TokenType::While)){
+     //   std::cout << "dsfdsfaf" << std::endl;
+        
+        auto cond =  parseExpr();
+      
+        consume(TokenType::Colon);
+        consume(TokenType::Indent);
+        
+
+        vector<AstNode*> *stmts = new vector<AstNode*>; 
+         
+
+        while(peek().type != TokenType::Dedent){
+             stmts->push_back(parseStmt());
+        }
+
+        
+         if(!isAtEnd())
+            consume(TokenType::Dedent); 
+
+        return new WhileNode(cond , stmts);
+        
+    }  else if (match(TokenType::IF)){
+     //   std::cout << "dsfdsfaf" << std::endl;
+        
+        auto cond =  parseExpr();
+      
+        consume(TokenType::Colon);
+        consume(TokenType::Indent);
+        
+
+        vector<AstNode*> *stmts = new vector<AstNode*>; 
+         
+
+        while(peek().type != TokenType::Dedent){
+             stmts->push_back(parseStmt());
+        }
+
+        
+         if(!isAtEnd())
+            consume(TokenType::Dedent); 
+
+        return new IfNode(cond , stmts);
+        
     } else {
         cout << peek().lexeme << "\n";
         error("Expected statement");

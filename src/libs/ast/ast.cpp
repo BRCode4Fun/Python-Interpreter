@@ -42,3 +42,11 @@ Value * PrintNode::accept(NodeVisitor * visitor) {
 Value * NullNode::accept(NodeVisitor * visitor) {
     return  visitor->visitNullNode(this);
 }
+
+ Value * WhileNode::accept(NodeVisitor* visitor) {
+     return  visitor->visitWhileNode(this);
+ }
+
+ Value * IfNode::accept(NodeVisitor* visitor) {
+     return  visitor->visitIfNode(this);
+ }

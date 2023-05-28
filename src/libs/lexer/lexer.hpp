@@ -31,12 +31,14 @@ class Lexer {
       void handleIdentifier();
       void handleNewline();
       void handleWhitespace();
+     
 
-      int currentIndentLevel = 0; 
+      int currentIndentLevel; 
       bool start_newline = false; 
       bool  is_block =  false;
 
-      std::stack<int> indentLevels;
+      bool has_symbol = false; 
 
+      std::stack<int> indentLevels;
       std::unordered_map<std::string, TokenType> keywords;
 };

@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
 
     Lexer lexer(source);
     std::vector<Token> tokens = lexer.scanTokens(); 
-
+  int x =16;
     #ifdef DEBUG
         /* to define DEBUG, use `make DEBUG=1` when compiling */
         show_tokens(tokens);

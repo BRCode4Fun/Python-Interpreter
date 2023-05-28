@@ -21,6 +21,7 @@ enum TokenType {
     
     // Identifiers and literals
     Identifier, Number,
+    While,
     
     // Others
     Error,

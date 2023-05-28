@@ -26,6 +26,46 @@ Value* Interpreter::visitNumNode(NumNode* node){
     return new Value(node->value);
 }
 
+
+Value* Interpreter::visitWhileNode(WhileNode* node)
+{    
+     Value *cond = node->cond->accept(this);
+
+  //   std::cout <<  "dfafsdfdf " << cond << std::endl; 
+
+    // 
+    bool  cond_result  = cond->is_bool() ? cond->getBoolean() : ((int)(cond->getFloat()) ? true : false); 
+
+     while (cond_result)
+     {
+           for(auto stmt : *node->stmts){
+                stmt->accept(this); 
+           }
+
+           cond = node->cond->accept(this);
+           cond_result  = cond->is_bool() ? cond->getBoolean() : ((int)(cond->getFloat()) ? true : false); 
+     }     
+
+     return new Value(-1.0); 
+}
+
+Value* Interpreter::visitIfNode(IfNode* node)
+{    
+     Value *cond = node->cond->accept(this);
+
+    bool  cond_result  = cond->is_bool() ? cond->getBoolean() : (cond->getFloat() > 0 ? true : false); 
+
+     if (cond_result)
+     {
+           for(auto stmt : *node->stmts){
+                stmt->accept(this); 
+           }
+           cond = node->cond->accept(this);
+     }     
+
+     return new Value(-1.0); 
+}
+
 Value* Interpreter::visitBinaryOpNode(BinaryOpNode* node)  {
     
     Value* leftValue  = node->left->accept(this);
