@@ -112,8 +112,14 @@ void Lexer::scanToken() {
             
             while (peek() != '\n' && !isAtEnd()) advance();
 
-            if(peek() == '\n'){ advance(); line++; }
-            has_symbol = true; 
+            if(peek() == '\n')
+            { 
+                line++;
+                advance();
+     //           break;
+             }
+            
+            has_symbol =  false; 
             
             break;    
         case ' ':
@@ -126,7 +132,7 @@ void Lexer::scanToken() {
         case '\n':
 
             
-            if(line <= 1 and  has_symbol == false)
+            if(has_symbol == false)
             {
                 line++;
                 start_newline = true; 
