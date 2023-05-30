@@ -83,13 +83,20 @@ AstNode* Parser::parseStmt() {
         return new IfNode(cond , stmts);
         
     } else {
-        cout << peek().lexeme << "\n";
-        error("Expected statement");
-    }
+     //   std::cout << "dsfdsfaf" << std::endl;     
+        auto expr =  parseExpr();
+
+         if(!isAtEnd())
+            consume(TokenType::Indent); 
+        return expr;    
+    } 
+    // else {
+     //   cout << peek().lexeme << "\n";
+     //   error("Expected statement");
+   // }
 }
 
 AstNode* Parser::parseExpr() {
-
     return parseAssign();
 }
 

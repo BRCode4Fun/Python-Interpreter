@@ -286,6 +286,8 @@ void Lexer::handleNewline() {
 
         while (indentLevels.top() !=  0 and currentIndentLevel < indentLevels.top() ) {
 
+           
+
             addToken(TokenType::Dedent);
             indentLevels.pop();
             
