@@ -2,7 +2,8 @@
 
 enum TokenType {
     // Keywords
-    Print, True, False, None,
+    Print, While, If, 
+    True, False, None,
     And, Or, Not,
     
     // Operators and punctuators
@@ -16,12 +17,10 @@ enum TokenType {
     LeftBrace, RightBrace,
     Comma, Colon, Semicolon,
     Indent, Dedent,
-    IF, 
     EndOfFile,
     
     // Identifiers and literals
     Identifier, Number,
-    While,
     
     // Others
     Error,

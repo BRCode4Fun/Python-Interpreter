@@ -10,15 +10,15 @@ reset="\e[0m"
 
 has_failed=false
 
-# Traverse the tests/ folder and look for test files
-for testfile in tests/test_*.py; do
+# Traverse the tests/ folder and look for subfolders
+for testfolder in tests/test_*; do
 
-  # Extract the test name from the filename
-  testname=$(echo "$testfile" | sed 's/tests\/test_\([^.]*\).py/\1/')
+  # Extract the test name from the folder name
+  testname=$(basename "$testfolder" | sed 's/^test_//')
   
   # Define the input and expected output filenames
-  inputfile="$testfile"
-  expectedfile="tests/expected_${testname}.txt"
+  inputfile="${testfolder}/test.py"
+  expectedfile="${testfolder}/expected.txt"
   
   # Run the test and capture the output
   output=$(./main "$inputfile")
@@ -45,3 +45,4 @@ else
   echo -e "${red}Test failure.${reset}"
   exit 1
 fi
+

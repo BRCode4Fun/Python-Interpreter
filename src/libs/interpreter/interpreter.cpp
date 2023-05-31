@@ -13,57 +13,40 @@ Value* Interpreter::visitProgramNode(ProgramNode* node) {
     return new Value(1.0);
 }
 
-
 Value* Interpreter::visitPrintNode(PrintNode* node) {
  
     Value* argValue = node->args[0].accept(this);
   
     std::cout << *argValue << "\n" << std::flush;
-    
 }
 
 Value* Interpreter::visitNumNode(NumNode* node){
     return new Value(node->value);
 }
 
+Value* Interpreter::visitWhileNode(WhileNode* node){    
+    
+    Value *cond = node->cond->accept(this);
 
-Value* Interpreter::visitWhileNode(WhileNode* node)
-{    
-     Value *cond = node->cond->accept(this);
-
-  //   std::cout <<  "dfafsdfdf " << cond << std::endl; 
-
-    // 
-    bool  cond_result  = cond->is_bool() ? cond->getBoolean() : ((int)(cond->getFloat()) ? true : false); 
-
-     while (cond_result)
-     {
+     while(cond->isTruthy()){
            for(auto stmt : *node->stmts){
-                stmt->accept(this); 
+                stmt->accept(this);
            }
-
            cond = node->cond->accept(this);
-           cond_result  = cond->is_bool() ? cond->getBoolean() : ((int)(cond->getFloat()) ? true : false); 
      }     
-
      return new Value(-1.0); 
 }
 
-Value* Interpreter::visitIfNode(IfNode* node)
-{    
-     Value *cond = node->cond->accept(this);
+Value* Interpreter::visitIfNode(IfNode* node){
 
-    bool  cond_result  = cond->is_bool() ? cond->getBoolean() : (cond->getFloat() > 0 ? true : false); 
+    Value* cond = node->cond->accept(this);
 
-     if (cond_result)
-     {
-           for(auto stmt : *node->stmts){
-                stmt->accept(this); 
-           }
-           cond = node->cond->accept(this);
-     }     
-
-     return new Value(-1.0); 
+    if (cond->isTruthy()){
+        for(auto stmt : *node->stmts){
+            stmt->accept(this); 
+        }
+    }    
+    return new Value(-1.0); 
 }
 
 Value* Interpreter::visitBinaryOpNode(BinaryOpNode* node)  {
@@ -133,35 +116,34 @@ Value* Interpreter::visitBinaryOpNode(BinaryOpNode* node)  {
     }
 }
 
-Value * Interpreter::visitAssignNode(AssignNode*  node) {
+Value* Interpreter::visitAssignNode(AssignNode* node) {
 
-        auto value = node->value->accept(this);
+    auto value = node->value->accept(this);
 
-        symbolTable[static_cast<NameNode*>(node->name)->name] = value;
+    symbolTable[static_cast<NameNode*>(node->name)->name] = value;
        
-        return  value;
+    return  value;
 }
 
-Value * Interpreter::visitNameNode(NameNode*  node)
-{
-        auto varname = node->name;
+Value* Interpreter::visitNameNode(NameNode* node){
+        
+    auto varname = node->name;
 
-        auto iter = symbolTable.find(varname);
+    auto iter = symbolTable.find(varname);
 
-        if(iter != symbolTable.end()) {
-            return iter->second;
-        } else {
-            throw std::runtime_error("Undeclared variable '" + varname + "'");
-        }
+    if(iter != symbolTable.end()) {
+        return iter->second;
+    } else {
+        throw std::runtime_error("Undeclared variable '" + varname + "'");
+    }
 }
 
-Value * Interpreter::visitBooleanNode(BooleanNode*  node)
-{    
-      return new Value(node->value);
+Value* Interpreter::visitBooleanNode(BooleanNode* node){    
+    return new Value(node->value);
 }
 
-Value * Interpreter::visitUnaryOpNode(UnaryOpNode*  node)
-{    
+Value* Interpreter::visitUnaryOpNode(UnaryOpNode*  node){
+
     Value* operandValue = node->right->accept(this);
      
     if(node->op == "-") {
@@ -171,10 +153,10 @@ Value * Interpreter::visitUnaryOpNode(UnaryOpNode*  node)
     } else {
         throw std::runtime_error("Unsupported unary operator");
     }
-} 
+}
 
-Value * Interpreter::visitNullNode(NullNode* expr){
-          return new Value(); 
+Value* Interpreter::visitNullNode(NullNode* expr){
+    return new Value(); 
 }
 
 Value* Interpreter::interpret(AstNode* node) {

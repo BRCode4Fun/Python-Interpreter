@@ -13,12 +13,9 @@ Lexer::Lexer(const std::string& source) : source(source), current(0), line(1), c
     keywords.insert(std::make_pair("or", TokenType::Or));
     keywords.insert(std::make_pair("not", TokenType::Not));
     keywords.insert(std::make_pair("while", TokenType::While));
-    keywords.insert(std::make_pair("if", TokenType::IF));
+    keywords.insert(std::make_pair("if", TokenType::If));
 
     indentLevels.push(0);
-    currentIndentLevel = 0;
-    line = 1;
-    //col  = 1;
 
     has_symbol = false;
 }
@@ -112,13 +109,11 @@ void Lexer::scanToken() {
             
             while (peek() != '\n' && !isAtEnd()) advance();
 
-            if(peek() == '\n')
-            { 
+            if(peek() == '\n'){ 
                 line++;
                 advance();
      //           break;
-             }
-            
+            }
             has_symbol =  false; 
             
             break;    
@@ -130,33 +125,18 @@ void Lexer::scanToken() {
            
             break;
         case '\n':
-
-            
-            if(has_symbol == false)
-            {
+            if(has_symbol == false){
                 line++;
                 start_newline = true; 
                 currentIndentLevel = 0; 
-         // addToken(TokenType::Indent); 
-
-          //  addToken(TokenType::Indent); 
                 handleNewline();
-
-            }else{
-
-           // if(!f)
-            //   {
-
-            line++;
-            start_newline = true; 
-            currentIndentLevel = 0; 
-         // addToken(TokenType::Indent); 
-
-            addToken(TokenType::Indent); 
-            handleNewline();
+            } else {
+                line++;
+                start_newline = true; 
+                currentIndentLevel = 0;
+                addToken(TokenType::Indent); 
+                handleNewline();
             }
-            //   }
-
             break;
         default:
             if (isdigit(c)) {
@@ -241,13 +221,9 @@ void Lexer::addToken(TokenType type, const std::string& lexeme) {
 
 void Lexer::handleNewline() {
   
-   char c = peek();
+    char c = peek();
 
-   
-
-
-    while ((c = peek()) == ' ' or (c = peek()) == '\n')
-    {
+    while ((c = peek()) == ' ' or (c = peek()) == '\n'){
 
         if((c = peek()) == '\n'){
             line++;
@@ -259,53 +235,23 @@ void Lexer::handleNewline() {
         advance(); 
         currentIndentLevel++; 
     }
-
-     
-
-
-
-    bool f = false; 
-
-  //  if(c == '')
-  //     addToken(TokenType::Indent);
-  
-
-   // if(f)
-    //   return;
-
-
     
- 
     if (is_block and currentIndentLevel > indentLevels.top() ) {
        
-      //   addToken(TokenType::Indent);
          indentLevels.push(currentIndentLevel);
          is_block = false;
 
     } else if ( !indentLevels.empty()  and  currentIndentLevel < indentLevels.top() ) {
 
         while (indentLevels.top() !=  0 and currentIndentLevel < indentLevels.top() ) {
-
-           
-
             addToken(TokenType::Dedent);
             indentLevels.pop();
-            
         }
-
-      
     }
 
-    if(currentIndentLevel > indentLevels.top())
-    {
-             std::string msg  = "Unexpected identation at line  " + std::to_string(line); 
-             throw std::runtime_error(msg);
+    if(currentIndentLevel > indentLevels.top()){
+        std::string msg  = "Unexpected identation at line  " + std::to_string(line); 
+        throw std::runtime_error(msg);
     }
-    
-
-
     if (c == '\n') return;
-
-    
-    
 }

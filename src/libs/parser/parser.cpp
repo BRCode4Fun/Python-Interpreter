@@ -17,8 +17,6 @@ ProgramNode* Parser::parseProgram() {
 
 AstNode* Parser::parseStmt() {
     
-    
-      //std::cout << peek() << std::endl;
     if (match(TokenType::Print)) {
         consume(TokenType::LeftParen);
         auto expr = parseExpr();
@@ -39,61 +37,48 @@ AstNode* Parser::parseStmt() {
         
         return expr;
     } else if (match(TokenType::While)){
-     //   std::cout << "dsfdsfaf" << std::endl;
         
         auto cond =  parseExpr();
       
         consume(TokenType::Colon);
         consume(TokenType::Indent);
-        
 
         vector<AstNode*> *stmts = new vector<AstNode*>; 
          
-
         while(peek().type != TokenType::Dedent){
              stmts->push_back(parseStmt());
         }
-
         
-         if(!isAtEnd())
+        if(!isAtEnd())
             consume(TokenType::Dedent); 
 
-        return new WhileNode(cond , stmts);
+        return new WhileNode(cond, stmts);
         
-    }  else if (match(TokenType::IF)){
-     //   std::cout << "dsfdsfaf" << std::endl;
+    }  else if (match(TokenType::If)){
         
         auto cond =  parseExpr();
       
         consume(TokenType::Colon);
         consume(TokenType::Indent);
-        
 
-        vector<AstNode*> *stmts = new vector<AstNode*>; 
-         
+        vector<AstNode*> *stmts = new vector<AstNode*>;
 
         while(peek().type != TokenType::Dedent){
              stmts->push_back(parseStmt());
         }
-
-        
-         if(!isAtEnd())
+        if(!isAtEnd())
             consume(TokenType::Dedent); 
 
-        return new IfNode(cond , stmts);
+        return new IfNode(cond, stmts);
         
     } else {
-     //   std::cout << "dsfdsfaf" << std::endl;     
-        auto expr =  parseExpr();
+        auto expr = parseExpr();
 
          if(!isAtEnd())
             consume(TokenType::Indent); 
+        
         return expr;    
-    } 
-    // else {
-     //   cout << peek().lexeme << "\n";
-     //   error("Expected statement");
-   // }
+    }
 }
 
 AstNode* Parser::parseExpr() {
@@ -107,6 +92,8 @@ AstNode* Parser::parseAssign() {
     while (match(TokenType::Equals)) {
         auto op = previous();
         auto right = parseAssign();
+        if(!left->is_name_node())
+            error("cannot assign to expression");
         left = new AssignNode(left, right);
     }
     return left;

@@ -3,9 +3,6 @@
 #include <iostream>
 #include "./tokentype.hpp"
 
-
-
-
 class Token {
 
 public:
@@ -21,14 +18,12 @@ public:
         switch (token.type) {
             case TokenType::LeftParen:
                 out << "LeftParen"; break;
+            case TokenType::RightParen:
+                out << "RightParen"; break;
             case TokenType::Indent:
                 out << "Indent"; break;
             case TokenType::Dedent:
                 out << "Dedent"; break;
-            
-            
-            case TokenType::RightParen:
-                out << "RightParen"; break;
             case TokenType::Plus:
                 out << "Plus"; break;
             case TokenType::Minus:
@@ -65,6 +60,10 @@ public:
                 out << "None"; break;
             case TokenType::Print:
                 out << "Print"; break;
+            case TokenType::While:
+                out << "While"; break;
+            case TokenType::If:
+                out << "If"; break;
             case TokenType::And:
                 out << "And"; break;
             case TokenType::Or:
@@ -73,8 +72,6 @@ public:
                 out << "Not"; break;
             case TokenType::EndOfFile:
                 out << "EndOfFile"; break;
-            case TokenType::While:
-                out << "While"; break;
             default:
                 out << "Error"; break;
         }
