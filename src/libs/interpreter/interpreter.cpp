@@ -49,6 +49,17 @@ Value* Interpreter::visitIfNode(IfNode* node){
     return new Value(-1.0); 
 }
 
+Value* Interpreter::visitTernaryOpNode(TernaryOpNode* node) {
+    
+    Value* cond = node->cond->accept(this);
+    
+    if(cond->isTruthy()) {
+        return node->left->accept(this);
+    } else {
+        return node->right->accept(this);
+    }
+}
+
 Value* Interpreter::visitBinaryOpNode(BinaryOpNode* node)  {
     
     Value* leftValue  = node->left->accept(this);

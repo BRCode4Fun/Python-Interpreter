@@ -64,6 +64,8 @@ public:
                 out << "While"; break;
             case TokenType::If:
                 out << "If"; break;
+            case TokenType::Else:
+                out << "Else"; break;
             case TokenType::And:
                 out << "And"; break;
             case TokenType::Or:

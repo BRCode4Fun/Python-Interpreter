@@ -13,6 +13,10 @@ Value* BinaryOpNode::accept(NodeVisitor* visitor) {
     return  visitor->visitBinaryOpNode(this);  
 }
 
+Value* TernaryOpNode::accept(NodeVisitor* visitor) {
+    return  visitor->visitTernaryOpNode(this);  
+}
+
 Value* NameNode::accept(NodeVisitor* visitor) {
     return  visitor->visitNameNode(this);
 }
@@ -33,7 +37,7 @@ Value* ProgramNode::accept(NodeVisitor* visitor) {
     return  visitor->visitProgramNode(this);
 }
 
-Value * PrintNode::accept(NodeVisitor* visitor) {
+Value* PrintNode::accept(NodeVisitor* visitor) {
     return visitor->visitPrintNode(this);
 }
 

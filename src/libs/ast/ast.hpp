@@ -20,7 +20,7 @@ enum class AstNodeType {
     Print, While, If, 
 
     // Expressions
-    BinaryOp, UnaryOp,
+    UnaryOp, BinaryOp, TernaryOp,
     Assign, Call,
 
     // Literals
@@ -64,6 +64,18 @@ public:
     virtual Value *accept(NodeVisitor* visitor) override;
 
     std::vector<AstNode*> statements;
+};
+
+class TernaryOpNode : public AstNode {
+public:
+    TernaryOpNode(AstNode* condition, AstNode* left, AstNode* right) 
+      : AstNode(AstNodeType::TernaryOp), cond(condition), left(left), right(right) {}
+
+    AstNode *cond;
+    AstNode *left;
+    AstNode *right;
+
+    virtual Value *accept(NodeVisitor* visitor) override;
 };
 
 class BinaryOpNode : public AstNode {
@@ -177,17 +189,18 @@ public:
 
     ~NodeVisitor() = default;
 
-    virtual Value * visitPrintNode( PrintNode* node) = 0;
-    virtual Value * visitProgramNode( ProgramNode* node) = 0;
-    virtual Value * visitBinaryOpNode( BinaryOpNode* node) = 0;
-    virtual Value * visitNumNode( NumNode* node) = 0;
-    virtual Value * visitNameNode( NameNode* node) = 0;
-    virtual Value * visitBooleanNode(BooleanNode* node)  = 0;
-    virtual Value * visitUnaryOpNode(UnaryOpNode* node)  = 0;
-    virtual Value * visitNullNode(NullNode* node) = 0;
-    virtual Value * visitWhileNode(WhileNode* node) = 0;
+    virtual Value* visitProgramNode(ProgramNode* node) = 0;
+    virtual Value* visitPrintNode(PrintNode* node) = 0;
+    virtual Value* visitWhileNode(WhileNode* node) = 0;
+    virtual Value* visitIfNode(IfNode* node) =  0;
+    virtual Value* visitAssignNode(AssignNode*  node) = 0;
+    virtual Value* visitTernaryOpNode(TernaryOpNode* node) = 0;
+    virtual Value* visitBinaryOpNode(BinaryOpNode* node) = 0;
+    virtual Value* visitUnaryOpNode(UnaryOpNode* node)  = 0;
+    virtual Value* visitNumNode(NumNode* node) = 0;
+    virtual Value* visitNameNode(NameNode* node) = 0;
+    virtual Value* visitBooleanNode(BooleanNode* node)  = 0;
+    virtual Value* visitNullNode(NullNode* node) = 0;
   //  virtual Value * visitCallNode(const CallNode*  expr) = 0;
-    virtual Value * visitAssignNode(AssignNode*  node) = 0;
-    virtual Value * visitIfNode(IfNode* node) =  0;
 };
 

@@ -27,15 +27,23 @@ AstNode* Parser::parseStmt() {
 
         return new PrintNode(expr);
 
-    } else if (match(TokenType::Identifier)){
+    } else if (match(TokenType::If)){
         
-        current--;
-        auto expr =  parseExpr();
+        auto cond =  parseExpr();
+      
+        consume(TokenType::Colon);
+        consume(TokenType::Indent);
 
+        vector<AstNode*> *stmts = new vector<AstNode*>;
+
+        while(peek().type != TokenType::Dedent){
+             stmts->push_back(parseStmt());
+        }
         if(!isAtEnd())
-            consume(TokenType::Indent);
+            consume(TokenType::Dedent); 
+
+        return new IfNode(cond, stmts);
         
-        return expr;
     } else if (match(TokenType::While)){
         
         auto cond =  parseExpr();
@@ -54,40 +62,19 @@ AstNode* Parser::parseStmt() {
 
         return new WhileNode(cond, stmts);
         
-    }  else if (match(TokenType::If)){
-        
-        auto cond =  parseExpr();
-      
-        consume(TokenType::Colon);
-        consume(TokenType::Indent);
-
-        vector<AstNode*> *stmts = new vector<AstNode*>;
-
-        while(peek().type != TokenType::Dedent){
-             stmts->push_back(parseStmt());
-        }
-        if(!isAtEnd())
-            consume(TokenType::Dedent); 
-
-        return new IfNode(cond, stmts);
-        
-    } else {
-        auto expr = parseExpr();
+    }  else {
+        auto expr = parseAssign();
 
          if(!isAtEnd())
             consume(TokenType::Indent); 
         
-        return expr;    
+        return expr;
     }
-}
-
-AstNode* Parser::parseExpr() {
-    return parseAssign();
 }
 
 AstNode* Parser::parseAssign() {
     
-    auto left = parseLogicOr();
+    auto left = parseExpr();
     
     while (match(TokenType::Equals)) {
         auto op = previous();
@@ -95,6 +82,23 @@ AstNode* Parser::parseAssign() {
         if(!left->is_name_node())
             error("cannot assign to expression");
         left = new AssignNode(left, right);
+    }
+    return left;
+}
+
+AstNode* Parser::parseExpr() {
+    return parseTernary();
+}
+
+AstNode* Parser::parseTernary() {
+    
+    auto left = parseLogicOr();
+    
+    if(match(TokenType::If)) {
+        auto condition = parseLogicOr();
+        consume(TokenType::Else);
+        auto right = parseExpr();
+        left = new TernaryOpNode(condition, left, right);
     }
     return left;
 }

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Build main
-make build
+make -s build
 
 # Define ANSI color codes
 green="\e[32m"

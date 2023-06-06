@@ -14,6 +14,7 @@ Lexer::Lexer(const std::string& source) : source(source), current(0), line(1), c
     keywords.insert(std::make_pair("not", TokenType::Not));
     keywords.insert(std::make_pair("while", TokenType::While));
     keywords.insert(std::make_pair("if", TokenType::If));
+    keywords.insert(std::make_pair("else", TokenType::Else));
 
     indentLevels.push(0);
 

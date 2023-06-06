@@ -22,8 +22,9 @@ class Parser {
         Token previous() const;
         void error(const std::string& message);
 
-        AstNode* parseExpr();
         AstNode* parseAssign();
+        AstNode* parseExpr();
+        AstNode* parseTernary();
         AstNode* parseLogicOr();
         AstNode* parseLogicAnd();
         AstNode* parseEquality();

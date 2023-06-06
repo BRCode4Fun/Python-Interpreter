@@ -26,5 +26,5 @@ test:
 
 # Clean rule
 clean:
-	rm -f $(OUTPUT)
+	@rm -f $(OUTPUT)
 
