@@ -18,6 +18,9 @@ class Value {
             STRING,
             LIST
         };
+
+
+        
       
         Value() : type(ValueType::NONE), data(nullptr) {}
         explicit Value(int v) : type(ValueType::INT), data(new int(v)) {}
@@ -25,6 +28,9 @@ class Value {
         explicit Value(bool v) : type(ValueType::BOOLEAN), data(new bool(v)) {}
         explicit Value(const string& v) : type(ValueType::STRING), data(new string(v)) {}
         explicit Value(const vector<Value>& v) : type(ValueType::LIST), data(new vector<Value>(v)) {}
+
+
+         
 
         // copy constructor
         Value(const Value& other) : type(other.type), data(nullptr) {
@@ -227,10 +233,32 @@ class Value {
                     throw runtime_error("Yet not evaluatable object.");
             }
         }
+
+    
+
+    void Increment_Reference_counting() 
+        {
+            Reference_counting++;   
+        }
+
+    void Decrement_Reference_counting()
+        {
+            Reference_counting--;   
+        }
+        
+    int Get_Reference_counting()
+        {
+            return Reference_counting; 
+        }
+
+
     
     private:
         ValueType type;
         void* data;
+        int Reference_counting = 0; 
+
+
 
         const int* getIntData() const {
             return static_cast<int*>(data);

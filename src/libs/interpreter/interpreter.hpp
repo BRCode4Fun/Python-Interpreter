@@ -3,10 +3,21 @@
 #include <unordered_map>
 #include "../value/value.hpp"
 #include "../ast/ast.hpp"
+#include "../gc/gc.hpp"
 
 class Interpreter : public NodeVisitor {
     public:
-        Interpreter() {}
+
+        void Increment_Reference(Value *Value);
+        void Decrement_Reference(Value *Value);
+
+        Interpreter() {
+
+            GC =  new GarbageCollector(); 
+            
+            if(!GC)
+                 throw std::runtime_error("Error while allocating garbage collector");
+        }
         Value* interpretUnaryOp(UnaryOpNode* node);
         Value* interpretBinaryOp(BinaryOpNode* node);
         Value* interpretTernaryOp(TernaryOpNode* node);  
@@ -29,7 +40,14 @@ class Interpreter : public NodeVisitor {
         virtual Value* visitBooleanNode(BooleanNode* node) override;
         virtual Value* visitNullNode(NullNode* expr) override;
 
+
+    
+
     //  virtual Value * visitCallNode(const CallNode*  expr) override;
     private:
         unordered_map<string, Value*> symbolTable;
+
+        GarbageCollector * GC = nullptr; 
+
+       // unsigned int num_objects_allocated = 0;
 };
