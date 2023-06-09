@@ -3,7 +3,7 @@
   <h1>Python Interpreter</h1>
 </div>
 
-A custom Python interpreter implemented in C++ to showcase advanced programming skills and demonstrate proficiency in language design and implementation.
+Custom Python interpreter implemented in C++ to provide developers with a versatile and extensible tool for executing Python code, fostering learning, and encouraging contributions to the open-source Python ecosystem. 
 
 ## Project Overview
 
