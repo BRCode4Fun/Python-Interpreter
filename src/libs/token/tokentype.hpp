@@ -17,11 +17,12 @@ enum TokenType {
     LeftParen, RightParen,
     LeftBrace, RightBrace,
     Comma, Colon, Semicolon,
-    Indent, Dedent,
+    Indent, Dedent, 
+    Newline, 
     EndOfFile,
     
     // Identifiers and literals
-    Identifier, Number,
+    Name, Number, String,
     
     // Others
     Error,

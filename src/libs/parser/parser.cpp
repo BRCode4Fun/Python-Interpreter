@@ -7,77 +7,161 @@ ProgramNode* Parser::parse() {
 }
 
 ProgramNode* Parser::parseProgram() {
-    
+    /*
+     *   program ::= (statement | NEWLINE)* $
+    */
     std::vector<AstNode*> statements;
     while (!isAtEnd()) {
-        statements.push_back(parseStmt());
+        if(match(TokenType::Newline)){
+            continue;
+        } else {
+            statements.push_back(parseStmt());
+        }
     }
-    return new ProgramNode(statements);
+    return new ProgramNode(new BlockNode(statements));
 }
 
 AstNode* Parser::parseStmt() {
-    
-    if (match(TokenType::Print)) {
-        consume(TokenType::LeftParen);
-        auto expr = parseExpr();
-        consume(TokenType::RightParen);
-
-        if(!isAtEnd())
-            consume(TokenType::Indent); 
-
-        return new PrintNode(expr);
-
-    } else if (match(TokenType::If)){
-        
-        auto cond =  parseExpr();
-      
-        consume(TokenType::Colon);
-        consume(TokenType::Indent);
-
-        vector<AstNode*> *stmts = new vector<AstNode*>;
-
-        while(peek().type != TokenType::Dedent){
-             stmts->push_back(parseStmt());
-        }
-        if(!isAtEnd())
-            consume(TokenType::Dedent); 
-
-        return new IfNode(cond, stmts);
+    /*
+     *    statement ::= stmt_list NEWLINE
+     *                  | compound_stmt
+     *
+     *    compound_stmt ::= if_stmt
+     *                      | while_stmt
+     *                      | for_stmt      TODO
+     *                      | try_stmt      TODO
+     *                      | with_stmt     TODO
+     *                      | funcdef       TODO
+     *                      | classdef      TODO
+     */
+    if (match(TokenType::If)){
+        return parseIfStmt();
         
     } else if (match(TokenType::While)){
-        
-        auto cond =  parseExpr();
-      
-        consume(TokenType::Colon);
-        consume(TokenType::Indent);
-
-        vector<AstNode*> *stmts = new vector<AstNode*>; 
-         
-        while(peek().type != TokenType::Dedent){
-             stmts->push_back(parseStmt());
-        }
-        
-        if(!isAtEnd())
-            consume(TokenType::Dedent); 
-
-        return new WhileNode(cond, stmts);
+        return parseWhileStmt();
         
     }  else {
-        auto expr = parseAssign();
-
-         if(!isAtEnd())
-            consume(TokenType::Indent); 
-        
-        return expr;
+        auto stmtList = parseStmtList();
+        while(match(TokenType::Newline)) continue;
+        return stmtList;
     }
 }
 
-AstNode* Parser::parseAssign() {
+AstNode* Parser::parseStmtList() {
+    /*
+     *    stmt_list ::= simple_stmt (SEMICOLON simple_stmt)* SEMICOLON?
+     */
+    vector<AstNode*> stmts;
     
+    stmts.push_back(parseSimpleStmt());
+    
+    while(match(TokenType::Semicolon)){
+        if(peek().type == TokenType::Newline) break;
+        stmts.push_back(parseSimpleStmt());
+    }
+    if(peek().type == TokenType::Semicolon) ++current;
+    
+    return new BlockNode(stmts);
+}
+
+AstNode* Parser::parseSimpleStmt() {
+    /*
+     *  simple_stmt ::= assignment_stmt
+     *                   | assert_stmt     TODO
+     *                   | pass_stmt       TODO
+     *                   | del_stmt        TODO
+     *                   | print_stmt      
+     *                   | return_stmt     TODO
+     *                   | yield_stmt      TODO
+     *                   | raise_stmt      TODO
+     *                   | break_stmt      TODO
+     *                   | continue_stmt   TODO
+     *                   | import_stmt     TODO
+     *                   | global_stmt     TODO
+     *                   | exec_stmt       TODO
+     *
+     */
+     if (match(TokenType::Print)) {
+        return parsePrintStmt();
+    } else {
+        return parseAssign();
+    }
+}
+
+AstNode* Parser::parsePrintStmt() {
+    /*
+     *    print_stmt ::= PRINT LEFT_PAREN expression RIGHT_PAREN
+     */
+    consume(TokenType::LeftParen);
+    auto expr = parseExpr();
+    consume(TokenType::RightParen);
+
+    return new PrintNode(expr);
+}
+
+AstNode* Parser::parseSuite() {
+    /*
+     *    suite ::= NEWLINE INDENT statement+ DEDENT
+     *              | stmt_list NEWLINE
+     */
+    if(match(TokenType::Newline)) {
+        consume(TokenType::Indent);
+        
+        vector<AstNode*> stmts;
+    
+        stmts.push_back(parseStmt());
+    
+        while(peek().type != TokenType::Dedent){
+            stmts.push_back(parseStmt());
+        }
+        consume(TokenType::Dedent);
+      
+        return new BlockNode(stmts);
+    } else {
+        auto stmtList = parseStmtList();
+        consume(TokenType::Newline);
+        return stmtList;
+    }
+}
+
+AstNode* Parser::parseIfStmt() {
+    /*
+     *    if_stmt ::= IF expression COLON suite
+     *                (ELIF expression COLON suite)*
+     *                (ELSE COLON suite)?
+    */
+    auto cond =  parseExpr();
+      
+    consume(TokenType::Colon);
+    
+    auto trueBranch = parseSuite();
+
+    return new IfNode(cond, trueBranch);
+}
+
+AstNode* Parser::parseWhileStmt() {
+    /*
+     *   while_stmt ::= WHILE expression COLON suite
+     *                  (ELSE COLON suite)?  //TODO
+    */
+    auto cond =  parseExpr();
+      
+    consume(TokenType::Colon);
+
+    auto body = parseSuite();
+
+    return new WhileNode(cond, body);
+}
+
+AstNode* Parser::parseAssign() {
+    /*
+     *  assign_stmt ::= expression EQUALS assign_stmt
+     *                  | expression
+    */
     auto left = parseExpr();
     
     while (match(TokenType::Equals)) {
-        auto op = previous();
+        //auto op = previous();
         auto right = parseAssign();
         if(!left->is_name_node())
             error("cannot assign to expression");
@@ -222,9 +306,12 @@ AstNode* Parser::parsePrimary() {
     } else if(match(TokenType::None)) {
         return new NullNode();
 
-    } else if (match(TokenType::Identifier)) {
+    } else if (match(TokenType::Name)) {
         return new NameNode(previous().lexeme);
-    
+
+    } else if (match(TokenType::String)) {
+        return new StringNode(previous().lexeme);
+
     } else if (match(TokenType::LeftParen)) {
         auto expr = parseExpr();
         consume(TokenType::RightParen);

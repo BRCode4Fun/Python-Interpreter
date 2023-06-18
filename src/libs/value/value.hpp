@@ -18,9 +18,6 @@ class Value {
             STRING,
             LIST
         };
-
-
-        
       
         Value() : type(ValueType::NONE), data(nullptr) {}
         explicit Value(int v) : type(ValueType::INT), data(new int(v)) {}
@@ -28,9 +25,6 @@ class Value {
         explicit Value(bool v) : type(ValueType::BOOLEAN), data(new bool(v)) {}
         explicit Value(const string& v) : type(ValueType::STRING), data(new string(v)) {}
         explicit Value(const vector<Value>& v) : type(ValueType::LIST), data(new vector<Value>(v)) {}
-
-
-         
 
         // copy constructor
         Value(const Value& other) : type(other.type), data(nullptr) {
@@ -142,6 +136,28 @@ class Value {
             return *this;
         }
 
+        // TODO: replace with call to __add__ later
+        Value* operator+(const Value& other) const {
+            
+            if((*this).is_float()) {
+                if(other.is_bool()) {
+                    return new Value(getFloat() + ((double)other.getBoolean()));  
+                } else if(other.is_float()) {
+                    return new Value(getFloat() + other.getFloat());
+                }
+            } else if((*this).is_bool()) {
+                if(other.is_float()) {
+                    return new Value(((double)getBoolean()) + other.getFloat()); 
+                } else if(other.is_bool()) {
+                    return new Value(getBoolean() + other.getBoolean());
+                }
+            } else if((*this).is_string() and other.is_string()) {  
+                return new Value(getString() + other.getString());
+            } else {
+                throw runtime_error("Unsupported operands for +.");
+            }
+        }
+
         // TODO: replace with call to __eq__ later
         bool operator==(const Value& other) const {
             
@@ -214,6 +230,8 @@ class Value {
                 out << (value.getBoolean() ? "True" : "False");
             } else if(value.is_float()) {
                 out << value.getFloat();
+            } else if(value.is_string()) {
+                out << value.getString();
             } else {
                 throw runtime_error("Yet not printable object.");
             }
@@ -229,36 +247,29 @@ class Value {
                     return getBoolean(); break;
                 case ValueType::FLOAT:
                     return getFloat() != 0.0; break;
+                case ValueType::STRING:
+                    return getString() != ""; break;
                 default:
                     throw runtime_error("Yet not evaluatable object.");
             }
         }
 
-    
-
-    void Increment_Reference_counting() 
-        {
-            Reference_counting++;   
+        void Increment_Reference_counting() {
+            ++Reference_counting;   
         }
 
-    void Decrement_Reference_counting()
-        {
-            Reference_counting--;   
+        void Decrement_Reference_counting() {
+            --Reference_counting;
         }
         
-    int Get_Reference_counting()
-        {
+        int Get_Reference_counting(){
             return Reference_counting; 
         }
-
-
     
     private:
         ValueType type;
         void* data;
-        int Reference_counting = 0; 
-
-
+        int Reference_counting = 0;
 
         const int* getIntData() const {
             return static_cast<int*>(data);

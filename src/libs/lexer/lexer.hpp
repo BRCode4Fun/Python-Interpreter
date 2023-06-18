@@ -12,33 +12,29 @@ class Lexer {
         std::vector<Token> scanTokens();
 
     private:
-      const std::string& source;
-      std::vector<Token> tokens;
-      long unsigned start = 0;
-      long unsigned current = 0;
-      unsigned int line = 1;
+        const std::string& source;
+        std::vector<Token> tokens;
+        long unsigned start = 0;
+        long unsigned current = 0;
+        unsigned int line = 1;
 
-      void scanToken();
-      char advance();
-      void addToken(TokenType type);
-      void addToken(TokenType type, const std::string& lexeme);
-      bool match(char expected);
-      char peek() const;
-      char peekNext() const;
-      bool isAtEnd() const;
+        void scanToken();
+        char advance();
+        void addToken(TokenType type);
+        void addToken(TokenType type, const std::string& lexeme);
+        bool match(char expected);
+        char peek() const;
+        char peekNext() const;
+        bool isAtEnd() const;
 
-      void handleNumber();
-      void handleIdentifier();
-      void handleNewline();
-      void handleWhitespace();
-     
+        void handleNumber();
+        void handleIdentifier();
+        void handleString(char quotedType);
+        void handleNewline();
+        void handleIndentation(); 
 
-      int currentIndentLevel; 
-      bool start_newline = false; 
-      bool  is_block =  false;
+        std::unordered_map<std::string, TokenType> keywords;
 
-      bool has_symbol = false; 
-
-      std::stack<int> indentLevels;
-      std::unordered_map<std::string, TokenType> keywords;
+        std::stack<int> indentLevels;
+        bool isBlock;
 };

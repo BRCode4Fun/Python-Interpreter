@@ -14,7 +14,10 @@ class NodeVisitor;
 // Define the AST node types
 enum class AstNodeType {
     // Root
-    Program,
+    Program, 
+    
+    // Group Statements
+    Block,
     
     // Statements
     Print, While, If, 
@@ -24,7 +27,8 @@ enum class AstNodeType {
     Assign, Call,
 
     // Literals
-    Number, Boolean, Name, Null
+    Number, Name, String, 
+    Boolean, Null
 };
 
 class AstNode {
@@ -45,7 +49,6 @@ public:
 class PrintNode : public AstNode {
 
 public:
-
     PrintNode(AstNode* args) 
       : AstNode(AstNodeType::Print),  args(args) {}
 
@@ -54,16 +57,25 @@ public:
     AstNode* args;
 };
 
+class BlockNode : public AstNode {
+public:
+    BlockNode(std::vector<AstNode*>& statements)
+      : AstNode(AstNodeType::Block), statements(statements) {}
+      
+    std::vector<AstNode*> statements;
+    
+    virtual Value *accept(NodeVisitor* visitor) override;
+};
+
 class ProgramNode : public AstNode {
 public:
-
-    ProgramNode(std::vector<AstNode*> statements) 
-      : AstNode(AstNodeType::Program) , statements(statements) {}
+    ProgramNode(BlockNode* body) 
+      : AstNode(AstNodeType::Program), body(body) {}
     virtual ~ProgramNode() {}
     
     virtual Value *accept(NodeVisitor* visitor) override;
 
-    std::vector<AstNode*> statements;
+    BlockNode* body;
 };
 
 class TernaryOpNode : public AstNode {
@@ -121,6 +133,15 @@ public:
     virtual Value *accept(NodeVisitor* visitor) override;
 };
 
+class StringNode : public AstNode {
+public:
+    StringNode(const std::string& lexeme) 
+      : AstNode(AstNodeType::String), lexeme(lexeme) {}
+    std::string lexeme;
+
+    virtual Value *accept(NodeVisitor* visitor) override;
+};
+
 class BooleanNode : public AstNode {
 public:
     BooleanNode(bool value) 
@@ -162,11 +183,11 @@ public:
 class WhileNode : public AstNode {
 public:
 
-    WhileNode(AstNode* cond, std::vector<AstNode*> *stmts) 
-      : AstNode(AstNodeType::While), cond(cond), stmts(stmts) {}
+    WhileNode(AstNode* cond, AstNode* body) 
+      : AstNode(AstNodeType::While), cond(cond), body(body) {}
 
     AstNode* cond;
-    std::vector<AstNode*> *stmts;
+    AstNode* body;
 
     virtual Value *accept(NodeVisitor* visitor) override;
 };
@@ -174,11 +195,11 @@ public:
 class IfNode : public AstNode {
 public:
 
-    IfNode(AstNode* cond, std::vector<AstNode*> *stmts) 
-      : AstNode(AstNodeType::If), cond(cond), stmts(stmts) {}
+    IfNode(AstNode* cond, AstNode* body) 
+      : AstNode(AstNodeType::If), cond(cond), body(body) {}
 
     AstNode* cond;
-    std::vector<AstNode*> *stmts;
+    AstNode* body;
 
     virtual Value *accept(NodeVisitor* visitor) override;
 };
@@ -190,6 +211,7 @@ public:
     ~NodeVisitor() = default;
 
     virtual Value* visitProgramNode(ProgramNode* node) = 0;
+    virtual Value* visitBlockNode(BlockNode* node) = 0;
     virtual Value* visitPrintNode(PrintNode* node) = 0;
     virtual Value* visitWhileNode(WhileNode* node) = 0;
     virtual Value* visitIfNode(IfNode* node) =  0;
@@ -199,6 +221,7 @@ public:
     virtual Value* visitUnaryOpNode(UnaryOpNode* node)  = 0;
     virtual Value* visitNumNode(NumNode* node) = 0;
     virtual Value* visitNameNode(NameNode* node) = 0;
+    virtual Value* visitStringNode(StringNode* node) = 0;
     virtual Value* visitBooleanNode(BooleanNode* node)  = 0;
     virtual Value* visitNullNode(NullNode* node) = 0;
   //  virtual Value * visitCallNode(const CallNode*  expr) = 0;

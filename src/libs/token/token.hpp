@@ -33,7 +33,7 @@ public:
             case TokenType::Slash:
                 out << "Slash"; break;
             case TokenType::Equals:
-                out << "Assign"; break;
+                out << "Equals"; break;
             case TokenType::EqualEqual:
                 out << "EqualEqual"; break;
             case TokenType::BangEqual:
@@ -48,10 +48,14 @@ public:
                 out << "GreaterEqual"; break;
             case TokenType::Semicolon:
                 out << "Semicolon"; break;
+            case TokenType::Colon:
+                out << "Colon"; break;
             case TokenType::Number:
                 out << "Number"; break;
-            case TokenType::Identifier:
-                out << "Identifier"; break;
+            case TokenType::Name:
+                out << "Name"; break;
+            case TokenType::String:
+                out << "String"; break;
             case TokenType::True:
                 out << "True"; break;
             case TokenType::False:
@@ -72,13 +76,25 @@ public:
                 out << "Or"; break;
             case TokenType::Not:
                 out << "Not"; break;
+            case TokenType::Newline:
+                out << "Newline"; break;
             case TokenType::EndOfFile:
                 out << "EndOfFile"; break;
             default:
                 out << "Error"; break;
         }
-        out << " <- " << "\'" << token.lexeme << "\'";
-
+        
+        out << " <- " << "\'";
+            
+        for (char c : token.lexeme) {
+            if (c == '\n') {
+                out << "\\n";
+            } else {
+                out << c;
+            }
+        }
+        out << "\'";
+  
         return out;
     }
 };

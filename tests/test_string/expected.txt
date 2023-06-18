@@ -1,0 +1,11 @@
+Hello, world!
+Hello, world!
+
+This is a string with single quotes.
+This is a string with double quotes.
+Helloworld
+
+Multiple concatenations: Hello, world! Welcome to Python!
+Hello, 'world'!
+Hello, "world"!
+

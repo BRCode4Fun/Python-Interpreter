@@ -33,19 +33,28 @@ int main(int argc, char* argv[]) {
     std::string source((std::istreambuf_iterator<char>(inputFile)), std::istreambuf_iterator<char>());
 
     Lexer lexer(source);
-    std::vector<Token> tokens = lexer.scanTokens(); 
-
+    Interpreter interpreter;
+    
+    std::vector<Token> tokens;
+    
+    try {
+        tokens = lexer.scanTokens(); 
+    } catch(const runtime_error& err) {
+        cerr << err.what() << endl; exit(EXIT_FAILURE);
+    }
     #ifdef DEBUG
         /* to define DEBUG, use `make DEBUG=1` when compiling */
         show_tokens(tokens);
     #endif
-
+    
     Parser parser(tokens);
-
-    AstNode* root = parser.parseProgram();
-
-    Interpreter interpreter;
-
+    ProgramNode* root;
+    
+    try {
+        root = parser.parse();
+    } catch(const runtime_error& err) {
+        cerr << err.what() << endl; exit(EXIT_FAILURE);
+    }
     interpreter.interpret(root);
 
     return 0;

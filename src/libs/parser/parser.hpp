@@ -9,7 +9,6 @@ class Parser {
     public:
         Parser(const std::vector<Token>& tokens);
         ProgramNode* parse();
-        ProgramNode* parseProgram();
 
     private:
         const std::vector<Token>& tokens;
@@ -22,6 +21,14 @@ class Parser {
         Token previous() const;
         void error(const std::string& message);
 
+        ProgramNode* parseProgram();
+        AstNode* parseStmt();
+        AstNode* parseStmtList();
+        AstNode* parseSimpleStmt();
+        AstNode* parsePrintStmt();
+        AstNode* parseSuite();
+        AstNode* parseIfStmt();
+        AstNode* parseWhileStmt();
         AstNode* parseAssign();
         AstNode* parseExpr();
         AstNode* parseTernary();
@@ -34,6 +41,4 @@ class Parser {
         AstNode* parseUnary();
         AstNode* parseCall();
         AstNode* parsePrimary();
-        AstNode* parsePrint();
-        AstNode* parseStmt();
 };

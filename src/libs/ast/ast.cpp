@@ -21,6 +21,10 @@ Value* NameNode::accept(NodeVisitor* visitor) {
     return  visitor->visitNameNode(this);
 }
 
+Value* StringNode::accept(NodeVisitor* visitor) {
+    return  visitor->visitStringNode(this);
+}
+
 Value* BooleanNode::accept(NodeVisitor* visitor) {
     return  visitor->visitBooleanNode(this);
 }
@@ -43,6 +47,10 @@ Value* PrintNode::accept(NodeVisitor* visitor) {
 
 Value* NullNode::accept(NodeVisitor* visitor) {
     return visitor->visitNullNode(this);
+}
+
+Value* BlockNode::accept(NodeVisitor* visitor) {
+    return  visitor->visitBlockNode(this);
 }
 
 Value* WhileNode::accept(NodeVisitor* visitor) {
