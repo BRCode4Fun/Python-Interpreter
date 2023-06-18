@@ -1,4 +1,8 @@
 5
 7
 2.5
-
+x is greater than 3
+z is equal to 7
+a is greater than or equal to 2.5
+z is negative
+a = 7

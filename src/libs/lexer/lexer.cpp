@@ -16,6 +16,7 @@ Lexer::Lexer(const std::string& source)
         {"not", TokenType::Not},
         {"while", TokenType::While},
         {"if", TokenType::If},
+        {"elif", TokenType::Elif},
         {"else", TokenType::Else}
     };
 }
@@ -141,7 +142,8 @@ void Lexer::handleIdentifier() {
     TokenType type = keywords.count(text) ? keywords.at(text) : TokenType::Name;
 
     // Check if the identifier indicates the start of a block
-    if (type == TokenType::If || type == TokenType::While) {
+    if (type == TokenType::If || type == TokenType::Elif || 
+        type == TokenType::Else || type == TokenType::While) {
         isBlock = true;
     }
     addToken(type);

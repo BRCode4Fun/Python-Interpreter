@@ -33,7 +33,7 @@ AstNode* Parser::parseStmt() {
      *                      | with_stmt     TODO
      *                      | funcdef       TODO
      *                      | classdef      TODO
-     */
+    */
     if (match(TokenType::If)){
         return parseIfStmt();
         
@@ -50,7 +50,7 @@ AstNode* Parser::parseStmt() {
 AstNode* Parser::parseStmtList() {
     /*
      *    stmt_list ::= simple_stmt (SEMICOLON simple_stmt)* SEMICOLON?
-     */
+    */
     vector<AstNode*> stmts;
     
     stmts.push_back(parseSimpleStmt());
@@ -80,7 +80,7 @@ AstNode* Parser::parseSimpleStmt() {
      *                   | global_stmt     TODO
      *                   | exec_stmt       TODO
      *
-     */
+    */
      if (match(TokenType::Print)) {
         return parsePrintStmt();
     } else {
@@ -91,7 +91,7 @@ AstNode* Parser::parseSimpleStmt() {
 AstNode* Parser::parsePrintStmt() {
     /*
      *    print_stmt ::= PRINT LEFT_PAREN expression RIGHT_PAREN
-     */
+    */
     consume(TokenType::LeftParen);
     auto expr = parseExpr();
     consume(TokenType::RightParen);
@@ -103,7 +103,7 @@ AstNode* Parser::parseSuite() {
     /*
      *    suite ::= NEWLINE INDENT statement+ DEDENT
      *              | stmt_list NEWLINE
-     */
+    */
     if(match(TokenType::Newline)) {
         consume(TokenType::Indent);
         
@@ -131,12 +131,24 @@ AstNode* Parser::parseIfStmt() {
      *                (ELSE COLON suite)?
     */
     auto cond =  parseExpr();
-      
     consume(TokenType::Colon);
-    
     auto trueBranch = parseSuite();
 
-    return new IfNode(cond, trueBranch);
+    std::vector<std::pair<AstNode*, AstNode*> > elifBranches;
+    while(match(TokenType::Elif)) {
+        auto elifCond = parseExpr();
+        consume(TokenType::Colon);
+        auto elifSuite = parseSuite();
+        elifBranches.emplace_back(elifCond, elifSuite);
+    }
+    
+    AstNode* elseBranch = nullptr;
+    if(match(TokenType::Else)) {
+        consume(TokenType::Colon);
+        elseBranch = parseSuite();
+    }
+    
+    return new IfNode(cond, trueBranch, elifBranches, elseBranch);
 }
 
 AstNode* Parser::parseWhileStmt() {

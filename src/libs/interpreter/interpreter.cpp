@@ -53,15 +53,25 @@ Value* Interpreter::visitWhileNode(WhileNode* node){
      return new Value(-1.0); 
 }
 
-Value* Interpreter::visitIfNode(IfNode* node){
-
+Value* Interpreter::visitIfNode(IfNode* node) {
     Value* cond = node->cond->accept(this);
 
-    if (cond->isTruthy()){
-        node->body->accept(this);
-    }    
-    return new Value(-1.0); 
+    if (cond->isTruthy()) {
+        return node->trueBranch->accept(this);
+    } else {
+        for (const auto& elif : node->elifBranches) {
+            Value* elifCond = elif.first->accept(this);
+            if (elifCond->isTruthy()) {
+                return elif.second->accept(this);
+            }
+        }
+        if (node->elseBranch != nullptr) {
+            return node->elseBranch->accept(this);
+        }
+    }
+    return new Value(-1.0);
 }
+
 
 Value* Interpreter::visitTernaryOpNode(TernaryOpNode* node) {
     

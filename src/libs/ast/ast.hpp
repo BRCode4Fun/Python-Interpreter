@@ -195,11 +195,15 @@ public:
 class IfNode : public AstNode {
 public:
 
-    IfNode(AstNode* cond, AstNode* body) 
-      : AstNode(AstNodeType::If), cond(cond), body(body) {}
+    IfNode(AstNode* cond, AstNode* trueBranch, 
+           const std::vector<std::pair<AstNode*, AstNode*>>& elifBranches, 
+           AstNode* elseBranch) : AstNode(AstNodeType::If), cond(cond), 
+          trueBranch(trueBranch), elifBranches(elifBranches), elseBranch(elseBranch) {}
 
     AstNode* cond;
-    AstNode* body;
+    AstNode* trueBranch;
+    std::vector<std::pair<AstNode*, AstNode*> > elifBranches;
+    AstNode* elseBranch;
 
     virtual Value *accept(NodeVisitor* visitor) override;
 };
