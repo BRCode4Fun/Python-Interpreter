@@ -12,8 +12,6 @@ class Interpreter : public NodeVisitor {
    
     public:
 
-
-
         Interpreter() {
 
             GC = new GarbageCollector();

@@ -11,6 +11,7 @@
 1
 2
 0
+0
 is even
 1
 is odd
@@ -71,4 +72,3 @@ is even
 29
 is odd
 30
-

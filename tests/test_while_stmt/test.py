@@ -31,6 +31,7 @@ while a < 3:
 #    b = b - 1
 
 count = 0
+print(count)
 
 while count < 30:
     print(count)

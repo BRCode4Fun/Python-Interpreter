@@ -20,6 +20,7 @@ class Value {
         };
       
         Value() : type(ValueType::NONE), data(nullptr) {}
+        
         explicit Value(long long v) : type(ValueType::INT), data(new long long(v)) {}
         explicit Value(double v) : type(ValueType::FLOAT), data(new double(v)) {}
         explicit Value(bool v) : type(ValueType::BOOLEAN), data(new bool(v)) {}

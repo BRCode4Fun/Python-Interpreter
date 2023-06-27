@@ -91,71 +91,138 @@ Value* Interpreter::visitTernaryOpNode(TernaryOpNode* node) {
 Value* Interpreter::visitBinaryOpNode(BinaryOpNode* node)  {
     
     Value* leftValue  = node->left->accept(this);
+    leftValue->Increment_Reference_counting(); 
+    
+    
     Value* rightValue = node->right->accept(this);
+    rightValue->Increment_Reference_counting(); 
 
+
+    
     if(node->op ==  "+"){ // TODO: replace with __add__ call
         Value* value = *leftValue + *rightValue;
         GC->Add_object(value);
+        
+        leftValue->Decrement_Reference_counting(); 
+        rightValue->Decrement_Reference_counting(); 
+    
         return value;
     
     } else if (node->op ==  "-"){ // TODO: replace with __sub__ call
          Value* value = *leftValue - *rightValue;
          GC->Add_object(value);
+         
+         leftValue->Decrement_Reference_counting(); 
+         rightValue->Decrement_Reference_counting(); 
+        
          return value;
          
     } else if (node->op ==  "*"){ // TODO: replace with __mul__ call
         Value* value = *leftValue * *rightValue;
         GC->Add_object(value); 
+        
+        leftValue->Decrement_Reference_counting(); 
+        rightValue->Decrement_Reference_counting();
+         
         return value;
     
     } else if (node->op ==  "/"){ // TODO: replace with __truediv__ call
         Value* value = *leftValue / *rightValue;
         GC->Add_object(value); 
+        
+        leftValue->Decrement_Reference_counting(); 
+        rightValue->Decrement_Reference_counting();
+        
+        
         return value;
 
     } else if (node->op ==  "%"){ // TODO: replace with __mod__ call
         Value* value = *leftValue % *rightValue;
         GC->Add_object(value);
+        
+        leftValue->Decrement_Reference_counting(); 
+        rightValue->Decrement_Reference_counting();
+        
         return value;
 
     } else if (node->op == "==") { // TODO: replace with __eq__ call
         Value* value = *leftValue == *rightValue;
         GC->Add_object(value); 
+        
+        leftValue->Decrement_Reference_counting(); 
+        rightValue->Decrement_Reference_counting();
+        
         return value;
 
     } else if(node->op == "!=") { // TODO: replace with __ne__ call
         Value* value = !(*(*leftValue == *rightValue));
         GC->Add_object(value);
+        
+        leftValue->Decrement_Reference_counting(); 
+        rightValue->Decrement_Reference_counting();
+        
+        
         return value;
 
     } else if (node->op == "<") { // TODO: replace with __lt__ call
         Value* value = *leftValue < *rightValue;
         GC->Add_object(value); 
+        
+        leftValue->Decrement_Reference_counting(); 
+        rightValue->Decrement_Reference_counting();
+        
+        
         return value;
 
     } else if(node->op == ">") { // TODO: replace with __gt__ call
         Value* value = *leftValue > *rightValue;
         GC->Add_object(value); 
+        
+        leftValue->Decrement_Reference_counting(); 
+        rightValue->Decrement_Reference_counting();
+        
+        
         return value;
 
     } else if (node->op == "<=") { // TODO: replace with __le__ call
         Value* value = !(*(*leftValue > *rightValue));
         GC->Add_object(value);
+        
+        leftValue->Decrement_Reference_counting(); 
+        rightValue->Decrement_Reference_counting();
+        
+        
         return value;  
         
     } else if(node->op == ">=") { // TODO: replace with __ge__ call
         Value* value = !(*(*leftValue < *rightValue));
         GC->Add_object(value);
+        
+        leftValue->Decrement_Reference_counting(); 
+        rightValue->Decrement_Reference_counting();
+        
+        
         return value;
 
     } else if(node->op == "or") { // TODO: replace with __or__ call
+		
+        leftValue->Decrement_Reference_counting(); 
+        rightValue->Decrement_Reference_counting();
+        
+        
         return *leftValue || *rightValue;
     } else if(node->op == "and") { // TODO: replace with __and__ call
+		
+	leftValue->Decrement_Reference_counting(); 
+        rightValue->Decrement_Reference_counting();
+        
+        
         return *leftValue && *rightValue;
     } else {
         throw std::runtime_error("Unsupported binary operator");
     }
 }
+
 
 Value* Interpreter::visitAssignNode(AssignNode* node) {
 
