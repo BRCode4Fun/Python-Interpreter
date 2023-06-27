@@ -41,4 +41,6 @@ class Parser {
         AstNode* parseUnary();
         AstNode* parseCall();
         AstNode* parsePrimary();
+        AstNode* parseFunctionDef();
+        
 };

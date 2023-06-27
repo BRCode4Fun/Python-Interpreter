@@ -17,6 +17,8 @@ class Lexer {
         long unsigned start = 0;
         long unsigned current = 0;
         unsigned int line = 1;
+        int s = 10;
+        int t = 10;
 
         void scanToken();
         char advance();

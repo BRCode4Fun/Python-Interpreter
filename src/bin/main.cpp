@@ -38,8 +38,11 @@ int main(int argc, char* argv[]) {
     std::vector<Token> tokens;
     
     try {
+        
         tokens = lexer.scanTokens(); 
+
     } catch(const runtime_error& err) {
+
         cerr << err.what() << endl; exit(EXIT_FAILURE);
     }
     #ifdef DEBUG

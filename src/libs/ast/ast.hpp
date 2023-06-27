@@ -4,9 +4,6 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <unordered_map>
-
-using namespace std;
 
 class Value; 
 class NodeVisitor;
@@ -20,15 +17,15 @@ enum class AstNodeType {
     Block,
     
     // Statements
-    Print, While, If, 
+    Print, While, If, Function,
 
     // Expressions
     UnaryOp, BinaryOp, TernaryOp,
-    Assign, Call,
+    Assign, Call, 
 
     // Literals
-    Number, Name, String, 
-    Boolean, Null
+    Name, String,
+    Int, Float, Boolean, Null
 };
 
 class AstNode {
@@ -52,30 +49,29 @@ public:
     PrintNode(AstNode* args) 
       : AstNode(AstNodeType::Print),  args(args) {}
 
-    virtual Value *accept(NodeVisitor* visitor) override;
-
     AstNode* args;
+
+    virtual Value* accept(NodeVisitor* visitor) override;
 };
 
 class BlockNode : public AstNode {
 public:
-    BlockNode(std::vector<AstNode*>& statements)
+    BlockNode(const std::vector<AstNode*>& statements)
       : AstNode(AstNodeType::Block), statements(statements) {}
       
     std::vector<AstNode*> statements;
     
-    virtual Value *accept(NodeVisitor* visitor) override;
+    virtual Value* accept(NodeVisitor* visitor) override;
 };
 
 class ProgramNode : public AstNode {
 public:
     ProgramNode(BlockNode* body) 
       : AstNode(AstNodeType::Program), body(body) {}
-    virtual ~ProgramNode() {}
     
-    virtual Value *accept(NodeVisitor* visitor) override;
-
     BlockNode* body;
+    
+    virtual Value* accept(NodeVisitor* visitor) override;
 };
 
 class TernaryOpNode : public AstNode {
@@ -83,90 +79,99 @@ public:
     TernaryOpNode(AstNode* condition, AstNode* left, AstNode* right) 
       : AstNode(AstNodeType::TernaryOp), cond(condition), left(left), right(right) {}
 
-    AstNode *cond;
-    AstNode *left;
-    AstNode *right;
+    AstNode *cond, *left, *right;
 
-    virtual Value *accept(NodeVisitor* visitor) override;
+    virtual Value* accept(NodeVisitor* visitor) override;
 };
 
 class BinaryOpNode : public AstNode {
 public:
 
-    BinaryOpNode(AstNode* left, std::string op, AstNode* right) 
+    BinaryOpNode(AstNode* left, const std::string& op, AstNode* right)
       : AstNode(AstNodeType::BinaryOp), left(left), op(op), right(right) {}
 
-    virtual Value *accept(NodeVisitor* visitor) override;
-
-    AstNode* left;
     std::string op;
-    AstNode* right;
+    AstNode *left, *right;
+
+    virtual Value* accept(NodeVisitor* visitor) override;
 };
 
 class UnaryOpNode : public AstNode {
 public:
-    UnaryOpNode(string op, AstNode* right) 
+    UnaryOpNode(const std::string& op, AstNode* right) 
       : AstNode(AstNodeType::UnaryOp), op(op), right(right) {}
 
     std::string op;
     AstNode* right;
 
-    virtual Value *accept(NodeVisitor* visitor) override;
+    virtual Value* accept(NodeVisitor* visitor) override;
 };
 
-class NumNode : public AstNode {
+class IntNode : public AstNode {
 public:
-    NumNode(double value) 
-      : AstNode(AstNodeType::Number), value(value) {}
+    IntNode(long long value) 
+      : AstNode(AstNodeType::Int), value(value) {}
 
-    virtual Value *accept(NodeVisitor* visitor) override;
+    long long value; // TODO: implement the BigInt class
+
+    virtual Value* accept(NodeVisitor* visitor) override;
+};
+class FloatNode : public AstNode {
+public:
+    FloatNode(double value)
+      : AstNode(AstNodeType::Float), value(value) {}
 
     double value;
+
+    virtual Value* accept(NodeVisitor* visitor) override;
 };
 
 class NameNode : public AstNode {
 public:
     NameNode(const std::string& name) 
       : AstNode(AstNodeType::Name), name(name) {}
+    
     std::string name;
 
-    virtual Value *accept(NodeVisitor* visitor) override;
+    virtual Value* accept(NodeVisitor* visitor) override;
 };
 
 class StringNode : public AstNode {
 public:
     StringNode(const std::string& lexeme) 
       : AstNode(AstNodeType::String), lexeme(lexeme) {}
+    
     std::string lexeme;
 
-    virtual Value *accept(NodeVisitor* visitor) override;
+    virtual Value* accept(NodeVisitor* visitor) override;
 };
 
 class BooleanNode : public AstNode {
 public:
     BooleanNode(bool value) 
       : AstNode(AstNodeType::Boolean), value(value) {}
+    
     bool value;
 
-    virtual Value *accept(NodeVisitor* visitor) override;
+    virtual Value* accept(NodeVisitor* visitor) override;
 };
 
 class NullNode : public AstNode {
 public:
     NullNode() : AstNode(AstNodeType::Null) {}
 
-    virtual Value *accept(NodeVisitor* visitor) override;
+    virtual Value* accept(NodeVisitor* visitor) override;
 };
 
 class CallNode : public AstNode {
 public:
-    CallNode(AstNode* name, std::vector<AstNode*> args) 
+    CallNode(AstNode* name, const std::vector<AstNode*>& args) 
       : AstNode(AstNodeType::Call), name(name), args(args) {}
 
     AstNode* name;
     std::vector<AstNode*> args;
 
-    virtual Value *accept(NodeVisitor * visitor) override;
+    virtual Value* accept(NodeVisitor * visitor) override;
 };
 
 class AssignNode : public AstNode {
@@ -174,10 +179,9 @@ public:
     AssignNode(AstNode* name, AstNode* value) 
       : AstNode(AstNodeType::Assign), name(name), value(value) {}
 
-    virtual Value *accept(NodeVisitor* visitor) override;
+    AstNode *name, *value;
 
-    AstNode* name;
-    AstNode* value;
+    virtual Value* accept(NodeVisitor* visitor) override;
 };
 
 class WhileNode : public AstNode {
@@ -186,11 +190,34 @@ public:
     WhileNode(AstNode* cond, AstNode* body) 
       : AstNode(AstNodeType::While), cond(cond), body(body) {}
 
-    AstNode* cond;
-    AstNode* body;
+    AstNode *cond, *body;
 
-    virtual Value *accept(NodeVisitor* visitor) override;
+    virtual Value* accept(NodeVisitor* visitor) override;
 };
+
+class FunctionNode : public AstNode {
+
+public:
+
+    FunctionNode(AstNode *name, std::vector<AstNode*> params, AstNode* body)
+    : AstNode(AstNodeType::Function),  name(name) , params(params) , body(body) {}
+   
+    const AstNode* getName() const { return name; };
+
+    std::vector<AstNode*>  getParams() const { return params; }
+
+    AstNode*  getBody() const { return body; }
+
+    virtual Value* accept(NodeVisitor* visitor) override;
+
+private:
+
+    AstNode* name;
+    std::vector<AstNode*> params;
+    AstNode* body;
+};
+
+
 
 class IfNode : public AstNode {
 public:
@@ -200,13 +227,13 @@ public:
            AstNode* elseBranch) : AstNode(AstNodeType::If), cond(cond), 
           trueBranch(trueBranch), elifBranches(elifBranches), elseBranch(elseBranch) {}
 
-    AstNode* cond;
-    AstNode* trueBranch;
+    AstNode *cond, *trueBranch, *elseBranch;;
     std::vector<std::pair<AstNode*, AstNode*> > elifBranches;
-    AstNode* elseBranch;
 
-    virtual Value *accept(NodeVisitor* visitor) override;
+    virtual Value* accept(NodeVisitor* visitor) override;
 };
+
+
 
 class NodeVisitor {
 
@@ -223,11 +250,14 @@ public:
     virtual Value* visitTernaryOpNode(TernaryOpNode* node) = 0;
     virtual Value* visitBinaryOpNode(BinaryOpNode* node) = 0;
     virtual Value* visitUnaryOpNode(UnaryOpNode* node)  = 0;
-    virtual Value* visitNumNode(NumNode* node) = 0;
+    virtual Value* visitIntNode(IntNode* node) = 0;
+    virtual Value* visitFloatNode(FloatNode* node) = 0;
     virtual Value* visitNameNode(NameNode* node) = 0;
     virtual Value* visitStringNode(StringNode* node) = 0;
     virtual Value* visitBooleanNode(BooleanNode* node)  = 0;
     virtual Value* visitNullNode(NullNode* node) = 0;
+    virtual Value* visitFunctionNode(FunctionNode* node) = 0;
+
   //  virtual Value * visitCallNode(const CallNode*  expr) = 0;
 };
 

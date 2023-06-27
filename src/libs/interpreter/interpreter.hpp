@@ -27,11 +27,13 @@ class Interpreter : public NodeVisitor {
         virtual Value* visitTernaryOpNode( TernaryOpNode* node) override;
         virtual Value* visitBinaryOpNode( BinaryOpNode* node) override;
         virtual Value* visitUnaryOpNode(UnaryOpNode* node)  override;
-        virtual Value* visitNumNode( NumNode* node)  override;
+        virtual Value* visitIntNode( IntNode* node)  override;
+        virtual Value* visitFloatNode( FloatNode* node)  override;
         virtual Value* visitNameNode( NameNode* node) override;
         virtual Value* visitStringNode( StringNode* node) override;
         virtual Value* visitBooleanNode(BooleanNode* node) override;
         virtual Value* visitNullNode(NullNode* expr) override;
+        virtual Value* visitFunctionNode(FunctionNode* node) override;
 
     //  virtual Value * visitCallNode(const CallNode*  expr) override;
     private:

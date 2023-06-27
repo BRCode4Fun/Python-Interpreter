@@ -20,7 +20,7 @@ class Value {
         };
       
         Value() : type(ValueType::NONE), data(nullptr) {}
-        explicit Value(int v) : type(ValueType::INT), data(new int(v)) {}
+        explicit Value(long long v) : type(ValueType::INT), data(new long long(v)) {}
         explicit Value(double v) : type(ValueType::FLOAT), data(new double(v)) {}
         explicit Value(bool v) : type(ValueType::BOOLEAN), data(new bool(v)) {}
         explicit Value(const string& v) : type(ValueType::STRING), data(new string(v)) {}
@@ -30,7 +30,7 @@ class Value {
         Value(const Value& other) : type(other.type), data(nullptr) {
             switch (type) {
                 case ValueType::INT:
-                    data = new int(*other.getIntData());
+                    data = new long long(*other.getIntData());
                     break;
                 case ValueType::FLOAT:
                     data = new double(*other.getFloatData());
@@ -65,19 +65,19 @@ class Value {
         inline bool is_list() const { return type == ValueType::LIST; }
         inline bool is_none() const { return type == ValueType::NONE; }
 
-        int getInt() const {
+        const long long getInt() const {
             if (not is_int()) {
                 throw runtime_error("Value is not an integer.");
             }
             return *getIntData();
         }
-        double getFloat() const {
+        const double getFloat() const {
             if (not is_float()) {
                 throw runtime_error("Value is not a float.");
             }
             return *getFloatData();
         }
-        bool getBoolean() const {
+        const bool getBoolean() const {
             if (not is_bool()) {
                 throw runtime_error("Value is not a boolean.");
             }
@@ -104,7 +104,7 @@ class Value {
 
                 switch(type) {
                     case ValueType::INT:
-                        data = new int(*other.getIntData());
+                        data = new long long(*other.getIntData());
                         break;
                     case ValueType::FLOAT:
                         data = new double(*other.getFloatData());
@@ -140,16 +140,37 @@ class Value {
         Value* operator+(const Value& other) const {
             
             if((*this).is_float()) {
-                if(other.is_bool()) {
-                    return new Value(getFloat() + ((double)other.getBoolean()));  
-                } else if(other.is_float()) {
-                    return new Value(getFloat() + other.getFloat());
+                switch(other.type) {
+                    case ValueType::FLOAT:
+                        return new Value(getFloat() + other.getFloat());
+                    case ValueType::INT:
+                        return new Value(getFloat() + (double)other.getInt());
+                    case ValueType::BOOLEAN:
+                        return new Value(getFloat() + (long long)other.getBoolean());
+                    default:
+                        throw runtime_error("Unsupported operands for +.");
+                }
+            } else if((*this).is_int()) {
+                switch(other.type) {
+                    case ValueType::INT:
+                        return new Value(getInt() + other.getInt());
+                    case ValueType::FLOAT:
+                        return new Value((double)getInt() + other.getFloat());
+                    case ValueType::BOOLEAN:
+                        return new Value(getInt() + (long long)other.getBoolean());
+                    default:
+                        throw runtime_error("Unsupported operands for +.");
                 }
             } else if((*this).is_bool()) {
-                if(other.is_float()) {
-                    return new Value(((double)getBoolean()) + other.getFloat()); 
-                } else if(other.is_bool()) {
-                    return new Value(getBoolean() + other.getBoolean());
+                switch(other.type) {
+                    case ValueType::INT:
+                        return new Value((long long)getBoolean() + other.getInt());
+                    case ValueType::FLOAT:
+                        return new Value((double)getBoolean() + other.getFloat());
+                    case ValueType::BOOLEAN:
+                        return new Value((long long)getBoolean() + (long long)other.getBoolean());
+                    default:
+                        throw runtime_error("Unsupported operands for +.");
                 }
             } else if((*this).is_string() and other.is_string()) {  
                 return new Value(getString() + other.getString());
@@ -157,25 +178,300 @@ class Value {
                 throw runtime_error("Unsupported operands for +.");
             }
         }
-
-        // TODO: replace with call to __eq__ later
-        bool operator==(const Value& other) const {
+        
+        // TODO: replace with call to __mul__ later
+        Value* operator*(const Value& other) const {
             
-            if((*this).is_none()) {
-                if(other.is_none()) return true;
-                else return false; // None is only equal to None
-            
-            } else if((*this).is_float()) {
-                if(other.is_bool()) {
-                    return getFloat() == ((double)other.getBoolean());  
-                } else if(other.is_float()) {
-                    return getFloat() == other.getFloat();
+            if((*this).is_float()) {
+                switch(other.type) {
+                    case ValueType::FLOAT:
+                        return new Value(getFloat() * other.getFloat());
+                    case ValueType::INT:
+                        return new Value(getFloat() * (double)other.getInt());
+                    case ValueType::BOOLEAN:
+                        return new Value(getFloat() * (double)other.getBoolean());
+                    default:
+                        throw runtime_error("Unsupported operands for *.");
+                }
+            } else if((*this).is_int()) {
+                switch(other.type) {
+                    case ValueType::INT:
+                        return new Value(getInt() * other.getInt());
+                    case ValueType::FLOAT:
+                        return new Value((double)getInt() * other.getFloat());
+                    case ValueType::BOOLEAN:
+                        return new Value(getInt() * (long long)other.getBoolean());
+                    case ValueType::STRING:
+                        throw std::logic_error("Function not implemented yet");
+                    default:
+                        throw runtime_error("Unsupported operands for *.");
                 }
             } else if((*this).is_bool()) {
-                if(other.is_float()) {
-                    return ((double)getBoolean()) == other.getFloat(); 
-                } else if(other.is_bool()) {
-                    return getBoolean() == other.getBoolean();
+                switch(other.type) {
+                    case ValueType::INT:
+                        return new Value((int)getBoolean() * other.getInt());
+                    case ValueType::FLOAT:
+                        return new Value((double)getBoolean() * other.getFloat());
+                    case ValueType::BOOLEAN:
+                        return new Value((long long)getBoolean() * (long long)other.getBoolean());
+                    default:
+                        throw runtime_error("Unsupported operands for *.");
+                }
+            } else if((*this).is_string() and other.is_int()) {  
+                throw std::logic_error("Feature not implemented yet");
+            } else {
+                throw runtime_error("Unsupported operands for +.");
+            }
+        }
+        
+        // TODO: replace with call to __truediv__ later
+        Value* operator/(const Value& other) const {
+            
+            if((*this).is_float()) {
+                switch(other.type) {
+                    case ValueType::FLOAT: {
+                        double rvalue = other.getFloat();
+                        if(rvalue == 0.0) throw std::runtime_error("Attempted to divide by zero");
+                        else return new Value(getFloat() / rvalue);
+                    } 
+                    case ValueType::INT: {
+                        double rvalue = (double) other.getInt();
+                        if(rvalue == 0.0) throw std::runtime_error("Attempted to divide by zero");
+                        else return new Value(getFloat() / rvalue);
+                    }
+                    case ValueType::BOOLEAN: {    
+                        double rvalue = (double) other.getBoolean();
+                        if(rvalue == 0.0) throw std::runtime_error("Attempted to divide by zero");
+                        else return new Value(getFloat() / rvalue);
+                    }
+                    default:
+                        throw runtime_error("Unsupported operands for /.");
+                }
+            } else if((*this).is_int()) {
+                switch(other.type) {
+                    case ValueType::INT: {
+                        long long rvalue = other.getInt();
+                        if(rvalue == 0L) throw std::runtime_error("Attempted to divide by zero");
+                        return new Value(getInt() / rvalue);
+                    }
+                    case ValueType::FLOAT: {
+                        double rvalue = other.getFloat();
+                        if(rvalue == 0.0) throw std::runtime_error("Attempted to divide by zero");
+                        return new Value((double)getInt() / rvalue);
+                    }
+                    case ValueType::BOOLEAN: {
+                        long long rvalue = (int) other.getBoolean();
+                        if(rvalue == 0L) throw std::runtime_error("Attempted to divide by zero");
+                        return new Value(getInt() / rvalue);
+                    }
+                    default:
+                        throw runtime_error("Unsupported operands for /.");
+                }
+            } else if((*this).is_bool()) {
+                switch(other.type) {
+                    case ValueType::INT: {
+                        long long rvalue = other.getInt();
+                        if(rvalue == 0L) throw std::runtime_error("Attempted to divide by zero");
+                        else return new Value((int)getBoolean() / rvalue);
+                    }
+                    case ValueType::FLOAT: {
+                        double rvalue = other.getFloat();
+                        if(rvalue == 0.0) throw std::runtime_error("Attempted to divide by zero");
+                        else return new Value((double)getBoolean() / rvalue);
+                    }
+                    case ValueType::BOOLEAN: {
+                        long long rvalue = (int) other.getBoolean();
+                        if(rvalue == 0L) throw std::runtime_error("Attempted to divide by zero");
+                        else return new Value((int)getBoolean() / rvalue);
+                    }
+                    default:
+                        throw runtime_error("Unsupported operands for /.");
+                }
+            } else {
+                throw runtime_error("Unsupported operands for /.");
+            }
+        }
+        
+        // TODO: replace with call to __truediv__ later
+        Value* operator%(const Value& other) const {
+            
+            if((*this).is_float()) {
+                throw std::logic_error("Feature not implemented yet");
+                
+            } else if((*this).is_int()) {
+                switch(other.type) {
+                    case ValueType::INT: {
+                        long long rvalue = other.getInt();
+                        if(rvalue == 0L) throw std::runtime_error("Modulo by zero");
+                        auto value = new Value(getInt() % rvalue);
+                        return value;
+                    }
+                    case ValueType::FLOAT: {
+                        throw std::logic_error("Feature not implemented yet");
+                    }
+                    case ValueType::BOOLEAN: {
+                        long long rvalue = (int) other.getBoolean();
+                        if(rvalue == 0L) throw std::runtime_error("Modulo by zero");
+                        return new Value(getInt() % rvalue);
+                    }
+                    default:
+                        throw runtime_error("Unsupported operands for %.");
+                }
+            } else if((*this).is_bool()) {
+                switch(other.type) {
+                    case ValueType::INT: {
+                        long long rvalue = other.getInt();
+                        if(rvalue == 0L) throw std::runtime_error("Modulo by zero");
+                        else return new Value((int)getBoolean() % rvalue);
+                    }
+                    case ValueType::FLOAT: {
+                        throw std::logic_error("Feature not implemented yet");
+                    }
+                    case ValueType::BOOLEAN: {
+                        long long rvalue = (int) other.getBoolean();
+                        if(rvalue == 0L) throw std::runtime_error("Modulo by zero");
+                        else return new Value((int)getBoolean() % rvalue);
+                    }
+                    default:
+                        throw runtime_error("Unsupported operands for %.");
+                }
+            } else {
+                throw runtime_error("Unsupported operands for %.");
+            }
+        }
+        
+        // TODO: replace with call to __neg__ later
+        Value* operator-() {
+            switch(type) {
+                case ValueType::INT:
+                    return new Value(-getInt());
+                case ValueType::FLOAT:
+                    return new Value(-getFloat());
+                case ValueType::BOOLEAN:
+                    return new Value(-(long long)getBoolean());
+                default:
+                    throw runtime_error("Unsupported operands for unary -.");
+            }
+        }
+        
+        // TODO: replace with call to __not__ later
+        Value* operator!() {
+            return new Value(!(this->isTruthy())); 
+        }
+        
+        // TODO: replace with call to __and__ later
+        Value* operator&&(Value& other) {
+            /* 
+            *  try to do short-circuit: if after evaluating the left operand,
+            *  the result of the logical expression is known, do not evaluate the right operand 
+            */
+            if(!(this->isTruthy())) return std::move(this);
+            else return std::move(&other);
+        }
+        
+        // TODO: replace with call to __or__ later
+        Value* operator||(Value& other) {
+            /* 
+             *  try to do short-circuit: if after evaluating the left operand,
+             *  the result of the logical expression is known, do not evaluate the right operand 
+            */
+            if(this->isTruthy()) return std::move(this);
+            else return std::move(&other);
+        }
+        
+        // TODO: replace with call to __sub__ later
+        Value* operator-(const Value& other) const {
+            
+            if((*this).is_float()) {
+                switch(other.type) {
+                    case ValueType::FLOAT:
+                        return new Value(getFloat() - other.getFloat());
+                    case ValueType::INT:
+                        return new Value(getFloat() - (double)other.getInt());
+                    case ValueType::BOOLEAN:
+                        return new Value(getFloat() - (double)other.getBoolean());
+                    default:
+                        throw runtime_error("Unsupported operands for -.");
+                }
+            } else if((*this).is_int()) {
+                switch(other.type) {
+                    case ValueType::INT:
+                        return new Value(getInt() - other.getInt());
+                    case ValueType::FLOAT:
+                        return new Value((double)getInt() - other.getFloat());
+                    case ValueType::BOOLEAN:
+                        return new Value(getInt() - (long long)other.getBoolean());
+                    default:
+                        throw runtime_error("Unsupported operands for -.");
+                }
+            } else if((*this).is_bool()) {
+                switch(other.type) {
+                    case ValueType::BOOLEAN:
+                        return new Value((long long)getBoolean() - (long long)other.getBoolean());
+                    case ValueType::INT:
+                        return new Value((long long)getBoolean() - other.getInt());
+                    case ValueType::FLOAT:
+                        return new Value((double)getBoolean() - other.getFloat());
+                    default:
+                        throw runtime_error("Unsupported operands for -.");
+                }
+            } else {
+                throw runtime_error("Unsupported operands for -.");
+            }
+        }
+
+        // TODO: replace with call to __eq__ later
+        Value* operator==(const Value& other) const {
+            
+            if((*this).is_none()) {
+                if(other.is_none()) return new Value(true);
+                else return new Value(false); // None is only equal to None
+            
+            } else if(other.is_none()) {
+                return new Value(false);
+                
+            } else if((*this).is_bool()) {
+                switch(other.type) {
+                    case ValueType::BOOLEAN:
+                        return new Value(getBoolean() == other.getBoolean());
+                        break;
+                    case ValueType::INT:
+                        return new Value((long long)getBoolean() == other.getInt());
+                        break;
+                    case ValueType::FLOAT:
+                        return new Value((double)getBoolean() == other.getFloat());
+                        break;
+                    default:
+                        throw runtime_error("Unsupported operands for ==.");
+                } 
+            } else if((*this).is_int()) {
+                switch(other.type) {
+                    case ValueType::INT:
+                        return new Value(getInt() == other.getInt());
+                        break;
+                    case ValueType::FLOAT:
+                        return new Value((double)getInt() == other.getFloat());
+                        break;
+                    case ValueType::BOOLEAN:
+                        return new Value(getInt() == (long long)other.getBoolean());
+                        break;
+                    default:
+                        throw runtime_error("Unsupported operands for ==.");
+                }
+                
+            } else if((*this).is_float()) {
+                switch(other.type) {
+                    case ValueType::FLOAT:
+                        return new Value(getFloat() == other.getFloat());
+                        break;
+                    case ValueType::INT:
+                        return new Value(getFloat() == (double)other.getInt());
+                        break;
+                    case ValueType::BOOLEAN:
+                        return new Value(getFloat() == (double)other.getBoolean());
+                        break;
+                    default:
+                        throw runtime_error("Unsupported operands for ==.");
                 }
             } else {
                 throw runtime_error("Unsupported operands for equality.");
@@ -183,19 +479,49 @@ class Value {
         }
 
         // TODO: replace with call to __lt__ later
-        bool operator<(const Value& other) const {
+        Value* operator<(const Value& other) const {
             
-            if((*this).is_float()) {
-                if(other.is_bool()) {
-                    return getFloat() < ((double)other.getBoolean());  
-                } else if(other.is_float()) {
-                    return getFloat() < other.getFloat();
+            if((*this).is_int()) {
+                switch(other.type) {
+                    case ValueType::INT:
+                        return new Value(getInt() < other.getInt());
+                        break;
+                    case ValueType::FLOAT:
+                        return new Value((double)getInt() < other.getFloat());
+                        break;
+                    case ValueType::BOOLEAN:
+                        return new Value(getInt() < (long long)other.getBoolean());
+                        break;
+                    default:
+                        throw runtime_error("Unsupported operands for comparison.");
+                }
+            } else if((*this).is_float()) {
+                switch(other.type) {
+                    case ValueType::FLOAT:
+                        return new Value(getFloat() < other.getFloat());
+                        break;
+                    case ValueType::INT:
+                        return new Value(getFloat() < (double)other.getInt());
+                        break;
+                    case ValueType::BOOLEAN:
+                        return new Value(getFloat() < (double)other.getBoolean());
+                        break;
+                    default:
+                        throw runtime_error("Unsupported operands for comparison.");
                 }
             } else if((*this).is_bool()) {
-                if(other.is_float()) {
-                    return ((double)getBoolean()) < other.getFloat();  
-                } else if(other.is_bool()) {
-                    return getBoolean() < other.getBoolean();
+                switch(other.type) {
+                    case ValueType::BOOLEAN:
+                        return new Value(getBoolean() < other.getBoolean());
+                        break;
+                    case ValueType::INT:
+                        return new Value((long long)getBoolean() < other.getInt());
+                        break;
+                    case ValueType::FLOAT:
+                        return new Value((double)getBoolean() < other.getFloat());
+                        break;
+                    default:
+                        throw runtime_error("Unsupported operands for comparison.");
                 }
             } else {
                 throw runtime_error("Unsupported operands for comparison.");
@@ -203,19 +529,49 @@ class Value {
         }
 
         // TODO: replace with call to __gt__ later
-        bool operator>(const Value& other) const {
+        Value* operator>(const Value& other) const {
             
-            if((*this).is_float()) {
-                if(other.is_bool()) {
-                    return getFloat() > ((double)other.getBoolean());  
-                } else if(other.is_float()) {
-                    return getFloat() > other.getFloat();
+            if((*this).is_int()) {
+                switch(other.type) {
+                    case ValueType::INT:
+                        return new Value(getInt() > other.getInt());
+                        break;
+                    case ValueType::FLOAT:
+                        return new Value((double)getInt() > other.getFloat());
+                        break;
+                    case ValueType::BOOLEAN:
+                        return new Value(getInt() > (long long)other.getBoolean());
+                        break;
+                    default:
+                        throw runtime_error("Unsupported operands for comparison.");
+                }
+            } else if((*this).is_float()) {
+                switch(other.type) {
+                    case ValueType::FLOAT:
+                        return new Value(getFloat() > other.getFloat());
+                        break;
+                    case ValueType::INT:
+                        return new Value(getFloat() > (double)other.getInt());
+                        break;
+                    case ValueType::BOOLEAN:
+                        return new Value(getFloat() > (double)other.getBoolean());
+                        break;
+                    default:
+                        throw runtime_error("Unsupported operands for comparison.");
                 }
             } else if((*this).is_bool()) {
-                if(other.is_float()) {
-                    return ((double)getBoolean()) > other.getFloat();  
-                } else if(other.is_bool()) {
-                    return getBoolean() > other.getBoolean();
+                switch(other.type) {
+                    case ValueType::BOOLEAN:
+                        return new Value(getBoolean() > other.getBoolean());
+                        break;
+                    case ValueType::INT:
+                        return new Value((long long)getBoolean() > other.getInt());
+                        break;
+                    case ValueType::FLOAT:
+                        return new Value((double)getBoolean() > other.getFloat());
+                        break;
+                    default:
+                        throw runtime_error("Unsupported operands for comparison.");
                 }
             } else {
                 throw runtime_error("Unsupported operands for comparison.");
@@ -228,6 +584,8 @@ class Value {
                 out << "None";
             } else if(value.is_bool()) {
                 out << (value.getBoolean() ? "True" : "False");
+            } else if(value.is_int()) {
+                out << value.getInt();
             } else if(value.is_float()) {
                 out << value.getFloat();
             } else if(value.is_string()) {
@@ -237,7 +595,8 @@ class Value {
             }
             return out;
         }
-
+        
+        // TODO: replace with truth later
         bool isTruthy() {
 
             switch(type) {
@@ -245,6 +604,8 @@ class Value {
                     return false; break;
                 case ValueType::BOOLEAN:
                     return getBoolean(); break;
+                case ValueType::INT:
+                    return getInt() != 0; break;
                 case ValueType::FLOAT:
                     return getFloat() != 0.0; break;
                 case ValueType::STRING:
@@ -259,6 +620,9 @@ class Value {
         }
 
         void Decrement_Reference_counting() {
+
+            if(Reference_counting == 0)
+               return; 
             --Reference_counting;
         }
         
@@ -271,8 +635,8 @@ class Value {
         void* data;
         int Reference_counting = 0;
 
-        const int* getIntData() const {
-            return static_cast<int*>(data);
+        const long long* getIntData() const {
+            return static_cast<long long*>(data);
         }
         const double* getFloatData() const {
             return static_cast<double*>(data);

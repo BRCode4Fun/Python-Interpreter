@@ -24,15 +24,27 @@ Value* Interpreter::visitPrintNode(PrintNode* node) {
     Value* argValue = node->args[0].accept(this);
   
     std::cout << *argValue << "\n" << std::flush;
+    
+    return new Value(1.0); 
 }
 
-Value* Interpreter::visitNumNode(NumNode* node){
-   
-    auto* value = new Value(node->value);
-    
-    GC->Add_object(value); 
- 
-    return  value;
+Value* Interpreter::visitIntNode(IntNode* node){
+    Value* value = new Value(node->value);
+    GC->Add_object(value);
+    return value;
+}
+
+Value* Interpreter::visitFloatNode(FloatNode* node){
+    Value* value = new Value(node->value);
+    GC->Add_object(value);
+    return value;
+}
+
+Value* Interpreter::visitFunctionNode(FunctionNode* node)
+{
+   // Value* value = new Value(node->value);
+ //   GC->Add_object(value);
+    return (Value *)nullptr;
 }
 
 Value* Interpreter::visitBlockNode(BlockNode* node) {
@@ -72,7 +84,6 @@ Value* Interpreter::visitIfNode(IfNode* node) {
     return new Value(-1.0);
 }
 
-
 Value* Interpreter::visitTernaryOpNode(TernaryOpNode* node) {
     
     Value* cond = node->cond->accept(this);
@@ -89,97 +100,65 @@ Value* Interpreter::visitBinaryOpNode(BinaryOpNode* node)  {
     Value* leftValue  = node->left->accept(this);
     Value* rightValue = node->right->accept(this);
 
-    if(node->op ==  "+"){
-
-        auto* value = *leftValue + *rightValue;
+    if(node->op ==  "+"){ // TODO: replace with __add__ call
+        Value* value = *leftValue + *rightValue;
         GC->Add_object(value);
-        return  value;
-
-       // return new Value(leftValue->getFloat() + rightValue->getFloat());
+        return value;
     
-    } else if (node->op ==  "-"){
-         auto* value =  new Value(leftValue->getFloat() - rightValue->getFloat());
-         GC->Add_object(value); 
-         return  value;
-        // return  new Value(leftValue->getFloat() - rightValue->getFloat());
-    
-    } else if (node->op ==  "*"){
-
-        auto* value =  new Value(leftValue->getFloat() * rightValue->getFloat());
+    } else if (node->op ==  "-"){ // TODO: replace with __sub__ call
+         Value* value = *leftValue - *rightValue;
+         GC->Add_object(value);
+         return value;
+         
+    } else if (node->op ==  "*"){ // TODO: replace with __mul__ call
+        Value* value = *leftValue * *rightValue;
         GC->Add_object(value); 
-        return  value;
-
-      // return new Value(leftValue->getFloat() * rightValue->getFloat());
+        return value;
     
-    } else if (node->op ==  "/"){
-        auto right = rightValue->getFloat();
-
-        if(right == 0) throw std::runtime_error("Attempted to divide by zero");
-
-        auto* value =  new Value(leftValue->getFloat() / right);
+    } else if (node->op ==  "/"){ // TODO: replace with __truediv__ call
+        Value* value = *leftValue / *rightValue;
         GC->Add_object(value); 
-        return  value;
+        return value;
 
-      //  return new Value(leftValue->getFloat() / right);
+    } else if (node->op ==  "%"){ // TODO: replace with __mod__ call
+        Value* value = *leftValue % *rightValue;
+        GC->Add_object(value);
+        return value;
 
     } else if (node->op == "==") { // TODO: replace with __eq__ call
-        auto* value =  new Value(*leftValue == *rightValue);
+        Value* value = *leftValue == *rightValue;
         GC->Add_object(value); 
         return value;
-      //  return new Value(*leftValue == *rightValue);
 
     } else if(node->op == "!=") { // TODO: replace with __ne__ call
-      
-        auto* value =  new Value(!(*leftValue == *rightValue));
-        GC->Add_object(value); 
+        Value* value = !(*(*leftValue == *rightValue));
+        GC->Add_object(value);
         return value;
-        
-     //   return new Value(!(*leftValue == *rightValue));
 
     } else if (node->op == "<") { // TODO: replace with __lt__ call
- 
-        auto* value =  new Value(*leftValue < *rightValue);
+        Value* value = *leftValue < *rightValue;
         GC->Add_object(value); 
         return value;
-       // return new Value(*leftValue < *rightValue);
 
     } else if(node->op == ">") { // TODO: replace with __gt__ call
-
-        auto* value =  new Value(*leftValue > *rightValue);
+        Value* value = *leftValue > *rightValue;
         GC->Add_object(value); 
-        return value;    
-     //   return new Value(*leftValue > *rightValue);
+        return value;
 
     } else if (node->op == "<=") { // TODO: replace with __le__ call
-        auto* value =  new Value(!(*leftValue > *rightValue));
-        GC->Add_object(value); 
-        return value;  
-
-      //  return new Value(!(*leftValue > *rightValue));
-
-    } else if(node->op == ">=") { // TODO: replace with __ge__ call
-        auto* value =  new Value(!(*leftValue <  *rightValue));
+        Value* value = !(*(*leftValue > *rightValue));
         GC->Add_object(value);
         return value;  
-       // return new Value(!(*leftValue < *rightValue));
+        
+    } else if(node->op == ">=") { // TODO: replace with __ge__ call
+        Value* value = !(*(*leftValue < *rightValue));
+        GC->Add_object(value);
+        return value;
 
     } else if(node->op == "or") { // TODO: replace with __or__ call
-        /* 
-         *  try to do short-circuit: if after evaluating the left operand,
-         *  the result of the logical expression is known, do not evaluate the right operand 
-        */
-        if(leftValue->isTruthy()) return leftValue;
-
-        return rightValue;
-
+        return *leftValue || *rightValue;
     } else if(node->op == "and") { // TODO: replace with __and__ call
-        /* try to do short-circuit: if after evaluating the left operand,
-         * the result of the logical expression is known, do not evaluate the right operand 
-        */
-        if(!(leftValue->isTruthy())) return leftValue;
-
-        return rightValue;
-
+        return *leftValue && *rightValue;
     } else {
         throw std::runtime_error("Unsupported binary operator");
     }
@@ -189,8 +168,11 @@ Value* Interpreter::visitAssignNode(AssignNode* node) {
 
     auto value = node->value->accept(this);
 
-    if(symbolTable[static_cast<NameNode*>(node->name)->name]){
+    if(symbolTable[static_cast<NameNode*>(node->name)->name])
+    {
+
         Decrement_Reference(symbolTable[static_cast<NameNode*>(node->name)->name]);
+
     }
     symbolTable[static_cast<NameNode*>(node->name)->name] = value;
     Increment_Reference(value);
@@ -212,13 +194,13 @@ Value* Interpreter::visitNameNode(NameNode* node){
 }
 
 Value* Interpreter::visitBooleanNode(BooleanNode* node){       
-     auto* value = new Value(node->value);    
+     Value* value = new Value(node->value);    
      GC->Add_object(value); 
      return value;
 }
 
 Value* Interpreter::visitStringNode(StringNode* node){       
-     auto* value = new Value(node->lexeme);    
+     Value* value = new Value(node->lexeme);    
      GC->Add_object(value); 
      return value;
 }
@@ -228,28 +210,23 @@ Value* Interpreter::visitUnaryOpNode(UnaryOpNode*  node){
     Value* operandValue = node->right->accept(this);
      
     if(node->op == "-") {
-
-        auto* value =  new  Value(-operandValue->getFloat());
-        GC->Add_object(value); 
-        return  new Value(-operandValue->getFloat());
+        Value* value = -(*operandValue);
+        GC->Add_object(value);
         return value;
-
+        
     } else if(node->op == "not") {
-        auto * value =  new  Value(!operandValue->isTruthy());
+        Value* value = !(*operandValue);
         GC->Add_object(value); 
         return value;
-       // return new Value(!operandValue->isTruthy());
     } else {
         throw std::runtime_error("Unsupported unary operator");
     }
 }
 
 Value* Interpreter::visitNullNode(NullNode* expr){
-  //  return new Value(); 
-
-    auto* value = new Value();  
+    Value* value = new Value();  
     GC->Add_object(value);
-    return value; 
+    return value;
 }
 
 Value* Interpreter::interpret(ProgramNode* node) {

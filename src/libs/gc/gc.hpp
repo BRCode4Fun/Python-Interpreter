@@ -8,7 +8,7 @@ class GarbageCollector {
     public:
         GarbageCollector() {};
         void Delete_objects(); 
-        void Add_object(Value * value);
+        void Add_object(Value* value);
         
     private:
         std::vector<Value*> objects; 

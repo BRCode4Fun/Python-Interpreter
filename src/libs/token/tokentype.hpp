@@ -5,10 +5,10 @@ enum TokenType {
     Print, 
     While, If, Elif, Else,
     True, False, None,
-    And, Or, Not,
+    And, Or, Not, Def,
     
     // Operators and punctuators
-    Plus, Minus, Star, Slash, 
+    Plus, Minus, Star, Slash, Mod,
     Less, LessEqual,
     Greater, GreaterEqual,
     Equals, EqualEqual,
@@ -22,7 +22,7 @@ enum TokenType {
     EndOfFile,
     
     // Identifiers and literals
-    Name, Number, String,
+    Int, Float, Name, String,
     
     // Others
     Error,

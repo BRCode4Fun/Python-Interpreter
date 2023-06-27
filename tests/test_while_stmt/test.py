@@ -30,3 +30,15 @@ while a < 3:
 #    print("Looping...")
 #    b = b - 1
 
+count = 0
+
+while count < 200:
+    print(count)
+    if count % 2 == 0:
+        print("is even")
+    else: 
+       print("is odd")
+    
+    count = count + 1
+
+print(count)

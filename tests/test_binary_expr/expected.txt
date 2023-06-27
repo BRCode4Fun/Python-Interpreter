@@ -1,0 +1,12 @@
+1
+1
+0
+5
+Number is odd
+0
+is even
+1
+is odd
+2
+is even
+

@@ -17,7 +17,8 @@ Lexer::Lexer(const std::string& source)
         {"while", TokenType::While},
         {"if", TokenType::If},
         {"elif", TokenType::Elif},
-        {"else", TokenType::Else}
+        {"else", TokenType::Else},
+        {"def", TokenType::Def}
     };
 }
 
@@ -43,7 +44,7 @@ void Lexer::scanToken() {
    
     switch (c) {
         case ':':
-            addToken(TokenType::Colon);
+            addToken(TokenType::Colon);         
             break;
         case '(':
             addToken(TokenType::LeftParen);
@@ -77,6 +78,12 @@ void Lexer::scanToken() {
         case '*':
             addToken(TokenType::Star);
             break;
+        case '/':
+            addToken(TokenType::Slash);
+            break;
+        case '%':
+            addToken(TokenType::Mod);
+            break;
         case '!':
             addToken(match('=') ? TokenType::BangEqual : TokenType::Bang);
             break;
@@ -88,9 +95,6 @@ void Lexer::scanToken() {
             break;
         case '>':
             addToken(match('=') ? TokenType::GreaterEqual : TokenType::Greater);
-            break;
-        case '/':
-            addToken(TokenType::Slash);
             break;
          case '#':
             while (peek() != '\n' && !isAtEnd()) advance();
@@ -123,15 +127,17 @@ void Lexer::scanToken() {
 }
 
 void Lexer::handleNumber() {
-   
+    
     while (isdigit(peek())) advance();    
     
+    bool hasDecimal = false;
     if (peek() == '.' && isdigit(peekNext())) {
+        hasDecimal = true;
         do {
           advance();
         } while (isdigit(peek()));
     }
-    addToken(TokenType::Number);
+    addToken(hasDecimal ? TokenType::Float : TokenType::Int);
 }
 
 void Lexer::handleIdentifier() {
@@ -143,7 +149,7 @@ void Lexer::handleIdentifier() {
 
     // Check if the identifier indicates the start of a block
     if (type == TokenType::If || type == TokenType::Elif || 
-        type == TokenType::Else || type == TokenType::While) {
+        type == TokenType::Else || type == TokenType::While   ||  TokenType::Def) {
         isBlock = true;
     }
     addToken(type);

@@ -32,6 +32,8 @@ public:
                 out << "Star"; break;
             case TokenType::Slash:
                 out << "Slash"; break;
+            case TokenType::Mod:
+                out << "Mod"; break;
             case TokenType::Equals:
                 out << "Equals"; break;
             case TokenType::EqualEqual:
@@ -50,8 +52,10 @@ public:
                 out << "Semicolon"; break;
             case TokenType::Colon:
                 out << "Colon"; break;
-            case TokenType::Number:
-                out << "Number"; break;
+            case TokenType::Int:
+                out << "Int"; break;
+            case TokenType::Float:
+                out << "Float"; break;
             case TokenType::Name:
                 out << "Name"; break;
             case TokenType::String:

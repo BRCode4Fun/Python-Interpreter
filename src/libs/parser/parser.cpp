@@ -22,6 +22,7 @@ ProgramNode* Parser::parseProgram() {
 }
 
 AstNode* Parser::parseStmt() {
+
     /*
      *    statement ::= stmt_list NEWLINE
      *                  | compound_stmt
@@ -34,24 +35,61 @@ AstNode* Parser::parseStmt() {
      *                      | funcdef       TODO
      *                      | classdef      TODO
     */
+
     if (match(TokenType::If)){
         return parseIfStmt();
         
     } else if (match(TokenType::While)){
         return parseWhileStmt();
         
-    }  else {
+    }else if (match(TokenType::Def)){
+        return parseFunctionDef();    
+
+    }   else {
         auto stmtList = parseStmtList();
         while(match(TokenType::Newline)) continue;
         return stmtList;
     }
 }
 
+AstNode* Parser::parseFunctionDef()
+{
+
+    
+    // "def" funcname "(" [parameter_list] ")"  ":" suite
+    
+    AstNode *  name = parsePrimary(); 
+   
+
+    consume(TokenType::LeftParen);
+
+    std::vector<AstNode*> parameters;
+
+    if (!match(TokenType::RightParen)) {
+
+        do {
+           parameters.push_back(parseExpr());      
+        } while (match(TokenType::Comma));
+
+    }
+
+
+    consume(TokenType::RightParen);
+    consume(TokenType::Colon);
+    
+
+    AstNode * body = parseSuite();
+    
+    
+
+    return new FunctionNode(name, parameters, body);
+}
+
 AstNode* Parser::parseStmtList() {
     /*
      *    stmt_list ::= simple_stmt (SEMICOLON simple_stmt)* SEMICOLON?
     */
-    vector<AstNode*> stmts;
+    std::vector<AstNode*> stmts;
     
     stmts.push_back(parseSimpleStmt());
     
@@ -101,13 +139,16 @@ AstNode* Parser::parsePrintStmt() {
 
 AstNode* Parser::parseSuite() {
     /*
-     *    suite ::= NEWLINE INDENT statement+ DEDENT
+     *    suite ::= NEWLINE INDENT NEWLINE* statement+ DEDENT
      *              | stmt_list NEWLINE
     */
     if(match(TokenType::Newline)) {
+
         consume(TokenType::Indent);
         
-        vector<AstNode*> stmts;
+        while(match(TokenType::Newline)) continue;
+        
+        std::vector<AstNode*> stmts;
     
         stmts.push_back(parseStmt());
     
@@ -264,7 +305,7 @@ AstNode* Parser::parseTerm() {
    
     auto left = parseUnary();
     
-    while (match(TokenType::Star) || match(TokenType::Slash)) {
+    while (match(TokenType::Star) || match(TokenType::Slash) || match(TokenType::Mod)) {
         auto op = previous();
         auto right = parseUnary();
         left = new BinaryOpNode(left, op.lexeme, right);
@@ -306,8 +347,11 @@ AstNode* Parser::parseCall() {
 
 AstNode* Parser::parsePrimary() {
     
-    if (match(TokenType::Number)) {
-        return new NumNode(std::stod(previous().lexeme));
+    if (match(TokenType::Int)) {
+        return new IntNode(std::stoll(previous().lexeme));
+        
+    } else if (match(TokenType::Float)) {
+        return new FloatNode(std::stod(previous().lexeme));
         
     } else if(match(TokenType::True)) {
         return new BooleanNode(true);
@@ -337,7 +381,10 @@ AstNode* Parser::parsePrimary() {
 Token Parser::consume(TokenType type) {
     if (match(type)) return previous();
     else {
-        error("Expected " );
+        error("Expected " + std::to_string(type) + "\n");
+
+       // std::cout << "But got  " <<  peek().type <<  std::endl; 
+    
         return Token(TokenType::Error, "", 0);
     }
 }

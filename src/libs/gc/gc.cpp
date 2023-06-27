@@ -1,19 +1,24 @@
 #include "gc.hpp"
 #include <algorithm>
 
-void GarbageCollector::Delete_objects() {         
+void GarbageCollector::Delete_objects() {    
+
     for(auto object : objects) {
                         
         if(object->Get_Reference_counting() == 0) {
 
             std::vector<Value*>::iterator position = std::find(objects.begin(), objects.end(), object);
                     
-            if(position != objects.end()){
+            if(position != objects.end())
+            {
                 objects.erase(position);
                 delete object;
             }
+
+            
         }
     }
+
 }
 
 void GarbageCollector::Add_object(Value * value) {

@@ -1,7 +1,7 @@
 #include "ast.hpp"
 
 Value* AssignNode::accept(NodeVisitor* visitor) {
-    return  visitor->visitAssignNode(this);
+    return visitor->visitAssignNode(this);
 }
 
 Value* CallNode::accept(NodeVisitor* visitor) {
@@ -10,35 +10,39 @@ Value* CallNode::accept(NodeVisitor* visitor) {
 }
 
 Value* BinaryOpNode::accept(NodeVisitor* visitor) {
-    return  visitor->visitBinaryOpNode(this);  
+    return visitor->visitBinaryOpNode(this);  
 }
 
 Value* TernaryOpNode::accept(NodeVisitor* visitor) {
-    return  visitor->visitTernaryOpNode(this);  
+    return visitor->visitTernaryOpNode(this);  
 }
 
 Value* NameNode::accept(NodeVisitor* visitor) {
-    return  visitor->visitNameNode(this);
+    return visitor->visitNameNode(this);
 }
 
 Value* StringNode::accept(NodeVisitor* visitor) {
-    return  visitor->visitStringNode(this);
+    return visitor->visitStringNode(this);
 }
 
 Value* BooleanNode::accept(NodeVisitor* visitor) {
-    return  visitor->visitBooleanNode(this);
+    return visitor->visitBooleanNode(this);
 }
 
 Value* UnaryOpNode::accept(NodeVisitor* visitor) {
-    return  visitor->visitUnaryOpNode(this);
+    return visitor->visitUnaryOpNode(this);
 }
 
-Value* NumNode::accept(NodeVisitor* visitor) {
-    return  visitor->visitNumNode(this);
+Value* IntNode::accept(NodeVisitor* visitor) {
+    return visitor->visitIntNode(this);
+}
+
+Value* FloatNode::accept(NodeVisitor* visitor) {
+    return visitor->visitFloatNode(this);
 }
 
 Value* ProgramNode::accept(NodeVisitor* visitor) {
-    return  visitor->visitProgramNode(this);
+    return visitor->visitProgramNode(this);
 }
 
 Value* PrintNode::accept(NodeVisitor* visitor) {
@@ -59,4 +63,8 @@ Value* WhileNode::accept(NodeVisitor* visitor) {
 
 Value* IfNode::accept(NodeVisitor* visitor) {
     return visitor->visitIfNode(this);
+}
+
+Value* FunctionNode::accept(NodeVisitor* visitor) {
+    return visitor->visitFunctionNode(this);
 }
