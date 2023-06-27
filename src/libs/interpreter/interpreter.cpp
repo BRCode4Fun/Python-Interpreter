@@ -5,15 +5,7 @@ void todo() {
     throw std::logic_error("Function not implemented yet");
 }
 
-void Interpreter::Increment_Reference(Value *Value){
-    if(Value != nullptr)
-        Value->Increment_Reference_counting(); 
-}
 
-void Interpreter::Decrement_Reference(Value *Value){
-    if(Value != nullptr)
-        Value->Decrement_Reference_counting();
-}
 
 Value* Interpreter::visitProgramNode(ProgramNode* node) {
     return node->body->accept(this);
@@ -66,6 +58,7 @@ Value* Interpreter::visitWhileNode(WhileNode* node){
 }
 
 Value* Interpreter::visitIfNode(IfNode* node) {
+
     Value* cond = node->cond->accept(this);
 
     if (cond->isTruthy()) {
@@ -167,30 +160,31 @@ Value* Interpreter::visitBinaryOpNode(BinaryOpNode* node)  {
 Value* Interpreter::visitAssignNode(AssignNode* node) {
 
     auto value = node->value->accept(this);
+    auto var_name = static_cast<NameNode*>(node->name)->name;
 
-    if(symbolTable[static_cast<NameNode*>(node->name)->name])
-    {
 
-        Decrement_Reference(symbolTable[static_cast<NameNode*>(node->name)->name]);
 
-    }
-    symbolTable[static_cast<NameNode*>(node->name)->name] = value;
-    Increment_Reference(value);
+    Environment.top()->define(var_name , value);
+
+    
 
     return value;
 }
 
-Value* Interpreter::visitNameNode(NameNode* node){
+Value* Interpreter::visitNameNode(NameNode* node)
+{
         
     auto varname = node->name;
 
-    auto iter = symbolTable.find(varname);
+  //  auto iter = symbolTable.find(varname);
 
-    if(iter != symbolTable.end()) {
-        return iter->second;
-    } else {
-        throw std::runtime_error("Undeclared variable '" + varname + "'");
-    }
+  //  if(iter != symbolTable.end()) {
+  //      return iter->second;
+  //  } else {
+
+     return Environment.top()->get(varname);
+  //      throw std::runtime_error("Undeclared variable '" + varname + "'");
+  //  }
 }
 
 Value* Interpreter::visitBooleanNode(BooleanNode* node){       

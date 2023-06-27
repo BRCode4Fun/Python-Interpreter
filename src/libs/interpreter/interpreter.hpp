@@ -4,16 +4,24 @@
 #include "../value/value.hpp"
 #include "../ast/ast.hpp"
 #include "../gc/gc.hpp"
+#include "scope.hpp"
+
+#include <stack>
 
 class Interpreter : public NodeVisitor {
+   
     public:
 
-        void Increment_Reference(Value *Value);
-        void Decrement_Reference(Value *Value);
+
 
         Interpreter() {
+
             GC = new GarbageCollector();
+
             if(!GC) throw std::runtime_error("Error while allocating garbage collector");
+
+          
+            Environment.push(new Scope());
         }
         
         Value* interpret(ProgramNode* node);
@@ -42,4 +50,7 @@ class Interpreter : public NodeVisitor {
         GarbageCollector* GC = nullptr; 
 
        // unsigned int num_objects_allocated = 0;
+
+      // std::stack<Scope *> Global_Environment = nullptr;
+       std::stack<Scope *> Environment;
 };

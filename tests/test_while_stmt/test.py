@@ -32,7 +32,7 @@ while a < 3:
 
 count = 0
 
-while count < 200:
+while count < 30:
     print(count)
     if count % 2 == 0:
         print("is even")
