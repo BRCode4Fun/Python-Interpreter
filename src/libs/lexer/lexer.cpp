@@ -3,9 +3,17 @@
 #include <fstream>
 #include "./lexer.hpp"
 
-Lexer::Lexer(const std::string& source) 
-  : source(source), current(0), line(1) {
-  
+Lexer::Lexer(const string& source) 
+    : source(source), current(0), line(1) {
+    /*
+     *  keyword ::= "and" | "del" | "from" | "not" | "while"
+     *            | "as" | "elif" | "global" | "or" | "with"
+     *            | "assert" | "else" | "if" | "pass" | "yield"
+     *            | "break" | "except" | "import" | "print"
+     *            | "class" | "in" | "raise" | "continue" 
+     *            | "finally" | "is" | "return" | "def" 
+     *            | "for" | "lambda" | "try"
+    */
     keywords = {
         {"print", TokenType::Print},
         {"True", TokenType::True},
@@ -22,7 +30,7 @@ Lexer::Lexer(const std::string& source)
     };
 }
 
-std::vector<Token> Lexer::scanTokens() {
+vector<Token> Lexer::scanTokens() {
 
     isBlock = false;
     indentLevels.push(0); // Initial indentation level
@@ -117,17 +125,21 @@ void Lexer::scanToken() {
         default:
             if (isdigit(c)) {
                 handleNumber();
-            } else if (isalpha(c)) {
+            } else if (isalpha(c) or c == '_') {
                 handleIdentifier();
             } else {
-                throw std::runtime_error("Unexpected character.");
+                throw runtime_error("Unexpected character.");
             }
             break;
     }
 }
 
 void Lexer::handleNumber() {
-    
+    /*
+     *    number ::= integer | floatnumber
+     *    integer ::= decimalinteger
+     *                | octinteger | hexinteger  // TODO
+    */
     while (isdigit(peek())) advance();    
     
     bool hasDecimal = false;
@@ -141,30 +153,51 @@ void Lexer::handleNumber() {
 }
 
 void Lexer::handleIdentifier() {
-    
-    while (isalnum(peek()) or peek() == '_') advance();
+    /*
+     *   identifier ::= (letter | "_") (letter | digit | "_")*
+     *   letter ::= lowercase | uppercase
+     *   lowercase ::= "a" | "b" | ... | "z"
+     *   uppercase ::= "A" | "B" | ... | "Z"
+     *   digit ::= "0" | "1" | ... | "9"
+     *
+     *  (where the matched string is not a keyword)
+    */
+    char c;
+    while (c = peek(), isalnum(c) or c == '_') advance();
 
-    std::string text = source.substr(start, current - start);
+    string text = source.substr(start, current - start);
     TokenType type = keywords.count(text) ? keywords.at(text) : TokenType::Name;
 
     // Check if the identifier indicates the start of a block
-    if (type == TokenType::If || type == TokenType::Elif || 
-        type == TokenType::Else || type == TokenType::While   ||  TokenType::Def) {
-        isBlock = true;
+    switch(type) {
+        case TokenType::If:
+        case TokenType::Elif:
+        case TokenType::Else:
+        case TokenType::While:
+        case TokenType::Def: { 
+            isBlock = true; 
+            break;
+        }
+        default: break;
     }
     addToken(type);
 }
 
 void Lexer::handleString(char quoteType){
+    /*
+     *  string ::= "'" <any source character except "'" or newline> "'"
+     *             | '"' <any source character except '"' or newline> '"'
+     * // TODO: add escape sequences and multi-line strings
+    */
     char c;
     while(c = peek(), c != quoteType && c != '\n') advance();
     if(peek() == '\n') {
-        throw std::runtime_error("Unterminated string at line " + std::to_string(line));
+        throw runtime_error("Unterminated string at line " + to_string(line));
     }
     advance(); // Consume the closing quote
     
     // Remove the surrounding quotes and add the token
-    std::string value = start < current - 2 ? source.substr(start + 1, current - start - 2) : "";
+    string value = start < current - 2 ? source.substr(start + 1, current - start - 2) : "";
     
     addToken(TokenType::String, value);
 }
@@ -206,8 +239,8 @@ void Lexer::addToken(TokenType type) {
     addToken(type, "");
 }
 
-void Lexer::addToken(TokenType type, const std::string& lexeme) {
-    std::string text = (type == TokenType::String) ? lexeme : source.substr(start, current - start);
+void Lexer::addToken(TokenType type, const string& lexeme) {
+    string text = (type == TokenType::String) ? lexeme : source.substr(start, current - start);
     tokens.push_back(Token(type, text, line));
 }
 
@@ -227,7 +260,7 @@ void Lexer::handleIndentation() {
         return;
     }
     if(indent and not isBlock) {
-        throw std::runtime_error("Unexpected indentation at line " + std::to_string(line));
+        throw runtime_error("Unexpected indentation at line " + to_string(line));
     }
     int prevIndentLevel = indentLevels.top();
     
@@ -240,7 +273,7 @@ void Lexer::handleIndentation() {
             indentLevels.pop();
         }
         if (indentLevels.empty() or indent != indentLevels.top()) {
-            throw std::runtime_error("Inconsistent indentation at line " + std::to_string(line));
+            throw runtime_error("Inconsistent indentation at line " + to_string(line));
         }
     } /*else if(indent == prevIndentLevel) {
         // dont generate Indent token

@@ -1,6 +1,6 @@
 #include "parser.hpp"
 
-Parser::Parser(const std::vector<Token>& tokens) : tokens(tokens) {}
+Parser::Parser(const vector<Token>& tokens) : tokens(tokens) {}
 
 ProgramNode* Parser::parse() {
     return parseProgram();
@@ -10,7 +10,7 @@ ProgramNode* Parser::parseProgram() {
     /*
      *   program ::= (statement | NEWLINE)* $
     */
-    std::vector<AstNode*> statements;
+    vector<AstNode*> statements;
     while (!isAtEnd()) {
         if(match(TokenType::Newline)){
             continue;
@@ -22,7 +22,6 @@ ProgramNode* Parser::parseProgram() {
 }
 
 AstNode* Parser::parseStmt() {
-
     /*
      *    statement ::= stmt_list NEWLINE
      *                  | compound_stmt
@@ -35,61 +34,59 @@ AstNode* Parser::parseStmt() {
      *                      | funcdef       TODO
      *                      | classdef      TODO
     */
-
     if (match(TokenType::If)){
         return parseIfStmt();
         
     } else if (match(TokenType::While)){
         return parseWhileStmt();
         
-    }else if (match(TokenType::Def)){
+    } else if (match(TokenType::Def)){
         return parseFunctionDef();    
 
-    }   else {
+    } else {
         auto stmtList = parseStmtList();
         while(match(TokenType::Newline)) continue;
         return stmtList;
     }
 }
 
-AstNode* Parser::parseFunctionDef()
-{
-
+vector<AstNode*> Parser::parseParameterList() {
+    /*
+     *   parameter_list ::= identifier ("," identifier)*    // keep simple for now
+    */
+    vector<AstNode*> parameters;
+    do {
+        parameters.push_back(new NameNode(consume(TokenType::Name).lexeme));      
+    } while (match(TokenType::Comma));
     
-    // "def" funcname "(" [parameter_list] ")"  ":" suite
-    
-    AstNode *  name = parsePrimary(); 
-   
+    return parameters;
+}
 
+AstNode* Parser::parseFunctionDef(){
+    /*
+     *   funcdef ::= "def" funcname "(" (parameter_list)? ")" ":" suite
+     *   funcname ::= identifier
+    */
+    AstNode* name = new NameNode(consume(TokenType::Name).lexeme);
     consume(TokenType::LeftParen);
 
-    std::vector<AstNode*> parameters;
-
-    if (!match(TokenType::RightParen)) {
-
-        do {
-           parameters.push_back(parseExpr());      
-        } while (match(TokenType::Comma));
-
+    vector<AstNode*> parameters;
+    if (peek().type != TokenType::RightParen) {
+       parameters = parseParameterList();   
     }
-
-
     consume(TokenType::RightParen);
     consume(TokenType::Colon);
-    
 
-    AstNode * body = parseSuite();
-    
-    
+    AstNode* body = parseSuite();
 
     return new FunctionNode(name, parameters, body);
 }
 
 AstNode* Parser::parseStmtList() {
     /*
-     *    stmt_list ::= simple_stmt (SEMICOLON simple_stmt)* SEMICOLON?
+     *    stmt_list ::= simple_stmt (";" simple_stmt)* (";")?
     */
-    std::vector<AstNode*> stmts;
+    vector<AstNode*> stmts;
     
     stmts.push_back(parseSimpleStmt());
     
@@ -116,7 +113,6 @@ AstNode* Parser::parseSimpleStmt() {
      *                   | continue_stmt   TODO
      *                   | import_stmt     TODO
      *                   | global_stmt     TODO
-     *                   | exec_stmt       TODO
      *
     */
      if (match(TokenType::Print)) {
@@ -128,27 +124,29 @@ AstNode* Parser::parseSimpleStmt() {
 
 AstNode* Parser::parsePrintStmt() {
     /*
-     *    print_stmt ::= PRINT LEFT_PAREN expression RIGHT_PAREN
+     *    print_stmt ::= "print" "(" (expression)? ")"
     */
     consume(TokenType::LeftParen);
-    auto expr = parseExpr();
-    consume(TokenType::RightParen);
+    AstNode* expr = nullptr;
+    if(peek().type != TokenType::RightParen) {
+        expr = parseExpr();
+    } consume(TokenType::RightParen);
 
     return new PrintNode(expr);
 }
 
 AstNode* Parser::parseSuite() {
     /*
-     *    suite ::= NEWLINE INDENT NEWLINE* statement+ DEDENT
+     *    suite ::= NEWLINE* INDENT statement+ DEDENT
      *              | stmt_list NEWLINE
     */
     if(match(TokenType::Newline)) {
+    
+        while(match(TokenType::Newline)) continue;
 
         consume(TokenType::Indent);
         
-        while(match(TokenType::Newline)) continue;
-        
-        std::vector<AstNode*> stmts;
+        vector<AstNode*> stmts;
     
         stmts.push_back(parseStmt());
     
@@ -167,15 +165,15 @@ AstNode* Parser::parseSuite() {
 
 AstNode* Parser::parseIfStmt() {
     /*
-     *    if_stmt ::= IF expression COLON suite
-     *                (ELIF expression COLON suite)*
-     *                (ELSE COLON suite)?
+     *    if_stmt ::= "if" expression ":" suite
+     *                ("elif" expression ":" suite)*
+     *                ("else" ":" suite)?
     */
     auto cond =  parseExpr();
     consume(TokenType::Colon);
     auto trueBranch = parseSuite();
 
-    std::vector<std::pair<AstNode*, AstNode*> > elifBranches;
+    vector<pair<AstNode*, AstNode*> > elifBranches;
     while(match(TokenType::Elif)) {
         auto elifCond = parseExpr();
         consume(TokenType::Colon);
@@ -194,13 +192,11 @@ AstNode* Parser::parseIfStmt() {
 
 AstNode* Parser::parseWhileStmt() {
     /*
-     *   while_stmt ::= WHILE expression COLON suite
-     *                  (ELSE COLON suite)?  //TODO
+     *   while_stmt ::= "while" expression ":" suite
+     *                  ("else" ":" suite)?  //TODO
     */
     auto cond =  parseExpr();
-      
     consume(TokenType::Colon);
-
     auto body = parseSuite();
 
     return new WhileNode(cond, body);
@@ -208,8 +204,7 @@ AstNode* Parser::parseWhileStmt() {
 
 AstNode* Parser::parseAssign() {
     /*
-     *  assign_stmt ::= expression EQUALS assign_stmt
-     *                  | expression
+     *  assign_stmt ::= expression ("=" assign_stmt)*
     */
     auto left = parseExpr();
     
@@ -224,15 +219,21 @@ AstNode* Parser::parseAssign() {
 }
 
 AstNode* Parser::parseExpr() {
-    return parseTernary();
+    /*
+     *  expression ::= conditional_expression 
+     *                 | lambda_form // TODO
+    */
+    return parseConditionalExpr();
 }
 
-AstNode* Parser::parseTernary() {
-    
-    auto left = parseLogicOr();
+AstNode* Parser::parseConditionalExpr() {
+    /*
+     *  conditional_expression ::= disjunction ("if" disjunction "else" expression)?
+    */
+    auto left = parseDisjunction();
     
     if(match(TokenType::If)) {
-        auto condition = parseLogicOr();
+        auto condition = parseDisjunction();
         consume(TokenType::Else);
         auto right = parseExpr();
         left = new TernaryOpNode(condition, left, right);
@@ -240,60 +241,91 @@ AstNode* Parser::parseTernary() {
     return left;
 }
 
-AstNode* Parser::parseLogicOr() {
-    
-    auto left = parseLogicAnd();
+AstNode* Parser::parseDisjunction() {
+    /*
+     *  disjunction ::= conjunction ("or" conjunction)*
+    */
+    auto left = parseConjunction();
     
     while (match(TokenType::Or)) {
         auto op = previous();
-        auto right = parseLogicAnd();
+        auto right = parseConjunction();
         left = new BinaryOpNode(left, op.lexeme, right);
     }
     return left;
 }
 
-AstNode* Parser::parseLogicAnd() {
-    
-    auto left = parseEquality();
+AstNode* Parser::parseConjunction() {
+    /*
+     *  conjunction ::= inversion ("and" inversion)*
+    */
+    auto left = parseInversion();
     
     while (match(TokenType::And)) {
         auto op = previous();
-        auto right = parseEquality();
+        auto right = parseInversion();
         left = new BinaryOpNode(left, op.lexeme, right);
     }
     return left;
 }
 
-AstNode* Parser::parseEquality() {
-    
-    auto left = parseRelational();
-    
-    while (match(TokenType::EqualEqual) || match(TokenType::BangEqual)) {
+AstNode* Parser::parseInversion() {
+    /*
+     *   inversion ::= "not" inversion
+     *                | comparison
+    */
+    if (match(TokenType::Not)) {
         auto op = previous();
-        auto right = parseRelational();
+        auto right = parseInversion();
+        return new UnaryOpNode(op.lexeme, right);
+    } else {
+        return parseComparison();
+    }
+}
+
+AstNode* Parser::parseComparison() {
+    /*
+     *   comparison ::= factor (comp_operator factor)*
+     *   comp_operator ::= "<" | ">" | "==" | ">=" | "<=" | "!="
+                           | "is" ("not")? | ("not")? "in"  // TODO
+    */
+    auto left = parseFactor(); //auto left = parseBitwiseOr();
+    
+    while (match({TokenType::Less, TokenType::Greater, 
+                  TokenType::EqualEqual, TokenType::GreaterEqual, 
+                  TokenType::LessEqual, TokenType::BangEqual})) {
+        auto op = previous();
+        auto right = parseFactor(); //auto right = parseBitwiseOr();
         left = new BinaryOpNode(left, op.lexeme, right);
     }
     return left;
 }
 
-AstNode* Parser::parseRelational() {
-    
-    auto left = parseFactor();
-    
-    while (match(TokenType::Less) || match(TokenType::LessEqual) ||
-            match(TokenType::Greater) || match(TokenType::GreaterEqual)) {
-        auto op = previous();
-        auto right = parseFactor();
-        left = new BinaryOpNode(left, op.lexeme, right);
-    }
-    return left;
+/*AstNode* Parser::parseBitwiseOr() {
+    // bitwise_or ::= bitwise_or "|" bitwise_xor | bitwise_xor
 }
+
+AstNode* Parser::parseBitwiseXor() {
+    // bitwise_xor ::= bitwise_xor "^" bitwise_and | bitwise_and
+}
+
+AstNode* Parser::parseBitwiseAnd() {
+    // bitwise_and ::= bitwise_and "&" shift_expr | shift_expr
+}
+
+AstNode* Parser::parseShiftExpr() {
+    // shift_expr ::= shift_expr "<<" factor
+    //                | shift_expr ">>" factor
+    //                | factor
+}*/
 
 AstNode* Parser::parseFactor() {
-    
+    /*
+     *   factor ::= term (("+" | "-") term)*
+    */
     auto left = parseTerm();
     
-    while (match(TokenType::Plus) || match(TokenType::Minus)) {
+    while (match({TokenType::Plus, TokenType::Minus})) {
         auto op = previous();
         auto right = parseTerm();
         left = new BinaryOpNode(left, op.lexeme, right);
@@ -302,10 +334,12 @@ AstNode* Parser::parseFactor() {
 }
 
 AstNode* Parser::parseTerm() {
-   
+    /*
+     *   term ::= unary (("*" | "/" | "%") unary)*
+    */
     auto left = parseUnary();
     
-    while (match(TokenType::Star) || match(TokenType::Slash) || match(TokenType::Mod)) {
+    while (match({TokenType::Star, TokenType::Slash, TokenType::Mod})) {
         auto op = previous();
         auto right = parseUnary();
         left = new BinaryOpNode(left, op.lexeme, right);
@@ -314,8 +348,10 @@ AstNode* Parser::parseTerm() {
 }
 
 AstNode* Parser::parseUnary() {
-    
-    if (match(TokenType::Minus) || match(TokenType::Not)) {
+    /*
+     *   unary ::= (("-" | "+") unary*) | primary
+    */
+    if (match(TokenType::Minus)) {
         auto op = previous();
         auto right = parseUnary();
         return new UnaryOpNode(op.lexeme, right);
@@ -324,16 +360,22 @@ AstNode* Parser::parseUnary() {
         return parseUnary();
     
     } else {
-        return parseCall();
+        return parsePrimary();
     }
 }
 
-AstNode* Parser::parseCall() {
+/*AstNode** Parser::parsePower() {
+    //  power ::= primary ("**" unary)
+}*/
+
+/*AstNode* Parser::parseCall() {
+    /*
+     *   call ::= primary "(" (argument_list)? ")"
     
     auto primary = parsePrimary();
 
     while (match(TokenType::LeftParen)) {
-        std::vector<AstNode*> args;
+        vector<AstNode*> args;
         if (!match(TokenType::RightParen)) {
             do {
                 args.push_back(parseExpr());
@@ -343,15 +385,24 @@ AstNode* Parser::parseCall() {
         primary = new CallNode(primary, args);
     }
     return primary;
-}
+}*/
 
 AstNode* Parser::parsePrimary() {
-    
+    /*
+     *   primary ::= atom | attributeref
+     *               | subscription | slicing | call
+     *   atom ::= identifier | literal
+     *   literal ::= stringliteral | integer | floatnumber 
+     *               | "None" | "True" | "False"
+     *   attributeref ::= primary "." identifier             // TODO
+     *   subscription ::= primary "[" expression_list "]"    // TODO
+     *   slicing ::= simple_slicing | extended_slicing       // TODO
+    */
     if (match(TokenType::Int)) {
-        return new IntNode(std::stoll(previous().lexeme));
+        return new IntNode(stoll(previous().lexeme));
         
     } else if (match(TokenType::Float)) {
-        return new FloatNode(std::stod(previous().lexeme));
+        return new FloatNode(stod(previous().lexeme));
         
     } else if(match(TokenType::True)) {
         return new BooleanNode(true);
@@ -381,9 +432,9 @@ AstNode* Parser::parsePrimary() {
 Token Parser::consume(TokenType type) {
     if (match(type)) return previous();
     else {
-        error("Expected " + std::to_string(type) + "\n");
+        error("Expected " + to_string(type) + "\n");
 
-       // std::cout << "But got  " <<  peek().type <<  std::endl; 
+       // cout << "But got  " <<  peek().type <<  endl; 
     
         return Token(TokenType::Error, "", 0);
     }
@@ -395,6 +446,19 @@ bool Parser::match(TokenType type) {
     }
     ++current;
     return true;
+}
+
+bool Parser::match(initializer_list<TokenType> types) {
+    
+    if(isAtEnd()) return false;
+    
+    for(const auto& type : types) {
+        if(peek().type == type) {
+            ++current;
+            return true;
+        }
+    }
+    return false;
 }
 
 bool Parser::isAtEnd() const {
@@ -409,8 +473,8 @@ Token Parser::previous() const {
     return tokens[current - 1];
 }
 
-void Parser::error(const std::string& message) {
+void Parser::error(const string& message) {
     
-    std::cerr << "Error at line " << peek().line << ": " << message << std::endl;
+    cerr << "Error at line " << peek().line << ": " << message << endl;
     exit(EXIT_FAILURE);
 }

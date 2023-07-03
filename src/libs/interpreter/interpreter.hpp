@@ -1,12 +1,13 @@
 #pragma once
 
+#include <stack>
 #include <unordered_map>
 #include "../value/value.hpp"
 #include "../ast/ast.hpp"
 #include "../gc/gc.hpp"
-#include "scope.hpp"
+#include "./scope.hpp"
 
-#include <stack>
+using namespace std;
 
 class Interpreter : public NodeVisitor {
    
@@ -16,8 +17,7 @@ class Interpreter : public NodeVisitor {
 
             GC = new GarbageCollector();
 
-            if(!GC) throw std::runtime_error("Error while allocating garbage collector");
-
+            if(!GC) throw runtime_error("Error while allocating garbage collector");
           
             Environment.push(new Scope());
         }
@@ -49,6 +49,6 @@ class Interpreter : public NodeVisitor {
 
        // unsigned int num_objects_allocated = 0;
 
-      // std::stack<Scope *> Global_Environment = nullptr;
-       std::stack<Scope *> Environment;
+      // stack<Scope *> Global_Environment = nullptr;
+       stack<Scope *> Environment;
 };

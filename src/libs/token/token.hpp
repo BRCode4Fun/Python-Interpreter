@@ -68,6 +68,8 @@ public:
                 out << "None"; break;
             case TokenType::Print:
                 out << "Print"; break;
+            case TokenType::Def:
+                out << "Def"; break;
             case TokenType::While:
                 out << "While"; break;
             case TokenType::If:

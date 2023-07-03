@@ -2,23 +2,27 @@
 #include <stdexcept>
 
 void todo() {
-    throw std::logic_error("Function not implemented yet");
+    throw logic_error("Function not implemented yet");
 }
-
-
 
 Value* Interpreter::visitProgramNode(ProgramNode* node) {
     return node->body->accept(this);
 }
 
 Value* Interpreter::visitPrintNode(PrintNode* node) {
- 
-    Value* argValue = node->args[0].accept(this);
-  
-    std::cout << *argValue << "\n" << std::flush;
+    Value* argValue = nullptr;
+
+    if (node->args != nullptr) {
+        argValue = node->args[0].accept(this);
+    }
+    if (argValue != nullptr) {
+        cout << *(argValue);
+    }
+    cout << "\n" << flush;
     
     return new Value(1.0); 
 }
+
 
 Value* Interpreter::visitIntNode(IntNode* node){
     Value* value = new Value(node->value);
@@ -219,7 +223,7 @@ Value* Interpreter::visitBinaryOpNode(BinaryOpNode* node)  {
         
         return *leftValue && *rightValue;
     } else {
-        throw std::runtime_error("Unsupported binary operator");
+        throw runtime_error("Unsupported binary operator");
     }
 }
 
@@ -250,7 +254,7 @@ Value* Interpreter::visitNameNode(NameNode* node)
   //  } else {
 
      return Environment.top()->get(varname);
-  //      throw std::runtime_error("Undeclared variable '" + varname + "'");
+  //      throw runtime_error("Undeclared variable '" + varname + "'");
   //  }
 }
 
@@ -280,7 +284,7 @@ Value* Interpreter::visitUnaryOpNode(UnaryOpNode*  node){
         GC->Add_object(value); 
         return value;
     } else {
-        throw std::runtime_error("Unsupported unary operator");
+        throw runtime_error("Unsupported unary operator");
     }
 }
 

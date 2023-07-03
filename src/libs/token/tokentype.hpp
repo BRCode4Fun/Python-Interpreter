@@ -2,10 +2,10 @@
 
 enum TokenType {
     // Keywords
-    Print, 
+    Print, Def,
     While, If, Elif, Else,
     True, False, None,
-    And, Or, Not, Def,
+    And, Or, Not,
     
     // Operators and punctuators
     Plus, Minus, Star, Slash, Mod,

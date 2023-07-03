@@ -37,10 +37,10 @@ class Value {
                     data = new double(*other.getFloatData());
                     break;
                 case ValueType::STRING:
-                    data = new std::string(*other.getStringData());
+                    data = new string(*other.getStringData());
                     break;
                 case ValueType::LIST:
-                    data = new std::vector<Value>(*other.getListData());
+                    data = new vector<Value>(*other.getListData());
                     break;
                 default:
                     break;
@@ -90,7 +90,7 @@ class Value {
             }
             return *getStringData();
         }
-        const std::vector<Value>& getList() const {
+        const vector<Value>& getList() const {
             if (not is_list()) {
                 throw runtime_error("Value is not a list");
             }
@@ -203,7 +203,7 @@ class Value {
                     case ValueType::BOOLEAN:
                         return new Value(getInt() * (long long)other.getBoolean());
                     case ValueType::STRING:
-                        throw std::logic_error("Function not implemented yet");
+                        throw logic_error("Function not implemented yet");
                     default:
                         throw runtime_error("Unsupported operands for *.");
                 }
@@ -219,7 +219,7 @@ class Value {
                         throw runtime_error("Unsupported operands for *.");
                 }
             } else if((*this).is_string() and other.is_int()) {  
-                throw std::logic_error("Feature not implemented yet");
+                throw logic_error("Feature not implemented yet");
             } else {
                 throw runtime_error("Unsupported operands for +.");
             }
@@ -232,17 +232,17 @@ class Value {
                 switch(other.type) {
                     case ValueType::FLOAT: {
                         double rvalue = other.getFloat();
-                        if(rvalue == 0.0) throw std::runtime_error("Attempted to divide by zero");
+                        if(rvalue == 0.0) throw runtime_error("Attempted to divide by zero");
                         else return new Value(getFloat() / rvalue);
                     } 
                     case ValueType::INT: {
                         double rvalue = (double) other.getInt();
-                        if(rvalue == 0.0) throw std::runtime_error("Attempted to divide by zero");
+                        if(rvalue == 0.0) throw runtime_error("Attempted to divide by zero");
                         else return new Value(getFloat() / rvalue);
                     }
                     case ValueType::BOOLEAN: {    
                         double rvalue = (double) other.getBoolean();
-                        if(rvalue == 0.0) throw std::runtime_error("Attempted to divide by zero");
+                        if(rvalue == 0.0) throw runtime_error("Attempted to divide by zero");
                         else return new Value(getFloat() / rvalue);
                     }
                     default:
@@ -252,17 +252,17 @@ class Value {
                 switch(other.type) {
                     case ValueType::INT: {
                         long long rvalue = other.getInt();
-                        if(rvalue == 0L) throw std::runtime_error("Attempted to divide by zero");
+                        if(rvalue == 0L) throw runtime_error("Attempted to divide by zero");
                         return new Value(getInt() / rvalue);
                     }
                     case ValueType::FLOAT: {
                         double rvalue = other.getFloat();
-                        if(rvalue == 0.0) throw std::runtime_error("Attempted to divide by zero");
+                        if(rvalue == 0.0) throw runtime_error("Attempted to divide by zero");
                         return new Value((double)getInt() / rvalue);
                     }
                     case ValueType::BOOLEAN: {
                         long long rvalue = (int) other.getBoolean();
-                        if(rvalue == 0L) throw std::runtime_error("Attempted to divide by zero");
+                        if(rvalue == 0L) throw runtime_error("Attempted to divide by zero");
                         return new Value(getInt() / rvalue);
                     }
                     default:
@@ -272,17 +272,17 @@ class Value {
                 switch(other.type) {
                     case ValueType::INT: {
                         long long rvalue = other.getInt();
-                        if(rvalue == 0L) throw std::runtime_error("Attempted to divide by zero");
+                        if(rvalue == 0L) throw runtime_error("Attempted to divide by zero");
                         else return new Value((int)getBoolean() / rvalue);
                     }
                     case ValueType::FLOAT: {
                         double rvalue = other.getFloat();
-                        if(rvalue == 0.0) throw std::runtime_error("Attempted to divide by zero");
+                        if(rvalue == 0.0) throw runtime_error("Attempted to divide by zero");
                         else return new Value((double)getBoolean() / rvalue);
                     }
                     case ValueType::BOOLEAN: {
                         long long rvalue = (int) other.getBoolean();
-                        if(rvalue == 0L) throw std::runtime_error("Attempted to divide by zero");
+                        if(rvalue == 0L) throw runtime_error("Attempted to divide by zero");
                         else return new Value((int)getBoolean() / rvalue);
                     }
                     default:
@@ -297,22 +297,22 @@ class Value {
         Value* operator%(const Value& other) const {
             
             if((*this).is_float()) {
-                throw std::logic_error("Feature not implemented yet");
+                throw logic_error("Feature not implemented yet");
                 
             } else if((*this).is_int()) {
                 switch(other.type) {
                     case ValueType::INT: {
                         long long rvalue = other.getInt();
-                        if(rvalue == 0L) throw std::runtime_error("Modulo by zero");
+                        if(rvalue == 0L) throw runtime_error("Modulo by zero");
                         auto value = new Value(getInt() % rvalue);
                         return value;
                     }
                     case ValueType::FLOAT: {
-                        throw std::logic_error("Feature not implemented yet");
+                        throw logic_error("Feature not implemented yet");
                     }
                     case ValueType::BOOLEAN: {
                         long long rvalue = (int) other.getBoolean();
-                        if(rvalue == 0L) throw std::runtime_error("Modulo by zero");
+                        if(rvalue == 0L) throw runtime_error("Modulo by zero");
                         return new Value(getInt() % rvalue);
                     }
                     default:
@@ -322,15 +322,15 @@ class Value {
                 switch(other.type) {
                     case ValueType::INT: {
                         long long rvalue = other.getInt();
-                        if(rvalue == 0L) throw std::runtime_error("Modulo by zero");
+                        if(rvalue == 0L) throw runtime_error("Modulo by zero");
                         else return new Value((int)getBoolean() % rvalue);
                     }
                     case ValueType::FLOAT: {
-                        throw std::logic_error("Feature not implemented yet");
+                        throw logic_error("Feature not implemented yet");
                     }
                     case ValueType::BOOLEAN: {
                         long long rvalue = (int) other.getBoolean();
-                        if(rvalue == 0L) throw std::runtime_error("Modulo by zero");
+                        if(rvalue == 0L) throw runtime_error("Modulo by zero");
                         else return new Value((int)getBoolean() % rvalue);
                     }
                     default:
@@ -366,8 +366,8 @@ class Value {
             *  try to do short-circuit: if after evaluating the left operand,
             *  the result of the logical expression is known, do not evaluate the right operand 
             */
-            if(!(this->isTruthy())) return std::move(this);
-            else return std::move(&other);
+            if(!(this->isTruthy())) return move(this);
+            else return move(&other);
         }
         
         // TODO: replace with call to __or__ later
@@ -376,8 +376,8 @@ class Value {
              *  try to do short-circuit: if after evaluating the left operand,
              *  the result of the logical expression is known, do not evaluate the right operand 
             */
-            if(this->isTruthy()) return std::move(this);
-            else return std::move(&other);
+            if(this->isTruthy()) return move(this);
+            else return move(&other);
         }
         
         // TODO: replace with call to __sub__ later

@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include "../value/value.hpp"
 
+using namespace std;
 
 class Scope {
 

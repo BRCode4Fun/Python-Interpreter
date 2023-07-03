@@ -21,7 +21,7 @@ void Scope::Increment_Reference(Value *Value){
         
 }
 
-void Scope::define(const std::string& name,  Value * value)
+void Scope::define(const string& name,  Value * value)
 {
     auto it = values.find(name);
    
@@ -44,7 +44,7 @@ void Scope::define(const std::string& name,  Value * value)
 
 
 
-Value * Scope::get(std::string name) 
+Value * Scope::get(string name) 
 {
 
     auto it = values.find(name);
@@ -54,5 +54,5 @@ Value * Scope::get(std::string name)
         return it->second;
     }
 
-    throw  std::runtime_error("Undeclared variable '" + name + "'");
+    throw  runtime_error("Undeclared variable '" + name + "'");
 }
