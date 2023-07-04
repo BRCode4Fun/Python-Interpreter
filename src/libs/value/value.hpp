@@ -4,6 +4,8 @@
 #include <vector>
 #include <stdexcept>
 #include <iostream>
+#include "../ast/ast.hpp"
+#include "./FuncObject.hpp"
 
 using namespace std;
 
@@ -16,7 +18,8 @@ class Value {
             INT, FLOAT,
             BOOLEAN,
             STRING,
-            LIST
+            LIST , 
+            FUNC 
         };
       
         Value() : type(ValueType::NONE), data(nullptr) {}
@@ -26,6 +29,7 @@ class Value {
         explicit Value(bool v) : type(ValueType::BOOLEAN), data(new bool(v)) {}
         explicit Value(const string& v) : type(ValueType::STRING), data(new string(v)) {}
         explicit Value(const vector<Value>& v) : type(ValueType::LIST), data(new vector<Value>(v)) {}
+        explicit Value(FunctionNode * func) : type(ValueType::INT), data(new FuncObj(func)) {}
 
         // copy constructor
         Value(const Value& other) : type(other.type), data(nullptr) {
@@ -41,6 +45,9 @@ class Value {
                     break;
                 case ValueType::LIST:
                     data = new vector<Value>(*other.getListData());
+                    break;
+                case ValueType::FUNC:
+                    data = new FuncObj(*other.getFuncData());
                     break;
                 default:
                     break;
@@ -64,6 +71,7 @@ class Value {
         inline bool is_bool() const { return type == ValueType::BOOLEAN; }
         inline bool is_string() const { return type == ValueType::STRING; }
         inline bool is_list() const { return type == ValueType::LIST; }
+        inline bool is_function() const { return type == ValueType::FUNC; }
         inline bool is_none() const { return type == ValueType::NONE; }
 
         const long long getInt() const {
@@ -97,6 +105,16 @@ class Value {
             return *getListData();
         }
 
+        const FuncObj& getFunc() const {
+
+            if (not is_function()) {
+                throw runtime_error("Value is not a   Function");
+            }
+            return *getFuncData();
+
+
+        }
+
         // Copy assignment operator
         Value& operator=(const Value& other) {
             if(this != &other) {
@@ -119,6 +137,10 @@ class Value {
                     case ValueType::LIST:
                         data = new vector<Value>(*other.getListData());
                         break;
+                    case ValueType::FUNC:
+                        data = new FuncObj(*other.getFuncData());
+                        break;
+
                     default:
                         break;
                 }
@@ -651,6 +673,10 @@ class Value {
         const vector<Value>* getListData() const {
             return static_cast<vector<Value>*>(data);
         }
+         const FuncObj* getFuncData() const {
+            return static_cast<FuncObj*>(data);
+        }
+
 
         void deleteData() {
             if(data != nullptr) {
@@ -670,6 +696,11 @@ class Value {
                     case ValueType::LIST:
                         delete getListData();
                         break;
+                    case ValueType::FUNC:
+                        delete getFuncData();
+                        
+                        break;
+
                     default:
                         break;
                 }
