@@ -18,8 +18,20 @@ class Interpreter : public NodeVisitor {
             GC = new GarbageCollector();
 
             if(!GC) throw runtime_error("Error while allocating garbage collector");
+
+
+       
           
+            
+            Global_Environment = new Scope();
             Environment.push(new Scope());
+
+            
+
+
+
+
+
         }
         
         Value* interpret(ProgramNode* node);
@@ -49,6 +61,7 @@ class Interpreter : public NodeVisitor {
 
        // unsigned int num_objects_allocated = 0;
 
-      // stack<Scope *> Global_Environment = nullptr;
+       Scope * Global_Environment;
        stack<Scope *> Environment;
+       
 };

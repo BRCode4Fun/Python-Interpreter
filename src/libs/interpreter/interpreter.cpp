@@ -38,8 +38,13 @@ Value* Interpreter::visitFloatNode(FloatNode* node){
 
 Value* Interpreter::visitFunctionNode(FunctionNode* node)
 {
-   // Value* value = new Value(node->value);
- //   GC->Add_object(value);
+
+    Value *value = new Value(node);
+
+    auto func_name = static_cast<NameNode*>(node->getName())->name;
+
+    Global_Environment->define(func_name ,  value);
+
     return (Value *)nullptr;
 }
 

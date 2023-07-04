@@ -204,7 +204,7 @@ public:
     FunctionNode(AstNode *name, vector<AstNode*> params, AstNode* body)
     : AstNode(AstNodeType::Function),  name(name) , params(params) , body(body) {}
    
-    const AstNode* getName() const { return name; };
+    AstNode* getName() const { return name; };
 
     vector<AstNode*>  getParams() const { return params; }
 
