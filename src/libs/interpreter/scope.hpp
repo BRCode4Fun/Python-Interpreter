@@ -5,9 +5,12 @@
 
 using namespace std;
 
+
+
 class Scope {
 
 public:
+
 
     Scope();
     Scope(Scope* parent);

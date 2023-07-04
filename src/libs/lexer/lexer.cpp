@@ -26,7 +26,8 @@ Lexer::Lexer(const string& source)
         {"if", TokenType::If},
         {"elif", TokenType::Elif},
         {"else", TokenType::Else},
-        {"def", TokenType::Def}
+        {"def", TokenType::Def} , 
+        {"return", TokenType::Return}
     };
 }
 

@@ -20,10 +20,11 @@ enum class AstNodeType {
     
     // Statements
     Print, While, If, Function,
+    Return,
 
     // Expressions
     UnaryOp, BinaryOp, TernaryOp,
-    Assign, Call, 
+    Assign, Call,
 
     // Literals
     Name, String,
@@ -158,6 +159,18 @@ public:
     virtual Value* accept(NodeVisitor* visitor) override;
 };
 
+class ReturnNode : public AstNode {
+
+public:
+
+    ReturnNode(AstNode * value) 
+      : AstNode(AstNodeType::Return), value(value) {}
+    
+    AstNode * value;
+
+    virtual Value* accept(NodeVisitor* visitor) override;
+};
+
 class NullNode : public AstNode {
 public:
     NullNode() : AstNode(AstNodeType::Null) {}
@@ -260,6 +273,7 @@ public:
     virtual Value* visitNullNode(NullNode* node) = 0;
     virtual Value* visitFunctionNode(FunctionNode* node) = 0;
     virtual Value* visitCallNode(CallNode* node) = 0;
+    virtual Value* visitReturnNode(ReturnNode* node) = 0;
 
   //  virtual Value * visitCallNode(const CallNode*  expr) = 0;
 };

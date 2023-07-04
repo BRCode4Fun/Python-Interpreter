@@ -53,9 +53,11 @@ class Interpreter : public NodeVisitor {
         virtual Value* visitNullNode(NullNode* expr) override;
         virtual Value* visitFunctionNode(FunctionNode* node) override;
         virtual Value* visitCallNode(CallNode* node) override;
+        virtual Value* visitReturnNode(ReturnNode* node) override;
 
     //  virtual Value * visitCallNode(const CallNode*  expr) override;
     private:
+
         unordered_map<string, Value*> symbolTable;
 
         GarbageCollector* GC = nullptr; 
@@ -64,5 +66,7 @@ class Interpreter : public NodeVisitor {
 
        Scope * Global_Environment;
        stack<Scope *> Environment;
+
+       bool is_exec_function = false; 
        
 };

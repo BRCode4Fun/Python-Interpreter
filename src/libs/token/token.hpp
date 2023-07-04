@@ -80,6 +80,8 @@ public:
                 out << "Else"; break;
             case TokenType::And:
                 out << "And"; break;
+            case TokenType::Return:
+                out << "Return"; break;
             case TokenType::Or:
                 out << "Or"; break;
             case TokenType::Not:

@@ -117,10 +117,21 @@ AstNode* Parser::parseSimpleStmt() {
     */
      if (match(TokenType::Print)) {
         return parsePrintStmt();
+    }else if(match(TokenType::Return)){
+        return parseReturnStmt();
     } else {
         return parseAssign();
     }
 }
+
+AstNode* Parser::parseReturnStmt() 
+{
+    /*
+     *    
+    */
+    return new ReturnNode(parseExpr());
+}
+
 
 AstNode* Parser::parsePrintStmt() {
     /*

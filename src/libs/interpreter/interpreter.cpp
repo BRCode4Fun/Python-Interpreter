@@ -49,10 +49,25 @@ Value* Interpreter::visitFunctionNode(FunctionNode* node)
 }
 
 Value* Interpreter::visitBlockNode(BlockNode* node) {
+
+   
+
     for (auto statement : node->statements) {
+
+        if(statement->type == AstNodeType::Return){
+           
+           // return statement->accept(this); 
+
+            cout << statement->accept(this) << endl; 
+
+         
+            
+        }
+    
+
         statement->accept(this);
     }
-    return new Value(1.0);
+    return (Value *)0;
 }
 
 Value* Interpreter::visitWhileNode(WhileNode* node){    
@@ -318,19 +333,29 @@ Value* Interpreter::visitCallNode(CallNode* expr)
    }
 
    Environment.push(func_env);
+   
+   is_exec_function = true; 
+   Value *return_value =  function->getFunc()->function_node->getBody()->accept(this); 
+   
 
-   function->getFunc()->function_node->getBody()->accept(this); 
 
    if(Environment.size() > 0)
       Environment.pop();
+   is_exec_function = false;    
   
    
-   return (Value *)nullptr;
+   return return_value;
 }
 
+
+Value* Interpreter::visitReturnNode(ReturnNode* node) {
+    
+    return node->value->accept(this);
+}
 
 Value* Interpreter::interpret(ProgramNode* node) {
     
     return node->accept(this);
 }
+
 

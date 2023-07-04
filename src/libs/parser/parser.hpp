@@ -33,8 +33,10 @@ class Parser {
         AstNode* parseSuite();
         AstNode* parseIfStmt();
         AstNode* parseWhileStmt();
+        AstNode* parseReturnStmt(); 
         AstNode* parseAssign();
         AstNode* parseExpr();
+
         AstNode* parseConditionalExpr();
         AstNode* parseDisjunction();
         AstNode* parseConjunction();
@@ -45,6 +47,7 @@ class Parser {
         AstNode* parseUnary();
         AstNode* parseCall(AstNode *func_name);
         AstNode* parsePrimary();
+        
         vector<AstNode*> parseParameterList();
         AstNode* parseFunctionDef();
         

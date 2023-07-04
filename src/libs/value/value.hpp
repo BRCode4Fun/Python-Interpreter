@@ -47,7 +47,7 @@ class Value {
                     data = new vector<Value>(*other.getListData());
                     break;
                 case ValueType::FUNC:
-                    data = new FuncObj(*other.getFuncData());
+                    data = new FuncObj(other.getFuncData()->function_node);
                     break;
                 default:
                     break;
@@ -118,7 +118,7 @@ class Value {
         // Copy assignment operator
         Value& operator=(const Value& other) {
             if(this != &other) {
-                deleteData();
+               
                 type = other.type;
 
                 switch(type) {
@@ -138,12 +138,14 @@ class Value {
                         data = new vector<Value>(*other.getListData());
                         break;
                     case ValueType::FUNC:
-                        data = new FuncObj(*other.getFuncData());
+                        data = new FuncObj(other.getFuncData()->function_node);
                         break;
 
                     default:
                         break;
                 }
+
+                 deleteData();
             }
             return *this;
         }

@@ -1,8 +1,9 @@
-def teste(a , b):
+def te(a , b):
 
-    while a < b: 
-        print(a)
-        a = a + 1
+  
+     return 20
+     
 
 
-teste(10 , 20)
+
+print(te(50 , 160))

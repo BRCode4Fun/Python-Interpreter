@@ -68,3 +68,8 @@ Value* IfNode::accept(NodeVisitor* visitor) {
 Value* FunctionNode::accept(NodeVisitor* visitor) {
     return visitor->visitFunctionNode(this);
 }
+
+Value* ReturnNode::accept(NodeVisitor* visitor) {
+    return visitor->visitReturnNode(this);
+}
+
