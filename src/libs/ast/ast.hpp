@@ -259,6 +259,7 @@ public:
     virtual Value* visitBooleanNode(BooleanNode* node)  = 0;
     virtual Value* visitNullNode(NullNode* node) = 0;
     virtual Value* visitFunctionNode(FunctionNode* node) = 0;
+    virtual Value* visitCallNode(CallNode* node) = 0;
 
   //  virtual Value * visitCallNode(const CallNode*  expr) = 0;
 };

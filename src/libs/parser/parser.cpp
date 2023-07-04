@@ -368,24 +368,36 @@ AstNode* Parser::parseUnary() {
     //  power ::= primary ("**" unary)
 }*/
 
-/*AstNode* Parser::parseCall() {
-    /*
-     *   call ::= primary "(" (argument_list)? ")"
+AstNode* Parser::parseCall(AstNode *func_name) {
     
-    auto primary = parsePrimary();
+     //*   call ::= primary "(" (argument_list)? ")"
+    
 
-    while (match(TokenType::LeftParen)) {
-        vector<AstNode*> args;
-        if (!match(TokenType::RightParen)) {
-            do {
-                args.push_back(parseExpr());
-            } while (match(TokenType::Comma));
-            consume(TokenType::RightParen);
+    consume(TokenType::LeftParen);
+
+    vector<AstNode*> args; 
+
+    while (true) 
+    {
+ 
+        args.push_back(parseExpr());
+
+        if(match(TokenType::RightParen))
+        {
+             break; 
         }
-        primary = new CallNode(primary, args);
+
+        match(TokenType::Comma);
+        
+       
     }
-    return primary;
-}*/
+       
+    
+
+    
+    
+    return new CallNode(func_name, args);
+}
 
 AstNode* Parser::parsePrimary() {
     /*
@@ -414,6 +426,14 @@ AstNode* Parser::parsePrimary() {
         return new NullNode();
 
     } else if (match(TokenType::Name)) {
+
+        if(peek().type == TokenType::LeftParen){
+         
+            
+            AstNode *name_function = new NameNode(previous().lexeme);
+            return parseCall(name_function); 
+        }
+
         return new NameNode(previous().lexeme);
 
     } else if (match(TokenType::String)) {

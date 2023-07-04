@@ -5,7 +5,7 @@ Value* AssignNode::accept(NodeVisitor* visitor) {
 }
 
 Value* CallNode::accept(NodeVisitor* visitor) {
-     //   return  visitor->visitNumNode(this);
+    return  visitor->visitCallNode(this);
     return (Value*)0; 
 }
 

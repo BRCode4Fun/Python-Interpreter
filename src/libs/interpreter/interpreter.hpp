@@ -52,6 +52,7 @@ class Interpreter : public NodeVisitor {
         virtual Value* visitBooleanNode(BooleanNode* node) override;
         virtual Value* visitNullNode(NullNode* expr) override;
         virtual Value* visitFunctionNode(FunctionNode* node) override;
+        virtual Value* visitCallNode(CallNode* node) override;
 
     //  virtual Value * visitCallNode(const CallNode*  expr) override;
     private:

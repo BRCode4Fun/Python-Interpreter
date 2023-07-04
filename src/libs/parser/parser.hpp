@@ -43,7 +43,7 @@ class Parser {
         AstNode* parseFactor();
         AstNode* parseTerm();
         AstNode* parseUnary();
-        AstNode* parseCall();
+        AstNode* parseCall(AstNode *func_name);
         AstNode* parsePrimary();
         vector<AstNode*> parseParameterList();
         AstNode* parseFunctionDef();

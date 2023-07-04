@@ -29,7 +29,7 @@ class Value {
         explicit Value(bool v) : type(ValueType::BOOLEAN), data(new bool(v)) {}
         explicit Value(const string& v) : type(ValueType::STRING), data(new string(v)) {}
         explicit Value(const vector<Value>& v) : type(ValueType::LIST), data(new vector<Value>(v)) {}
-        explicit Value(FunctionNode * func) : type(ValueType::INT), data(new FuncObj(func)) {}
+        explicit Value(FunctionNode * func) : type(ValueType::FUNC), data(new FuncObj(func)) {}
 
         // copy constructor
         Value(const Value& other) : type(other.type), data(nullptr) {
@@ -105,12 +105,12 @@ class Value {
             return *getListData();
         }
 
-        const FuncObj& getFunc() const {
+        const FuncObj* getFunc() const {
 
             if (not is_function()) {
                 throw runtime_error("Value is not a   Function");
             }
-            return *getFuncData();
+            return getFuncData();
 
 
         }

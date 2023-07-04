@@ -299,6 +299,36 @@ Value* Interpreter::visitNullNode(NullNode* expr){
     return value;
 }
 
+
+Value* Interpreter::visitCallNode(CallNode* expr)
+{
+   // Value* value = new Value();  
+   // GC->Add_object(value);
+
+
+   Value * function = Global_Environment->get(static_cast<NameNode*>(expr->name)->name); 
+
+   vector<Value *> arguments; 
+   Scope *func_env = new Scope();  
+
+   for (int i = 0; i < expr->args.size(); i++)
+   {
+        string arg_name =  static_cast<NameNode*>(function->getFunc()->function_node->getParams()[i])->name;
+        func_env->define(arg_name, expr->args[i]->accept(this));
+   }
+
+   Environment.push(func_env);
+
+   function->getFunc()->function_node->getBody()->accept(this); 
+
+   if(Environment.size() > 0)
+      Environment.pop();
+  
+   
+   return (Value *)nullptr;
+}
+
+
 Value* Interpreter::interpret(ProgramNode* node) {
     
     return node->accept(this);
