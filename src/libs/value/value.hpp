@@ -100,25 +100,22 @@ class Value {
         }
         const vector<Value>& getList() const {
             if (not is_list()) {
-                throw runtime_error("Value is not a list");
+                throw runtime_error("Value is not a list.");
             }
             return *getListData();
         }
 
-        const FuncObj* getFunc() const {
-
+        const FuncObj getFunc() const {
             if (not is_function()) {
-                throw runtime_error("Value is not a   Function");
+                throw runtime_error("Value is not a Function.");
             }
-            return getFuncData();
-
-
+            return *getFuncData();
         }
 
         // Copy assignment operator
         Value& operator=(const Value& other) {
             if(this != &other) {
-               
+                deleteData();
                 type = other.type;
 
                 switch(type) {
@@ -140,12 +137,9 @@ class Value {
                     case ValueType::FUNC:
                         data = new FuncObj(other.getFuncData()->function_node);
                         break;
-
                     default:
                         break;
                 }
-
-                 deleteData();
             }
             return *this;
         }
@@ -245,7 +239,7 @@ class Value {
             } else if((*this).is_string() and other.is_int()) {  
                 throw logic_error("Feature not implemented yet");
             } else {
-                throw runtime_error("Unsupported operands for +.");
+                throw runtime_error("Unsupported operands for *.");
             }
         }
         
@@ -317,7 +311,7 @@ class Value {
             }
         }
         
-        // TODO: replace with call to __truediv__ later
+        // TODO: replace with call to __mod__ later
         Value* operator%(const Value& other) const {
             
             if((*this).is_float()) {
@@ -379,29 +373,21 @@ class Value {
             }
         }
         
+        // TODO: replace with call to __inv__ later
+        Value* operator~() {
+            switch(type) {
+                case ValueType::INT:
+                    return new Value(~getInt());
+                case ValueType::BOOLEAN:
+                    return new Value(~(long long)getBoolean());
+                default:
+                    throw runtime_error("Unsupported operands for unary .");
+            }
+        }
+        
         // TODO: replace with call to __not__ later
         Value* operator!() {
             return new Value(!(this->isTruthy())); 
-        }
-        
-        // TODO: replace with call to __and__ later
-        Value* operator&&(Value& other) {
-            /* 
-            *  try to do short-circuit: if after evaluating the left operand,
-            *  the result of the logical expression is known, do not evaluate the right operand 
-            */
-            if(!(this->isTruthy())) return move(this);
-            else return move(&other);
-        }
-        
-        // TODO: replace with call to __or__ later
-        Value* operator||(Value& other) {
-            /* 
-             *  try to do short-circuit: if after evaluating the left operand,
-             *  the result of the logical expression is known, do not evaluate the right operand 
-            */
-            if(this->isTruthy()) return move(this);
-            else return move(&other);
         }
         
         // TODO: replace with call to __sub__ later
@@ -442,6 +428,135 @@ class Value {
                 }
             } else {
                 throw runtime_error("Unsupported operands for -.");
+            }
+        }
+        // TODO: replace with call to __and__ later
+        Value* operator&(const Value& other) const {
+            
+            if((*this).is_int()) {
+                switch(other.type) {
+                    case ValueType::INT:
+                        return new Value(getInt() & other.getInt());
+                    case ValueType::BOOLEAN:
+                        return new Value(getInt() & (long long)other.getBoolean());
+                    default:
+                        throw runtime_error("Unsupported operands for &.");
+                }
+            } else if((*this).is_bool()) {
+                switch(other.type) {
+                    case ValueType::BOOLEAN:
+                        return new Value((long long)getBoolean() & (long long)other.getBoolean());
+                    case ValueType::INT:
+                        return new Value((long long)getBoolean() & other.getInt());
+                    default:
+                        throw runtime_error("Unsupported operands for &.");
+                }
+            } else {
+                throw runtime_error("Unsupported operands for &.");
+            }
+        }
+        
+        // TODO: replace with call to __or__ later
+        Value* operator|(const Value& other) const {
+            
+            if((*this).is_int()) {
+                switch(other.type) {
+                    case ValueType::INT:
+                        return new Value(getInt() | other.getInt());
+                    case ValueType::BOOLEAN:
+                        return new Value(getInt() | (long long)other.getBoolean());
+                    default:
+                        throw runtime_error("Unsupported operands for |.");
+                }
+            } else if((*this).is_bool()) {
+                switch(other.type) {
+                    case ValueType::BOOLEAN:
+                        return new Value((long long)getBoolean() | (long long)other.getBoolean());
+                    case ValueType::INT:
+                        return new Value((long long)getBoolean() | other.getInt());
+                    default:
+                        throw runtime_error("Unsupported operands for |.");
+                }
+            } else {
+                throw runtime_error("Unsupported operands for |.");
+            }
+        }
+
+        // TODO: replace with call to __xor__ later
+        Value* operator^(const Value& other) const {
+            
+            if((*this).is_int()) {
+                switch(other.type) {
+                    case ValueType::INT:
+                        return new Value(getInt() ^ other.getInt());
+                    case ValueType::BOOLEAN:
+                        return new Value(getInt() ^ (long long)other.getBoolean());
+                    default:
+                        throw runtime_error("Unsupported operands for ^.");
+                }
+            } else if((*this).is_bool()) {
+                switch(other.type) {
+                    case ValueType::BOOLEAN:
+                        return new Value((long long)getBoolean() ^ (long long)other.getBoolean());
+                    case ValueType::INT:
+                        return new Value((long long)getBoolean() ^ other.getInt());
+                    default:
+                        throw runtime_error("Unsupported operands for ^");
+                }
+            } else {
+                throw runtime_error("Unsupported operands for ^.");
+            }
+        }
+
+        // TODO: replace with call to __lshift__ later
+        Value* operator<<(const Value& other) const {
+            
+            if((*this).is_int()) {
+                switch(other.type) {
+                    case ValueType::INT:
+                        return new Value(getInt() << other.getInt());
+                    case ValueType::BOOLEAN:
+                        return new Value(getInt() << (long long)other.getBoolean());
+                    default:
+                        throw runtime_error("Unsupported operands for <<.");
+                }
+            } else if((*this).is_bool()) {
+                switch(other.type) {
+                    case ValueType::BOOLEAN:
+                        return new Value((long long)getBoolean() << (long long)other.getBoolean());
+                    case ValueType::INT:
+                        return new Value((long long)getBoolean() << other.getInt());
+                    default:
+                        throw runtime_error("Unsupported operands for <<.");
+                }
+            } else {
+                throw runtime_error("Unsupported operands for <<.");
+            }
+        }
+
+        // TODO: replace with call to __rshift__ later
+        Value* operator>>(const Value& other) const {
+            
+            if((*this).is_int()) {
+                switch(other.type) {
+                    case ValueType::INT:
+                        return new Value(getInt() >> other.getInt());
+                    case ValueType::BOOLEAN:
+                        return new Value(getInt() >> (long long)other.getBoolean());
+                    default:
+                        throw runtime_error("Unsupported operands for >>.");
+                }
+            } else if((*this).is_bool()) {
+                switch(other.type) {
+                    case ValueType::BOOLEAN:
+                        return new Value((long long)getBoolean() >> (long long)other.getBoolean());
+                    case ValueType::INT:
+                        return new Value((long long)getBoolean() >> other.getInt());
+                    default:
+                        throw runtime_error("Unsupported operands for >>.");
+                }
+            } else {
+                throw runtime_error("Unsupported operands for >>.");
             }
         }
 
@@ -621,7 +736,7 @@ class Value {
             return out;
         }
         
-        // TODO: replace with truth later
+        // TODO: replace with truth or __bool__ later
         bool isTruthy() {
 
             switch(type) {
@@ -679,7 +794,6 @@ class Value {
             return static_cast<FuncObj*>(data);
         }
 
-
         void deleteData() {
             if(data != nullptr) {
                 switch (type) {
@@ -700,9 +814,7 @@ class Value {
                         break;
                     case ValueType::FUNC:
                         delete getFuncData();
-                        
                         break;
-
                     default:
                         break;
                 }

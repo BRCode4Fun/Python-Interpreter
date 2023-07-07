@@ -36,14 +36,18 @@ class Parser {
         AstNode* parseReturnStmt(); 
         AstNode* parseAssign();
         AstNode* parseExpr();
-
         AstNode* parseConditionalExpr();
         AstNode* parseDisjunction();
         AstNode* parseConjunction();
         AstNode* parseInversion();
         AstNode* parseComparison();
+        AstNode* parseBitwiseOr();
+        AstNode* parseBitwiseXor();
+        AstNode* parseBitwiseAnd();
+        AstNode* parseShiftExpr();
         AstNode* parseFactor();
         AstNode* parseTerm();
+        AstNode* parsePower();
         AstNode* parseUnary();
         AstNode* parseCall(AstNode *func_name);
         AstNode* parsePrimary();

@@ -34,6 +34,20 @@ public:
                 out << "Slash"; break;
             case TokenType::Mod:
                 out << "Mod"; break;
+            case TokenType::Pipe:
+                out << "Pipe"; break;
+            case TokenType::Caret:
+                out << "Caret"; break;
+            case TokenType::Ampersand:
+                out << "Ampersand"; break;
+            case TokenType::Tilde:
+                out << "Tilde"; break;
+            case TokenType::LeftShift:
+                out << "LeftShift"; break;
+            case TokenType::RightShift:
+                out << "RightShift"; break;
+            case TokenType::DoubleStar:
+                out << "DoubleStar"; break;
             case TokenType::Equals:
                 out << "Equals"; break;
             case TokenType::EqualEqual:

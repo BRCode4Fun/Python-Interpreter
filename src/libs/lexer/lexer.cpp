@@ -85,13 +85,25 @@ void Lexer::scanToken() {
             addToken(TokenType::Semicolon);
             break;
         case '*':
-            addToken(TokenType::Star);
+            addToken(match('*') ? TokenType::DoubleStar : TokenType::Star);
             break;
         case '/':
             addToken(TokenType::Slash);
             break;
         case '%':
             addToken(TokenType::Mod);
+            break;
+        case '|':
+            addToken(TokenType::Pipe);
+            break;
+        case '&':
+            addToken(TokenType::Ampersand);
+            break;
+        case '^':
+            addToken(TokenType::Caret);
+            break;
+        case '~':
+            addToken(TokenType::Tilde);
             break;
         case '!':
             addToken(match('=') ? TokenType::BangEqual : TokenType::Bang);
@@ -100,10 +112,12 @@ void Lexer::scanToken() {
             addToken(match('=') ? TokenType::EqualEqual : TokenType::Equals);
             break;
         case '<':
-            addToken(match('=') ? TokenType::LessEqual : TokenType::Less);
+            addToken(match('<') ? TokenType::LeftShift : 
+                     match('=') ? TokenType::LessEqual : TokenType::Less);
             break;
         case '>':
-            addToken(match('=') ? TokenType::GreaterEqual : TokenType::Greater);
+            addToken(match('>') ? TokenType::RightShift : 
+                     match('=') ? TokenType::GreaterEqual : TokenType::Greater);
             break;
          case '#':
             while (peek() != '\n' && !isAtEnd()) advance();

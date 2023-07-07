@@ -2,19 +2,23 @@
 
 enum TokenType {
     // Keywords
-    Print, Def,
+    Print, Def, Return,
     While, If, Elif, Else,
-    Return,
     True, False, None,
     And, Or, Not,
     
-    // Operators and punctuators
-    Plus, Minus, Star, Slash, Mod,
+    // Operators
+    Plus, Minus, 
+    Star, DoubleStar, Slash, Mod,
+    Pipe, Caret, Ampersand, Tilde,
+    LeftShift, RightShift,  
     Less, LessEqual,
     Greater, GreaterEqual,
     Equals, EqualEqual,
     Bang, BangEqual,
-    Dot, 
+    Dot,
+    
+    // Punctuators
     LeftParen, RightParen,
     LeftBrace, RightBrace,
     Comma, Colon, Semicolon,
