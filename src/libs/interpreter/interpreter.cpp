@@ -19,8 +19,8 @@ Value* Interpreter::visitPrintNode(PrintNode* node) {
         cout << *(argValue);
     }
     cout << "\n" << flush;
-    
-    return new Value(1.0); 
+
+    return new Value(1.0);
 }
 
 
@@ -48,25 +48,34 @@ Value* Interpreter::visitFunctionNode(FunctionNode* node){
 
 Value* Interpreter::visitBlockNode(BlockNode* node) {
 
+    Value *n_value = nullptr;
+
     for (auto statement : node->statements) {
-        if(statement->type == AstNodeType::Return){
-           // return statement->accept(this); 
-            cout << statement->accept(this) << endl;
+
+        n_value = statement->accept(this);
+               
+        if(statement->type == AstNodeType::Return)
+        {
+           
+           
+           break;
         }
-        statement->accept(this);
+
     }
-    return (Value *)0;
+
+
+    return n_value;
 }
 
-Value* Interpreter::visitWhileNode(WhileNode* node){    
-    
+Value* Interpreter::visitWhileNode(WhileNode* node){
+
     Value* cond = node->cond->accept(this);
 
      while(cond->isTruthy()){
           node->body->accept(this);
           cond = node->cond->accept(this);
-     }     
-     return new Value(-1.0); 
+     }
+     return new Value(-1.0);
 }
 
 Value* Interpreter::visitIfNode(IfNode* node) {
@@ -90,9 +99,9 @@ Value* Interpreter::visitIfNode(IfNode* node) {
 }
 
 Value* Interpreter::visitTernaryOpNode(TernaryOpNode* node) {
-    
+
     Value* cond = node->cond->accept(this);
-    
+
     if(cond->isTruthy()) {
         return node->left->accept(this);
     } else {
@@ -101,176 +110,176 @@ Value* Interpreter::visitTernaryOpNode(TernaryOpNode* node) {
 }
 
 Value* Interpreter::visitBinaryOpNode(BinaryOpNode* node)  {
-    
+
     Value* leftValue  = node->left->accept(this);
     leftValue->Increment_Reference_counting();
-    
+
     Value* rightValue = node->right->accept(this);
     rightValue->Increment_Reference_counting();
-    
+
     if(node->op ==  "+"){ // TODO: replace with __add__ call
         Value* value = *leftValue + *rightValue;
         GC->Add_object(value);
-        
-        leftValue->Decrement_Reference_counting(); 
-        rightValue->Decrement_Reference_counting(); 
-    
+
+        leftValue->Decrement_Reference_counting();
+        rightValue->Decrement_Reference_counting();
+
         return value;
-    
+
     } else if (node->op ==  "-"){ // TODO: replace with __sub__ call
          Value* value = *leftValue - *rightValue;
          GC->Add_object(value);
-         
-         leftValue->Decrement_Reference_counting(); 
-         rightValue->Decrement_Reference_counting(); 
-        
+
+         leftValue->Decrement_Reference_counting();
+         rightValue->Decrement_Reference_counting();
+
          return value;
-         
+
     } else if (node->op ==  "*"){ // TODO: replace with __mul__ call
         Value* value = *leftValue * *rightValue;
-        GC->Add_object(value); 
-        
-        leftValue->Decrement_Reference_counting(); 
+        GC->Add_object(value);
+
+        leftValue->Decrement_Reference_counting();
         rightValue->Decrement_Reference_counting();
-         
+
         return value;
-    
+
     } else if (node->op ==  "&"){ // TODO: replace with __and__ call
         Value* value = *leftValue & *rightValue;
-        GC->Add_object(value); 
-        
-        leftValue->Decrement_Reference_counting(); 
+        GC->Add_object(value);
+
+        leftValue->Decrement_Reference_counting();
         rightValue->Decrement_Reference_counting();
-         
+
         return value;
-    
+
     } else if (node->op ==  "|"){ // TODO: replace with __or__ call
         Value* value = *leftValue | *rightValue;
-        GC->Add_object(value); 
-        
-        leftValue->Decrement_Reference_counting(); 
+        GC->Add_object(value);
+
+        leftValue->Decrement_Reference_counting();
         rightValue->Decrement_Reference_counting();
-         
+
         return value;
-    
+
     } else if (node->op ==  "^"){ // TODO: replace with __xor__ call
         Value* value = *leftValue ^ *rightValue;
         GC->Add_object(value);
-        
-        leftValue->Decrement_Reference_counting(); 
+
+        leftValue->Decrement_Reference_counting();
         rightValue->Decrement_Reference_counting();
-        
+
         return value;
-    
+
     } else if (node->op ==  "/"){ // TODO: replace with __truediv__ call
         Value* value = *leftValue / *rightValue;
-        GC->Add_object(value); 
-        
-        leftValue->Decrement_Reference_counting(); 
+        GC->Add_object(value);
+
+        leftValue->Decrement_Reference_counting();
         rightValue->Decrement_Reference_counting();
-        
-        
+
+
         return value;
 
     } else if (node->op ==  "%"){ // TODO: replace with __mod__ call
         Value* value = *leftValue % *rightValue;
         GC->Add_object(value);
-        
-        leftValue->Decrement_Reference_counting(); 
+
+        leftValue->Decrement_Reference_counting();
         rightValue->Decrement_Reference_counting();
-        
+
         return value;
 
     } else if (node->op == "==") { // TODO: replace with __eq__ call
         Value* value = *leftValue == *rightValue;
-        GC->Add_object(value); 
-        
-        leftValue->Decrement_Reference_counting(); 
+        GC->Add_object(value);
+
+        leftValue->Decrement_Reference_counting();
         rightValue->Decrement_Reference_counting();
-        
+
         return value;
 
     } else if(node->op == "!=") { // TODO: replace with __ne__ call
         Value* value = !(*(*leftValue == *rightValue));
         GC->Add_object(value);
-        
-        leftValue->Decrement_Reference_counting(); 
+
+        leftValue->Decrement_Reference_counting();
         rightValue->Decrement_Reference_counting();
-        
-        
+
+
         return value;
 
     } else if (node->op == "<") { // TODO: replace with __lt__ call
         Value* value = *leftValue < *rightValue;
-        GC->Add_object(value); 
-        
-        leftValue->Decrement_Reference_counting(); 
+        GC->Add_object(value);
+
+        leftValue->Decrement_Reference_counting();
         rightValue->Decrement_Reference_counting();
-        
+
         return value;
 
     } else if(node->op == ">") { // TODO: replace with __gt__ call
         Value* value = *leftValue > *rightValue;
-        GC->Add_object(value); 
-        
-        leftValue->Decrement_Reference_counting(); 
+        GC->Add_object(value);
+
+        leftValue->Decrement_Reference_counting();
         rightValue->Decrement_Reference_counting();
-        
+
         return value;
 
     } else if (node->op == "<=") { // TODO: replace with __le__ call
         Value* value = !(*(*leftValue > *rightValue));
         GC->Add_object(value);
-        
-        leftValue->Decrement_Reference_counting(); 
+
+        leftValue->Decrement_Reference_counting();
         rightValue->Decrement_Reference_counting();
-        
-        return value;  
-        
+
+        return value;
+
     } else if(node->op == ">=") { // TODO: replace with __ge__ call
         Value* value = !(*(*leftValue < *rightValue));
         GC->Add_object(value);
-        
-        leftValue->Decrement_Reference_counting(); 
+
+        leftValue->Decrement_Reference_counting();
         rightValue->Decrement_Reference_counting();
-        
+
         return value;
 
     } else if(node->op == "<<") { // TODO: replace with __lshift__ call
         Value* value = *leftValue << *rightValue;
         GC->Add_object(value);
-        
-        leftValue->Decrement_Reference_counting(); 
+
+        leftValue->Decrement_Reference_counting();
         rightValue->Decrement_Reference_counting();
-        
+
         return value;
 
     } else if(node->op == ">>") { // TODO: replace with __rshift__ call
         Value* value = *leftValue >> *rightValue;
         GC->Add_object(value);
-        
-        leftValue->Decrement_Reference_counting(); 
+
+        leftValue->Decrement_Reference_counting();
         rightValue->Decrement_Reference_counting();
-        
+
         return value;
 
     } else if(node->op == "or") {
-		
-        leftValue->Decrement_Reference_counting(); 
+
+        leftValue->Decrement_Reference_counting();
         rightValue->Decrement_Reference_counting();
-        /* 
+        /*
          *  try to do short-circuit: if after evaluating the left operand,
-         *  the result of the logical expression is known, do not evaluate the right operand 
+         *  the result of the logical expression is known, do not evaluate the right operand
         */
         return leftValue->isTruthy() ? leftValue : rightValue;
-    
+
     } else if(node->op == "and") {
-		
-	leftValue->Decrement_Reference_counting(); 
+
+	leftValue->Decrement_Reference_counting();
         rightValue->Decrement_Reference_counting();
-        /* 
+        /*
          *  try to do short-circuit: if after evaluating the left operand,
-         *  the result of the logical expression is known, do not evaluate the right operand 
+         *  the result of the logical expression is known, do not evaluate the right operand
         */
         return !(leftValue->isTruthy()) ? leftValue : rightValue;
     } else {
@@ -289,7 +298,7 @@ Value* Interpreter::visitAssignNode(AssignNode* node) {
 }
 
 Value* Interpreter::visitNameNode(NameNode* node){
-        
+
     auto varname = node->name;
 
   //  auto iter = symbolTable.find(varname);
@@ -303,34 +312,34 @@ Value* Interpreter::visitNameNode(NameNode* node){
   //  }
 }
 
-Value* Interpreter::visitBooleanNode(BooleanNode* node){       
-     Value* value = new Value(node->value);    
-     GC->Add_object(value); 
+Value* Interpreter::visitBooleanNode(BooleanNode* node){
+     Value* value = new Value(node->value);
+     GC->Add_object(value);
      return value;
 }
 
-Value* Interpreter::visitStringNode(StringNode* node){       
-     Value* value = new Value(node->lexeme);    
-     GC->Add_object(value); 
+Value* Interpreter::visitStringNode(StringNode* node){
+     Value* value = new Value(node->lexeme);
+     GC->Add_object(value);
      return value;
 }
 
 Value* Interpreter::visitUnaryOpNode(UnaryOpNode*  node){
 
     Value* operandValue = node->right->accept(this);
-     
+
     if(node->op == "-") {
         Value* value = -(*operandValue);
         GC->Add_object(value);
         return value;
-        
+
     } else if(node->op == "not") {
         Value* value = !(*operandValue);
-        GC->Add_object(value); 
+        GC->Add_object(value);
         return value;
     } else if(node->op == "~") {
         Value* value = ~(*operandValue);
-        GC->Add_object(value); 
+        GC->Add_object(value);
         return value;
     } else {
         throw runtime_error("Unsupported unary operator");
@@ -338,19 +347,19 @@ Value* Interpreter::visitUnaryOpNode(UnaryOpNode*  node){
 }
 
 Value* Interpreter::visitNullNode(NullNode* expr){
-    Value* value = new Value();  
+    Value* value = new Value();
     GC->Add_object(value);
     return value;
 }
 
 Value* Interpreter::visitCallNode(CallNode* expr){
-   // Value* value = new Value();  
+   // Value* value = new Value();
    // GC->Add_object(value);
 
-   Value * function = Global_Environment->get(static_cast<NameNode*>(expr->name)->name); 
+   Value * function = Global_Environment->get(static_cast<NameNode*>(expr->name)->name);
 
-   vector<Value *> arguments; 
-   Scope *func_env = new Scope();  
+   vector<Value *> arguments;
+   Scope *func_env = new Scope();
 
    for (int i = 0; i < expr->args.size(); i++)
    {
@@ -359,26 +368,30 @@ Value* Interpreter::visitCallNode(CallNode* expr){
    }
 
    Environment.push(func_env);
-   
-   is_exec_function = true; 
-   Value *return_value = function->getFunc().function_node->getBody()->accept(this); 
-   
-   if(Environment.size() > 0)
+
+   is_exec_function = true;
+
+   Value *return_value = function->getFunc().function_node->getBody()->accept(this);
+
+
+
+
+
+  if(Environment.size() > 0)
       Environment.pop();
+
    is_exec_function = false;
-   
+
    return return_value;
 }
 
 
 Value* Interpreter::visitReturnNode(ReturnNode* node) {
-    
-    return node->value->accept(this);
+
+      return node->value->accept(this);
 }
 
 Value* Interpreter::interpret(ProgramNode* node) {
-    
+
     return node->accept(this);
 }
-
-

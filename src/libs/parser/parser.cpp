@@ -40,13 +40,14 @@ AstNode* Parser::parseStmt() {
     } else if (match(TokenType::While)){
         return parseWhileStmt();
         
-    } else if (match(TokenType::Def)){
+    } else if (match(TokenType::Def))
+    {
         return parseFunctionDef();    
 
     } else {
         auto stmtList = parseStmtList();
         while(match(TokenType::Newline)) continue;
-        return stmtList;
+        return new BlockNode(stmtList);
     }
 }
 
@@ -82,7 +83,7 @@ AstNode* Parser::parseFunctionDef(){
     return new FunctionNode(name, parameters, body);
 }
 
-AstNode* Parser::parseStmtList() {
+vector<AstNode*> Parser::parseStmtList() {
     /*
      *    stmt_list ::= simple_stmt (";" simple_stmt)* (";")?
     */
@@ -94,9 +95,10 @@ AstNode* Parser::parseStmtList() {
         if(peek().type == TokenType::Newline) break;
         stmts.push_back(parseSimpleStmt());
     }
+    
     if(peek().type == TokenType::Semicolon) ++current;
     
-    return new BlockNode(stmts);
+    return stmts;
 }
 
 AstNode* Parser::parseSimpleStmt() {
@@ -157,18 +159,37 @@ AstNode* Parser::parseSuite() {
         
         vector<AstNode*> stmts;
     
-        stmts.push_back(parseStmt());
+        //stmts.push_back(parseStmt());
     
         while(peek().type != TokenType::Dedent){
-            stmts.push_back(parseStmt());
+
+             auto r = parseStmt();
+
+             if(dynamic_cast<BlockNode *>(r) != nullptr){
+                 
+                BlockNode * stmt_list =  dynamic_cast<BlockNode *>(r);
+
+                for(auto stmt : stmt_list->statements)
+                     stmts.push_back(stmt);  
+                                  
+             }else
+             {
+
+                 stmts.push_back(r);       
+             }
         }
+
+
         consume(TokenType::Dedent);
-      
+
         return new BlockNode(stmts);
+
     } else {
         auto stmtList = parseStmtList();
         consume(TokenType::Newline);
-        return stmtList;
+
+        return new BlockNode(stmtList);
+   
     }
 }
 

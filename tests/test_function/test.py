@@ -1,6 +1,9 @@
-def loop_function(a, b):
-    while a < b:
-        print(a)        
-        a = a + 1
+def factorial(n):
+   if n == 1:
+       return n
+   else:
+       return n * factorial(n-1)
 
-loop_function(10, 20)
+
+print(factorial(4))
+print(factorial(5))

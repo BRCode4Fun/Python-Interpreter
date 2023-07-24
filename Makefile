@@ -2,11 +2,11 @@
 SRCS := $(shell find . -name "*.cpp")
 
 # Set the output file name
-OUTPUT := main
+OUTPUT :=  main
 
 # Set the compiler and compiler flags
 CC := g++
-CFLAGS := -std=c++17
+CFLAGS := -std=c++17 -g
 
 # Add DEBUG macro to CFLAGS
 ifdef DEBUG

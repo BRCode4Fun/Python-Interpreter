@@ -59,7 +59,7 @@ public:
 
 class BlockNode : public AstNode {
 public:
-    BlockNode(const vector<AstNode*>& statements)
+    BlockNode(const vector<AstNode*> statements)
       : AstNode(AstNodeType::Block), statements(statements) {}
       
     vector<AstNode*> statements;

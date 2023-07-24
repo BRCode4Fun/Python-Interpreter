@@ -27,7 +27,7 @@ class Parser {
 
         ProgramNode* parseProgram();
         AstNode* parseStmt();
-        AstNode* parseStmtList();
+        vector<AstNode*> parseStmtList();
         AstNode* parseSimpleStmt();
         AstNode* parsePrintStmt();
         AstNode* parseSuite();
