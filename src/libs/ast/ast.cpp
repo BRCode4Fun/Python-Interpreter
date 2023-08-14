@@ -5,8 +5,7 @@ Value* AssignNode::accept(NodeVisitor* visitor) {
 }
 
 Value* CallNode::accept(NodeVisitor* visitor) {
-    return  visitor->visitCallNode(this);
-    return (Value*)0; 
+    return visitor->visitCallNode(this);
 }
 
 Value* BinaryOpNode::accept(NodeVisitor* visitor) {

@@ -6,53 +6,51 @@
 #include "../token/token.hpp"
 #include "../ast/ast.hpp"
 
-using namespace std;
-
 class Parser {
-    public:
-        Parser(const vector<Token>& tokens);
-        ProgramNode* parse();
 
-    private:
-        const vector<Token>& tokens;
-        int current = 0;
+public:
+    Parser(const std::vector<Token>& tokens);
+    ProgramNode* parse();
 
-        Token consume(TokenType type);
-        bool match(TokenType type);
-        bool match(initializer_list<TokenType> types);
-        bool isAtEnd() const;
-        Token peek() const;
-        Token previous() const;
-        void error(const string& message);
+private:
+    ProgramNode* parseProgram();
+    AstNode* parseStmt();
+    std::vector<AstNode*> parseStmtList();
+    AstNode* parseSimpleStmt();
+    AstNode* parsePrintStmt();
+    AstNode* parseSuite();
+    AstNode* parseIfStmt();
+    AstNode* parseWhileStmt();
+    AstNode* parseReturnStmt(); 
+    AstNode* parseAssign();
+    AstNode* parseExpr();
+    AstNode* parseConditionalExpr();
+    AstNode* parseDisjunction();
+    AstNode* parseConjunction();
+    AstNode* parseInversion();
+    AstNode* parseComparison();
+    AstNode* parseBitwiseOr();
+    AstNode* parseBitwiseXor();
+    AstNode* parseBitwiseAnd();
+    AstNode* parseShiftExpr();
+    AstNode* parseFactor();
+    AstNode* parseTerm();
+    AstNode* parsePower();
+    AstNode* parseUnary();
+    AstNode* parseCall(AstNode *func_name);
+    AstNode* parsePrimary();    
+    std::vector<AstNode*> parseParameterList();
+    AstNode* parseFunctionDef();
+    
+    const std::vector<Token>& tokens;
+    int current = 0;
 
-        ProgramNode* parseProgram();
-        AstNode* parseStmt();
-        vector<AstNode*> parseStmtList();
-        AstNode* parseSimpleStmt();
-        AstNode* parsePrintStmt();
-        AstNode* parseSuite();
-        AstNode* parseIfStmt();
-        AstNode* parseWhileStmt();
-        AstNode* parseReturnStmt(); 
-        AstNode* parseAssign();
-        AstNode* parseExpr();
-        AstNode* parseConditionalExpr();
-        AstNode* parseDisjunction();
-        AstNode* parseConjunction();
-        AstNode* parseInversion();
-        AstNode* parseComparison();
-        AstNode* parseBitwiseOr();
-        AstNode* parseBitwiseXor();
-        AstNode* parseBitwiseAnd();
-        AstNode* parseShiftExpr();
-        AstNode* parseFactor();
-        AstNode* parseTerm();
-        AstNode* parsePower();
-        AstNode* parseUnary();
-        AstNode* parseCall(AstNode *func_name);
-        AstNode* parsePrimary();
-        
-        vector<AstNode*> parseParameterList();
-        AstNode* parseFunctionDef();
-        
+    bool isAtEnd() const;
+    Token consume(TokenType type);
+    bool match(TokenType type);
+    bool match(std::initializer_list<TokenType> types);
+    void error(const std::string& message);
+    Token peek() const;
+    Token previous() const;
+    Token advance();
 };

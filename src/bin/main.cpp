@@ -8,40 +8,40 @@
 #pragma GCC optimize("Ofast")
 #pragma GCC target("avx,avx2,fma")
 
-void show_tokens(vector<Token> &tokens){
+void show_tokens(std::vector<Token>& tokens){
 
     for(unsigned long i = 0; i < tokens.size(); i++) {
-        cout << tokens[i] << '\n';
+        std::cout << tokens[i] << '\n';
     }
-    cout << flush;
+    std::cout << std::flush;
 }
 
 int main(int argc, char* argv[]) {
 
-    ios_base::sync_with_stdio(false);
-    cin.tie(0); cout.tie(0);
+    std::ios_base::sync_with_stdio(false);
+    std::cin.tie(0); std::cout.tie(0);
 
     if (argc != 2) {
-        cerr << "Usage: " << argv[0] << " [filename].py\n";
+        std::cerr << "Usage: " << argv[0] << " [filename].py\n";
         return 1;
     }
-    ifstream inputFile(argv[1]);
+    std::ifstream inputFile(argv[1]);
 
     if (!inputFile) {
-        cerr << "Error: could not open file '" << argv[1] << "'\n";
+        std::cerr << "Error: could not open file '" << argv[1] << "'\n";
         return 1;
     }
-    string source((istreambuf_iterator<char>(inputFile)), istreambuf_iterator<char>());
+    std::string source((std::istreambuf_iterator<char>(inputFile)), std::istreambuf_iterator<char>());
 
     Lexer lexer(source);
     Interpreter interpreter;
     
-    vector<Token> tokens;
+    std::vector<Token> tokens;
     
     try {
         tokens = lexer.scanTokens(); 
-    } catch(const runtime_error& err) {
-        cerr << err.what() << endl; exit(EXIT_FAILURE);
+    } catch(const std::runtime_error& err) {
+        std::cerr << err.what() << std::endl; exit(EXIT_FAILURE);
     }
     
     #ifdef DEBUG
@@ -54,8 +54,8 @@ int main(int argc, char* argv[]) {
     
     try {
         root = parser.parse();
-    } catch(const runtime_error& err) {
-        cerr << err.what() << endl; exit(EXIT_FAILURE);
+    } catch(const std::runtime_error& err) {
+        std::cerr << err.what() << std::endl; exit(EXIT_FAILURE);
     }
     interpreter.interpret(root);
 

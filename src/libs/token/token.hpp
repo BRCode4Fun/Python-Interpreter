@@ -6,10 +6,6 @@
 class Token {
 
 public:
-    TokenType type;
-    std::string lexeme;
-    int line;
-
     Token(TokenType type, const std::string& lexeme, int line)
         : type(type), lexeme(lexeme), line(line) {}
 
@@ -121,4 +117,8 @@ public:
   
         return out;
     }
+    
+    TokenType type;
+    std::string lexeme;
+    int line;
 };

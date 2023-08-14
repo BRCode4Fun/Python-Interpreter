@@ -7,44 +7,47 @@
 #include "../ast/ast.hpp"
 #include "./FuncObject.hpp"
 
-using namespace std;
+using llf = long double;
+using lld = long long int;
 
 class Value {
     
-    public:
-    
-        enum class ValueType {
-            NONE,
-            INT, FLOAT,
-            BOOLEAN,
-            STRING,
-            LIST , 
-            FUNC 
-        };
+public:
+    enum class ValueType {
+        NONE,
+        INT, FLOAT,
+        BOOLEAN,
+        STRING,
+        LIST, 
+        FUNC 
+    };
       
-        Value() : type(ValueType::NONE), data(nullptr) {}
+    Value() : type(ValueType::NONE), data(nullptr) {}
         
-        explicit Value(long long v) : type(ValueType::INT), data(new long long(v)) {}
-        explicit Value(double v) : type(ValueType::FLOAT), data(new double(v)) {}
-        explicit Value(bool v) : type(ValueType::BOOLEAN), data(new bool(v)) {}
-        explicit Value(const string& v) : type(ValueType::STRING), data(new string(v)) {}
-        explicit Value(const vector<Value>& v) : type(ValueType::LIST), data(new vector<Value>(v)) {}
-        explicit Value(FunctionNode * func) : type(ValueType::FUNC), data(new FuncObj(func)) {}
+    explicit Value(lld v) : type(ValueType::INT), data(new lld(v)) {}
+    explicit Value(llf v) : type(ValueType::FLOAT), data(new llf(v)) {}
+    explicit Value(bool v) : type(ValueType::BOOLEAN), data(new bool(v)) {}
+    explicit Value(const std::string& v) : type(ValueType::STRING), data(new std::string(v)) {}
+    explicit Value(const std::vector<Value>& v) : type(ValueType::LIST), data(new std::vector<Value>(v)) {}
+    explicit Value(FunctionNode* func) : type(ValueType::FUNC), data(new FuncObj(func)) {}
 
         // copy constructor
         Value(const Value& other) : type(other.type), data(nullptr) {
             switch (type) {
                 case ValueType::INT:
-                    data = new long long(*other.getIntData());
+                    data = new lld(*other.getIntData());
                     break;
+                case ValueType::BOOLEAN:
+                    data = new bool(*other.getBoolData());
+                    break;    
                 case ValueType::FLOAT:
-                    data = new double(*other.getFloatData());
+                    data = new llf(*other.getFloatData());
                     break;
                 case ValueType::STRING:
-                    data = new string(*other.getStringData());
+                    data = new std::string(*other.getStringData());
                     break;
                 case ValueType::LIST:
-                    data = new vector<Value>(*other.getListData());
+                    data = new std::vector<Value>(*other.getListData());
                     break;
                 case ValueType::FUNC:
                     data = new FuncObj(other.getFuncData()->function_node);
@@ -74,40 +77,40 @@ class Value {
         inline bool is_function() const { return type == ValueType::FUNC; }
         inline bool is_none() const { return type == ValueType::NONE; }
 
-        const long long getInt() const {
+        lld getInt() const {
             if (not is_int()) {
-                throw runtime_error("Value is not an integer.");
+                throw std::runtime_error("Value is not an integer.");
             }
             return *getIntData();
         }
-        const double getFloat() const {
+        llf getFloat() const {
             if (not is_float()) {
-                throw runtime_error("Value is not a float.");
+                throw std::runtime_error("Value is not a float.");
             }
             return *getFloatData();
         }
-        const bool getBoolean() const {
+        bool getBoolean() const {
             if (not is_bool()) {
-                throw runtime_error("Value is not a boolean.");
+                throw std::runtime_error("Value is not a boolean.");
             }
             return *getBoolData();
         }
-        const string& getString() const {
+        const std::string& getString() const {
             if (not is_string()) {
-                throw runtime_error("Value is not a string.");
+                throw std::runtime_error("Value is not a std::string.");
             }
             return *getStringData();
         }
-        const vector<Value>& getList() const {
+        const std::vector<Value>& getList() const {
             if (not is_list()) {
-                throw runtime_error("Value is not a list.");
+                throw std::runtime_error("Value is not a list.");
             }
             return *getListData();
         }
 
         const FuncObj getFunc() const {
             if (not is_function()) {
-                throw runtime_error("Value is not a Function.");
+                throw std::runtime_error("Value is not a Function.");
             }
             return *getFuncData();
         }
@@ -120,19 +123,19 @@ class Value {
 
                 switch(type) {
                     case ValueType::INT:
-                        data = new long long(*other.getIntData());
+                        data = new lld(*other.getIntData());
                         break;
                     case ValueType::FLOAT:
-                        data = new double(*other.getFloatData());
+                        data = new llf(*other.getFloatData());
                         break;
                     case ValueType::BOOLEAN:
                         data = new bool(*other.getBoolData());
                         break;
                     case ValueType::STRING:
-                        data = new string(*other.getStringData());
+                        data = new std::string(*other.getStringData());
                         break;
                     case ValueType::LIST:
-                        data = new vector<Value>(*other.getListData());
+                        data = new std::vector<Value>(*other.getListData());
                         break;
                     case ValueType::FUNC:
                         data = new FuncObj(other.getFuncData()->function_node);
@@ -163,38 +166,38 @@ class Value {
                     case ValueType::FLOAT:
                         return new Value(getFloat() + other.getFloat());
                     case ValueType::INT:
-                        return new Value(getFloat() + (double)other.getInt());
+                        return new Value(getFloat() + (llf)other.getInt());
                     case ValueType::BOOLEAN:
-                        return new Value(getFloat() + (long long)other.getBoolean());
+                        return new Value(getFloat() + (llf)other.getBoolean());
                     default:
-                        throw runtime_error("Unsupported operands for +.");
+                        throw std::runtime_error("Unsupported operands for +.");
                 }
             } else if((*this).is_int()) {
                 switch(other.type) {
                     case ValueType::INT:
                         return new Value(getInt() + other.getInt());
                     case ValueType::FLOAT:
-                        return new Value((double)getInt() + other.getFloat());
+                        return new Value((llf)getInt() + other.getFloat());
                     case ValueType::BOOLEAN:
-                        return new Value(getInt() + (long long)other.getBoolean());
+                        return new Value(getInt() + (lld)other.getBoolean());
                     default:
-                        throw runtime_error("Unsupported operands for +.");
+                        throw std::runtime_error("Unsupported operands for +.");
                 }
             } else if((*this).is_bool()) {
                 switch(other.type) {
                     case ValueType::INT:
-                        return new Value((long long)getBoolean() + other.getInt());
+                        return new Value((lld)getBoolean() + other.getInt());
                     case ValueType::FLOAT:
-                        return new Value((double)getBoolean() + other.getFloat());
+                        return new Value((llf)getBoolean() + other.getFloat());
                     case ValueType::BOOLEAN:
-                        return new Value((long long)getBoolean() + (long long)other.getBoolean());
+                        return new Value((lld)getBoolean() + (lld)other.getBoolean());
                     default:
-                        throw runtime_error("Unsupported operands for +.");
+                        throw std::runtime_error("Unsupported operands for +.");
                 }
             } else if((*this).is_string() and other.is_string()) {  
                 return new Value(getString() + other.getString());
             } else {
-                throw runtime_error("Unsupported operands for +.");
+                throw std::runtime_error("Unsupported operands for +.");
             }
         }
         
@@ -206,40 +209,40 @@ class Value {
                     case ValueType::FLOAT:
                         return new Value(getFloat() * other.getFloat());
                     case ValueType::INT:
-                        return new Value(getFloat() * (double)other.getInt());
+                        return new Value(getFloat() * (llf)other.getInt());
                     case ValueType::BOOLEAN:
-                        return new Value(getFloat() * (double)other.getBoolean());
+                        return new Value(getFloat() * (llf)other.getBoolean());
                     default:
-                        throw runtime_error("Unsupported operands for *.");
+                        throw std::runtime_error("Unsupported operands for *.");
                 }
             } else if((*this).is_int()) {
                 switch(other.type) {
                     case ValueType::INT:
                         return new Value(getInt() * other.getInt());
                     case ValueType::FLOAT:
-                        return new Value((double)getInt() * other.getFloat());
+                        return new Value((llf)getInt() * other.getFloat());
                     case ValueType::BOOLEAN:
-                        return new Value(getInt() * (long long)other.getBoolean());
+                        return new Value(getInt() * (lld)other.getBoolean());
                     case ValueType::STRING:
-                        throw logic_error("Function not implemented yet");
+                        throw std::logic_error("Function not implemented yet");
                     default:
-                        throw runtime_error("Unsupported operands for *.");
+                        throw std::runtime_error("Unsupported operands for *.");
                 }
             } else if((*this).is_bool()) {
                 switch(other.type) {
                     case ValueType::INT:
-                        return new Value((int)getBoolean() * other.getInt());
+                        return new Value((lld)getBoolean() * other.getInt());
                     case ValueType::FLOAT:
-                        return new Value((double)getBoolean() * other.getFloat());
+                        return new Value((llf)getBoolean() * other.getFloat());
                     case ValueType::BOOLEAN:
-                        return new Value((long long)getBoolean() * (long long)other.getBoolean());
+                        return new Value((lld)getBoolean() * (lld)other.getBoolean());
                     default:
-                        throw runtime_error("Unsupported operands for *.");
+                        throw std::runtime_error("Unsupported operands for *.");
                 }
             } else if((*this).is_string() and other.is_int()) {  
-                throw logic_error("Feature not implemented yet");
+                throw std::logic_error("Feature not implemented yet");
             } else {
-                throw runtime_error("Unsupported operands for *.");
+                throw std::runtime_error("Unsupported operands for *.");
             }
         }
         
@@ -249,65 +252,65 @@ class Value {
             if((*this).is_float()) {
                 switch(other.type) {
                     case ValueType::FLOAT: {
-                        double rvalue = other.getFloat();
-                        if(rvalue == 0.0) throw runtime_error("Attempted to divide by zero");
+                        llf rvalue = other.getFloat();
+                        if(rvalue == 0.0) throw std::runtime_error("Attempted to divide by zero");
                         else return new Value(getFloat() / rvalue);
                     } 
                     case ValueType::INT: {
-                        double rvalue = (double) other.getInt();
-                        if(rvalue == 0.0) throw runtime_error("Attempted to divide by zero");
+                        llf rvalue = (llf) other.getInt();
+                        if(rvalue == 0.0) throw std::runtime_error("Attempted to divide by zero");
                         else return new Value(getFloat() / rvalue);
                     }
                     case ValueType::BOOLEAN: {    
-                        double rvalue = (double) other.getBoolean();
-                        if(rvalue == 0.0) throw runtime_error("Attempted to divide by zero");
+                        llf rvalue = (llf) other.getBoolean();
+                        if(rvalue == 0.0) throw std::runtime_error("Attempted to divide by zero");
                         else return new Value(getFloat() / rvalue);
                     }
                     default:
-                        throw runtime_error("Unsupported operands for /.");
+                        throw std::runtime_error("Unsupported operands for /.");
                 }
             } else if((*this).is_int()) {
                 switch(other.type) {
                     case ValueType::INT: {
-                        long long rvalue = other.getInt();
-                        if(rvalue == 0L) throw runtime_error("Attempted to divide by zero");
+                        lld rvalue = other.getInt();
+                        if(rvalue == 0L) throw std::runtime_error("Attempted to divide by zero");
                         return new Value(getInt() / rvalue);
                     }
                     case ValueType::FLOAT: {
-                        double rvalue = other.getFloat();
-                        if(rvalue == 0.0) throw runtime_error("Attempted to divide by zero");
-                        return new Value((double)getInt() / rvalue);
+                        llf rvalue = other.getFloat();
+                        if(rvalue == 0.0) throw std::runtime_error("Attempted to divide by zero");
+                        return new Value((llf)getInt() / rvalue);
                     }
                     case ValueType::BOOLEAN: {
-                        long long rvalue = (int) other.getBoolean();
-                        if(rvalue == 0L) throw runtime_error("Attempted to divide by zero");
+                        lld rvalue = (lld) other.getBoolean();
+                        if(rvalue == 0L) throw std::runtime_error("Attempted to divide by zero");
                         return new Value(getInt() / rvalue);
                     }
                     default:
-                        throw runtime_error("Unsupported operands for /.");
+                        throw std::runtime_error("Unsupported operands for /.");
                 }
             } else if((*this).is_bool()) {
                 switch(other.type) {
                     case ValueType::INT: {
-                        long long rvalue = other.getInt();
-                        if(rvalue == 0L) throw runtime_error("Attempted to divide by zero");
-                        else return new Value((int)getBoolean() / rvalue);
+                        lld rvalue = other.getInt();
+                        if(rvalue == 0L) throw std::runtime_error("Attempted to divide by zero");
+                        else return new Value((lld)getBoolean() / rvalue);
                     }
                     case ValueType::FLOAT: {
-                        double rvalue = other.getFloat();
-                        if(rvalue == 0.0) throw runtime_error("Attempted to divide by zero");
-                        else return new Value((double)getBoolean() / rvalue);
+                        llf rvalue = other.getFloat();
+                        if(rvalue == 0.0) throw std::runtime_error("Attempted to divide by zero");
+                        else return new Value((llf)getBoolean() / rvalue);
                     }
                     case ValueType::BOOLEAN: {
-                        long long rvalue = (int) other.getBoolean();
-                        if(rvalue == 0L) throw runtime_error("Attempted to divide by zero");
-                        else return new Value((int)getBoolean() / rvalue);
+                        lld rvalue = (lld) other.getBoolean();
+                        if(rvalue == 0L) throw std::runtime_error("Attempted to divide by zero");
+                        else return new Value((lld)getBoolean() / rvalue);
                     }
                     default:
-                        throw runtime_error("Unsupported operands for /.");
+                        throw std::runtime_error("Unsupported operands for /.");
                 }
             } else {
-                throw runtime_error("Unsupported operands for /.");
+                throw std::runtime_error("Unsupported operands for /.");
             }
         }
         
@@ -315,47 +318,46 @@ class Value {
         Value* operator%(const Value& other) const {
             
             if((*this).is_float()) {
-                throw logic_error("Feature not implemented yet");
+                throw std::logic_error("Feature not implemented yet");
                 
             } else if((*this).is_int()) {
                 switch(other.type) {
                     case ValueType::INT: {
-                        long long rvalue = other.getInt();
-                        if(rvalue == 0L) throw runtime_error("Modulo by zero");
-                        auto value = new Value(getInt() % rvalue);
-                        return value;
-                    }
-                    case ValueType::FLOAT: {
-                        throw logic_error("Feature not implemented yet");
-                    }
-                    case ValueType::BOOLEAN: {
-                        long long rvalue = (int) other.getBoolean();
-                        if(rvalue == 0L) throw runtime_error("Modulo by zero");
+                        lld rvalue = other.getInt();
+                        if(rvalue == 0L) throw std::runtime_error("Modulo by zero");
                         return new Value(getInt() % rvalue);
                     }
+                    case ValueType::BOOLEAN: {
+                        lld rvalue = (lld) other.getBoolean();
+                        if(rvalue == 0L) throw std::runtime_error("Modulo by zero");
+                        return new Value(getInt() % rvalue);
+                    }
+                    case ValueType::FLOAT: {
+                        throw std::logic_error("Feature not implemented yet");
+                    }
                     default:
-                        throw runtime_error("Unsupported operands for %.");
+                        throw std::runtime_error("Unsupported operands for %.");
                 }
             } else if((*this).is_bool()) {
                 switch(other.type) {
                     case ValueType::INT: {
-                        long long rvalue = other.getInt();
-                        if(rvalue == 0L) throw runtime_error("Modulo by zero");
-                        else return new Value((int)getBoolean() % rvalue);
+                        lld rvalue = other.getInt();
+                        if(rvalue == 0L) throw std::runtime_error("Modulo by zero");
+                        else return new Value((lld)getBoolean() % rvalue);
                     }
                     case ValueType::FLOAT: {
-                        throw logic_error("Feature not implemented yet");
+                        throw std::logic_error("Feature not implemented yet");
                     }
                     case ValueType::BOOLEAN: {
-                        long long rvalue = (int) other.getBoolean();
-                        if(rvalue == 0L) throw runtime_error("Modulo by zero");
-                        else return new Value((int)getBoolean() % rvalue);
+                        lld rvalue = (lld) other.getBoolean();
+                        if(rvalue == 0L) throw std::runtime_error("Modulo by zero");
+                        else return new Value((lld)getBoolean() % rvalue);
                     }
                     default:
-                        throw runtime_error("Unsupported operands for %.");
+                        throw std::runtime_error("Unsupported operands for %.");
                 }
             } else {
-                throw runtime_error("Unsupported operands for %.");
+                throw std::runtime_error("Unsupported operands for %.");
             }
         }
         
@@ -367,9 +369,9 @@ class Value {
                 case ValueType::FLOAT:
                     return new Value(-getFloat());
                 case ValueType::BOOLEAN:
-                    return new Value(-(long long)getBoolean());
+                    return new Value(-(lld)getBoolean());
                 default:
-                    throw runtime_error("Unsupported operands for unary -.");
+                    throw std::runtime_error("Unsupported operands for unary -.");
             }
         }
         
@@ -379,9 +381,9 @@ class Value {
                 case ValueType::INT:
                     return new Value(~getInt());
                 case ValueType::BOOLEAN:
-                    return new Value(~(long long)getBoolean());
+                    return new Value(~(lld)getBoolean());
                 default:
-                    throw runtime_error("Unsupported operands for unary .");
+                    throw std::runtime_error("Unsupported operands for unary .");
             }
         }
         
@@ -398,36 +400,36 @@ class Value {
                     case ValueType::FLOAT:
                         return new Value(getFloat() - other.getFloat());
                     case ValueType::INT:
-                        return new Value(getFloat() - (double)other.getInt());
+                        return new Value(getFloat() - (llf)other.getInt());
                     case ValueType::BOOLEAN:
-                        return new Value(getFloat() - (double)other.getBoolean());
+                        return new Value(getFloat() - (llf)other.getBoolean());
                     default:
-                        throw runtime_error("Unsupported operands for -.");
+                        throw std::runtime_error("Unsupported operands for -.");
                 }
             } else if((*this).is_int()) {
                 switch(other.type) {
                     case ValueType::INT:
                         return new Value(getInt() - other.getInt());
                     case ValueType::FLOAT:
-                        return new Value((double)getInt() - other.getFloat());
+                        return new Value((llf)getInt() - other.getFloat());
                     case ValueType::BOOLEAN:
-                        return new Value(getInt() - (long long)other.getBoolean());
+                        return new Value(getInt() - (lld)other.getBoolean());
                     default:
-                        throw runtime_error("Unsupported operands for -.");
+                        throw std::runtime_error("Unsupported operands for -.");
                 }
             } else if((*this).is_bool()) {
                 switch(other.type) {
                     case ValueType::BOOLEAN:
-                        return new Value((long long)getBoolean() - (long long)other.getBoolean());
+                        return new Value((lld)getBoolean() - (lld)other.getBoolean());
                     case ValueType::INT:
-                        return new Value((long long)getBoolean() - other.getInt());
+                        return new Value((lld)getBoolean() - other.getInt());
                     case ValueType::FLOAT:
-                        return new Value((double)getBoolean() - other.getFloat());
+                        return new Value((llf)getBoolean() - other.getFloat());
                     default:
-                        throw runtime_error("Unsupported operands for -.");
+                        throw std::runtime_error("Unsupported operands for -.");
                 }
             } else {
-                throw runtime_error("Unsupported operands for -.");
+                throw std::runtime_error("Unsupported operands for -.");
             }
         }
         // TODO: replace with call to __and__ later
@@ -438,21 +440,21 @@ class Value {
                     case ValueType::INT:
                         return new Value(getInt() & other.getInt());
                     case ValueType::BOOLEAN:
-                        return new Value(getInt() & (long long)other.getBoolean());
+                        return new Value(getInt() & (lld)other.getBoolean());
                     default:
-                        throw runtime_error("Unsupported operands for &.");
+                        throw std::runtime_error("Unsupported operands for &.");
                 }
             } else if((*this).is_bool()) {
                 switch(other.type) {
                     case ValueType::BOOLEAN:
-                        return new Value((long long)getBoolean() & (long long)other.getBoolean());
+                        return new Value((lld)getBoolean() & (lld)other.getBoolean());
                     case ValueType::INT:
-                        return new Value((long long)getBoolean() & other.getInt());
+                        return new Value((lld)getBoolean() & other.getInt());
                     default:
-                        throw runtime_error("Unsupported operands for &.");
+                        throw std::runtime_error("Unsupported operands for &.");
                 }
             } else {
-                throw runtime_error("Unsupported operands for &.");
+                throw std::runtime_error("Unsupported operands for &.");
             }
         }
         
@@ -464,21 +466,21 @@ class Value {
                     case ValueType::INT:
                         return new Value(getInt() | other.getInt());
                     case ValueType::BOOLEAN:
-                        return new Value(getInt() | (long long)other.getBoolean());
+                        return new Value(getInt() | (lld)other.getBoolean());
                     default:
-                        throw runtime_error("Unsupported operands for |.");
+                        throw std::runtime_error("Unsupported operands for |.");
                 }
             } else if((*this).is_bool()) {
                 switch(other.type) {
                     case ValueType::BOOLEAN:
-                        return new Value((long long)getBoolean() | (long long)other.getBoolean());
+                        return new Value((lld)getBoolean() | (lld)other.getBoolean());
                     case ValueType::INT:
-                        return new Value((long long)getBoolean() | other.getInt());
+                        return new Value((lld)getBoolean() | other.getInt());
                     default:
-                        throw runtime_error("Unsupported operands for |.");
+                        throw std::runtime_error("Unsupported operands for |.");
                 }
             } else {
-                throw runtime_error("Unsupported operands for |.");
+                throw std::runtime_error("Unsupported operands for |.");
             }
         }
 
@@ -490,21 +492,21 @@ class Value {
                     case ValueType::INT:
                         return new Value(getInt() ^ other.getInt());
                     case ValueType::BOOLEAN:
-                        return new Value(getInt() ^ (long long)other.getBoolean());
+                        return new Value(getInt() ^ (lld)other.getBoolean());
                     default:
-                        throw runtime_error("Unsupported operands for ^.");
+                        throw std::runtime_error("Unsupported operands for ^.");
                 }
             } else if((*this).is_bool()) {
                 switch(other.type) {
                     case ValueType::BOOLEAN:
-                        return new Value((long long)getBoolean() ^ (long long)other.getBoolean());
+                        return new Value((lld)getBoolean() ^ (lld)other.getBoolean());
                     case ValueType::INT:
-                        return new Value((long long)getBoolean() ^ other.getInt());
+                        return new Value((lld)getBoolean() ^ other.getInt());
                     default:
-                        throw runtime_error("Unsupported operands for ^");
+                        throw std::runtime_error("Unsupported operands for ^");
                 }
             } else {
-                throw runtime_error("Unsupported operands for ^.");
+                throw std::runtime_error("Unsupported operands for ^.");
             }
         }
 
@@ -516,21 +518,21 @@ class Value {
                     case ValueType::INT:
                         return new Value(getInt() << other.getInt());
                     case ValueType::BOOLEAN:
-                        return new Value(getInt() << (long long)other.getBoolean());
+                        return new Value(getInt() << (lld)other.getBoolean());
                     default:
-                        throw runtime_error("Unsupported operands for <<.");
+                        throw std::runtime_error("Unsupported operands for <<.");
                 }
             } else if((*this).is_bool()) {
                 switch(other.type) {
                     case ValueType::BOOLEAN:
-                        return new Value((long long)getBoolean() << (long long)other.getBoolean());
+                        return new Value((lld)getBoolean() << (lld)other.getBoolean());
                     case ValueType::INT:
-                        return new Value((long long)getBoolean() << other.getInt());
+                        return new Value((lld)getBoolean() << other.getInt());
                     default:
-                        throw runtime_error("Unsupported operands for <<.");
+                        throw std::runtime_error("Unsupported operands for <<.");
                 }
             } else {
-                throw runtime_error("Unsupported operands for <<.");
+                throw std::runtime_error("Unsupported operands for <<.");
             }
         }
 
@@ -542,21 +544,21 @@ class Value {
                     case ValueType::INT:
                         return new Value(getInt() >> other.getInt());
                     case ValueType::BOOLEAN:
-                        return new Value(getInt() >> (long long)other.getBoolean());
+                        return new Value(getInt() >> (lld)other.getBoolean());
                     default:
-                        throw runtime_error("Unsupported operands for >>.");
+                        throw std::runtime_error("Unsupported operands for >>.");
                 }
             } else if((*this).is_bool()) {
                 switch(other.type) {
                     case ValueType::BOOLEAN:
-                        return new Value((long long)getBoolean() >> (long long)other.getBoolean());
+                        return new Value((lld)getBoolean() >> (lld)other.getBoolean());
                     case ValueType::INT:
-                        return new Value((long long)getBoolean() >> other.getInt());
+                        return new Value((lld)getBoolean() >> other.getInt());
                     default:
-                        throw runtime_error("Unsupported operands for >>.");
+                        throw std::runtime_error("Unsupported operands for >>.");
                 }
             } else {
-                throw runtime_error("Unsupported operands for >>.");
+                throw std::runtime_error("Unsupported operands for >>.");
             }
         }
 
@@ -576,13 +578,13 @@ class Value {
                         return new Value(getBoolean() == other.getBoolean());
                         break;
                     case ValueType::INT:
-                        return new Value((long long)getBoolean() == other.getInt());
+                        return new Value((lld)getBoolean() == other.getInt());
                         break;
                     case ValueType::FLOAT:
-                        return new Value((double)getBoolean() == other.getFloat());
+                        return new Value((llf)getBoolean() == other.getFloat());
                         break;
                     default:
-                        throw runtime_error("Unsupported operands for ==.");
+                        throw std::runtime_error("Unsupported operands for ==.");
                 } 
             } else if((*this).is_int()) {
                 switch(other.type) {
@@ -590,13 +592,13 @@ class Value {
                         return new Value(getInt() == other.getInt());
                         break;
                     case ValueType::FLOAT:
-                        return new Value((double)getInt() == other.getFloat());
+                        return new Value((llf)getInt() == other.getFloat());
                         break;
                     case ValueType::BOOLEAN:
-                        return new Value(getInt() == (long long)other.getBoolean());
+                        return new Value(getInt() == (lld)other.getBoolean());
                         break;
                     default:
-                        throw runtime_error("Unsupported operands for ==.");
+                        throw std::runtime_error("Unsupported operands for ==.");
                 }
                 
             } else if((*this).is_float()) {
@@ -605,16 +607,16 @@ class Value {
                         return new Value(getFloat() == other.getFloat());
                         break;
                     case ValueType::INT:
-                        return new Value(getFloat() == (double)other.getInt());
+                        return new Value(getFloat() == (llf)other.getInt());
                         break;
                     case ValueType::BOOLEAN:
-                        return new Value(getFloat() == (double)other.getBoolean());
+                        return new Value(getFloat() == (llf)other.getBoolean());
                         break;
                     default:
-                        throw runtime_error("Unsupported operands for ==.");
+                        throw std::runtime_error("Unsupported operands for ==.");
                 }
             } else {
-                throw runtime_error("Unsupported operands for equality.");
+                throw std::runtime_error("Unsupported operands for equality.");
             }
         }
 
@@ -627,13 +629,13 @@ class Value {
                         return new Value(getInt() < other.getInt());
                         break;
                     case ValueType::FLOAT:
-                        return new Value((double)getInt() < other.getFloat());
+                        return new Value((llf)getInt() < other.getFloat());
                         break;
                     case ValueType::BOOLEAN:
-                        return new Value(getInt() < (long long)other.getBoolean());
+                        return new Value(getInt() < (lld)other.getBoolean());
                         break;
                     default:
-                        throw runtime_error("Unsupported operands for comparison.");
+                        throw std::runtime_error("Unsupported operands for comparison.");
                 }
             } else if((*this).is_float()) {
                 switch(other.type) {
@@ -641,13 +643,13 @@ class Value {
                         return new Value(getFloat() < other.getFloat());
                         break;
                     case ValueType::INT:
-                        return new Value(getFloat() < (double)other.getInt());
+                        return new Value(getFloat() < (llf)other.getInt());
                         break;
                     case ValueType::BOOLEAN:
-                        return new Value(getFloat() < (double)other.getBoolean());
+                        return new Value(getFloat() < (llf)other.getBoolean());
                         break;
                     default:
-                        throw runtime_error("Unsupported operands for comparison.");
+                        throw std::runtime_error("Unsupported operands for comparison.");
                 }
             } else if((*this).is_bool()) {
                 switch(other.type) {
@@ -655,16 +657,16 @@ class Value {
                         return new Value(getBoolean() < other.getBoolean());
                         break;
                     case ValueType::INT:
-                        return new Value((long long)getBoolean() < other.getInt());
+                        return new Value((lld)getBoolean() < other.getInt());
                         break;
                     case ValueType::FLOAT:
-                        return new Value((double)getBoolean() < other.getFloat());
+                        return new Value((llf)getBoolean() < other.getFloat());
                         break;
                     default:
-                        throw runtime_error("Unsupported operands for comparison.");
+                        throw std::runtime_error("Unsupported operands for comparison.");
                 }
             } else {
-                throw runtime_error("Unsupported operands for comparison.");
+                throw std::runtime_error("Unsupported operands for comparison.");
             }
         }
 
@@ -677,13 +679,13 @@ class Value {
                         return new Value(getInt() > other.getInt());
                         break;
                     case ValueType::FLOAT:
-                        return new Value((double)getInt() > other.getFloat());
+                        return new Value((llf)getInt() > other.getFloat());
                         break;
                     case ValueType::BOOLEAN:
-                        return new Value(getInt() > (long long)other.getBoolean());
+                        return new Value(getInt() > (lld)other.getBoolean());
                         break;
                     default:
-                        throw runtime_error("Unsupported operands for comparison.");
+                        throw std::runtime_error("Unsupported operands for comparison.");
                 }
             } else if((*this).is_float()) {
                 switch(other.type) {
@@ -691,13 +693,13 @@ class Value {
                         return new Value(getFloat() > other.getFloat());
                         break;
                     case ValueType::INT:
-                        return new Value(getFloat() > (double)other.getInt());
+                        return new Value(getFloat() > (llf)other.getInt());
                         break;
                     case ValueType::BOOLEAN:
-                        return new Value(getFloat() > (double)other.getBoolean());
+                        return new Value(getFloat() > (llf)other.getBoolean());
                         break;
                     default:
-                        throw runtime_error("Unsupported operands for comparison.");
+                        throw std::runtime_error("Unsupported operands for comparison.");
                 }
             } else if((*this).is_bool()) {
                 switch(other.type) {
@@ -705,21 +707,21 @@ class Value {
                         return new Value(getBoolean() > other.getBoolean());
                         break;
                     case ValueType::INT:
-                        return new Value((long long)getBoolean() > other.getInt());
+                        return new Value((lld)getBoolean() > other.getInt());
                         break;
                     case ValueType::FLOAT:
-                        return new Value((double)getBoolean() > other.getFloat());
+                        return new Value((llf)getBoolean() > other.getFloat());
                         break;
                     default:
-                        throw runtime_error("Unsupported operands for comparison.");
+                        throw std::runtime_error("Unsupported operands for comparison.");
                 }
             } else {
-                throw runtime_error("Unsupported operands for comparison.");
+                throw std::runtime_error("Unsupported operands for comparison.");
             }
         }
 
         // TODO: replace with __repr__ later
-        friend ostream& operator<<(ostream& out, const Value& value) {
+        friend std::ostream& operator<<(std::ostream& out, const Value& value) {
             if(value.is_none()) {
                 out << "None";
             } else if(value.is_bool()) {
@@ -731,7 +733,7 @@ class Value {
             } else if(value.is_string()) {
                 out << value.getString();
             } else {
-                throw runtime_error("Yet not printable object.");
+                throw std::runtime_error("Yet not printable object.");
             }
             return out;
         }
@@ -751,7 +753,7 @@ class Value {
                 case ValueType::STRING:
                     return getString() != ""; break;
                 default:
-                    throw runtime_error("Yet not evaluatable object.");
+                    throw std::runtime_error("Yet not evaluatable object.");
             }
         }
 
@@ -775,22 +777,22 @@ class Value {
         void* data;
         int Reference_counting = 0;
 
-        const long long* getIntData() const {
-            return static_cast<long long*>(data);
+        const lld* getIntData() const {
+            return static_cast<lld*>(data);
         }
-        const double* getFloatData() const {
-            return static_cast<double*>(data);
+        const llf* getFloatData() const {
+            return static_cast<llf*>(data);
         }
         const bool* getBoolData() const {
             return static_cast<bool*>(data);
         }
-        const string* getStringData() const {
-            return static_cast<string*>(data);
+        const std::string* getStringData() const {
+            return static_cast<std::string*>(data);
         } 
-        const vector<Value>* getListData() const {
-            return static_cast<vector<Value>*>(data);
+        const std::vector<Value>* getListData() const {
+            return static_cast<std::vector<Value>*>(data);
         }
-         const FuncObj* getFuncData() const {
+        const FuncObj* getFuncData() const {
             return static_cast<FuncObj*>(data);
         }
 

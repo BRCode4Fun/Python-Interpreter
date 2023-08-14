@@ -9,13 +9,10 @@ void GarbageCollector::Delete_objects() {
 
             std::vector<Value*>::iterator position = std::find(objects.begin(), objects.end(), object);
                     
-            if(position != objects.end())
-            {
+            if(position != objects.end()){
                 objects.erase(position);
                 delete object;
             }
-
-            
         }
     }
 
