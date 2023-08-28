@@ -1,74 +1,74 @@
 #include "ast.hpp"
 
-Value* AssignNode::accept(NodeVisitor* visitor) {
+PyObject* AssignNode::accept(NodeVisitor* visitor) {
     return visitor->visitAssignNode(this);
 }
 
-Value* CallNode::accept(NodeVisitor* visitor) {
+PyObject* CallNode::accept(NodeVisitor* visitor) {
     return visitor->visitCallNode(this);
 }
 
-Value* BinaryOpNode::accept(NodeVisitor* visitor) {
+PyObject* BinaryOpNode::accept(NodeVisitor* visitor) {
     return visitor->visitBinaryOpNode(this);  
 }
 
-Value* TernaryOpNode::accept(NodeVisitor* visitor) {
+PyObject* TernaryOpNode::accept(NodeVisitor* visitor) {
     return visitor->visitTernaryOpNode(this);  
 }
 
-Value* NameNode::accept(NodeVisitor* visitor) {
+PyObject* NameNode::accept(NodeVisitor* visitor) {
     return visitor->visitNameNode(this);
 }
 
-Value* StringNode::accept(NodeVisitor* visitor) {
+PyObject* StringNode::accept(NodeVisitor* visitor) {
     return visitor->visitStringNode(this);
 }
 
-Value* BooleanNode::accept(NodeVisitor* visitor) {
+PyObject* BooleanNode::accept(NodeVisitor* visitor) {
     return visitor->visitBooleanNode(this);
 }
 
-Value* UnaryOpNode::accept(NodeVisitor* visitor) {
+PyObject* UnaryOpNode::accept(NodeVisitor* visitor) {
     return visitor->visitUnaryOpNode(this);
 }
 
-Value* IntNode::accept(NodeVisitor* visitor) {
+PyObject* IntNode::accept(NodeVisitor* visitor) {
     return visitor->visitIntNode(this);
 }
 
-Value* FloatNode::accept(NodeVisitor* visitor) {
+PyObject* FloatNode::accept(NodeVisitor* visitor) {
     return visitor->visitFloatNode(this);
 }
 
-Value* ProgramNode::accept(NodeVisitor* visitor) {
+PyObject* ProgramNode::accept(NodeVisitor* visitor) {
     return visitor->visitProgramNode(this);
 }
 
-Value* PrintNode::accept(NodeVisitor* visitor) {
+PyObject* PrintNode::accept(NodeVisitor* visitor) {
     return visitor->visitPrintNode(this);
 }
 
-Value* NullNode::accept(NodeVisitor* visitor) {
+PyObject* NullNode::accept(NodeVisitor* visitor) {
     return visitor->visitNullNode(this);
 }
 
-Value* BlockNode::accept(NodeVisitor* visitor) {
+PyObject* BlockNode::accept(NodeVisitor* visitor) {
     return  visitor->visitBlockNode(this);
 }
 
-Value* WhileNode::accept(NodeVisitor* visitor) {
+PyObject* WhileNode::accept(NodeVisitor* visitor) {
     return visitor->visitWhileNode(this);
 }
 
-Value* IfNode::accept(NodeVisitor* visitor) {
+PyObject* IfNode::accept(NodeVisitor* visitor) {
     return visitor->visitIfNode(this);
 }
 
-Value* FunctionNode::accept(NodeVisitor* visitor) {
+PyObject* FunctionNode::accept(NodeVisitor* visitor) {
     return visitor->visitFunctionNode(this);
 }
 
-Value* ReturnNode::accept(NodeVisitor* visitor) {
+PyObject* ReturnNode::accept(NodeVisitor* visitor) {
     return visitor->visitReturnNode(this);
 }
 

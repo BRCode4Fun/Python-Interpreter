@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <vector>
 #include "../libs/lexer/lexer.hpp"
 #include "../libs/parser/parser.hpp"
 #include "../libs/ast/ast.hpp"
@@ -8,56 +9,54 @@
 #pragma GCC optimize("Ofast")
 #pragma GCC target("avx,avx2,fma")
 
-void show_tokens(std::vector<Token>& tokens){
+using namespace std;
 
-    for(unsigned long i = 0; i < tokens.size(); i++) {
-        std::cout << tokens[i] << '\n';
+inline void show_tokens(const vector<Token>& tokens) {
+    for (const auto& token : tokens) {
+        cout << token << '\n';
     }
-    std::cout << std::flush;
+    cout << flush;
 }
 
 int main(int argc, char* argv[]) {
-
-    std::ios_base::sync_with_stdio(false);
-    std::cin.tie(0); std::cout.tie(0);
+    ios_base::sync_with_stdio(false);
+    cin.tie(nullptr);
+    cout.tie(nullptr);
 
     if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " [filename].py\n";
+        cerr << "Usage: " << argv[0] << " [filename].py\n";
         return 1;
     }
-    std::ifstream inputFile(argv[1]);
+
+    const char* const filename = argv[1];
+    ifstream inputFile(filename);
 
     if (!inputFile) {
-        std::cerr << "Error: could not open file '" << argv[1] << "'\n";
+        cerr << "Error: could not open file '" << filename << "'\n";
         return 1;
     }
-    std::string source((std::istreambuf_iterator<char>(inputFile)), std::istreambuf_iterator<char>());
 
-    Lexer lexer(source);
-    Interpreter interpreter;
-    
-    std::vector<Token> tokens;
-    
+    string source((istreambuf_iterator<char>(inputFile)), {});
+
     try {
-        tokens = lexer.scanTokens(); 
-    } catch(const std::runtime_error& err) {
-        std::cerr << err.what() << std::endl; exit(EXIT_FAILURE);
+        Lexer lexer(source);
+        vector<Token> tokens = lexer.scanTokens();
+
+        #ifdef DEBUG
+            /* To define DEBUG, use `make DEBUG=1` when compiling */
+            show_tokens(tokens);
+        #endif
+
+        Parser parser(tokens);
+        ProgramNode* root = parser.parse();
+
+        Interpreter interpreter;
+        interpreter.interpret(root);
+    } catch (const runtime_error& err) {
+        cerr << err.what() << '\n';
+        return EXIT_FAILURE;
     }
-    
-    #ifdef DEBUG
-        /* to define DEBUG, use `make DEBUG=1` when compiling */
-        show_tokens(tokens);
-    #endif
-    
-    Parser parser(tokens);
-    ProgramNode* root;
-    
-    try {
-        root = parser.parse();
-    } catch(const std::runtime_error& err) {
-        std::cerr << err.what() << std::endl; exit(EXIT_FAILURE);
-    }
-    interpreter.interpret(root);
 
     return 0;
 }
+

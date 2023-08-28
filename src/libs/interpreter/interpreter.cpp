@@ -6,48 +6,55 @@ void todo() {
     throw std::logic_error("Function not implemented yet");
 }
 
-Value* Interpreter::visitProgramNode(ProgramNode* node) {
+PyObject* Interpreter::visitProgramNode(ProgramNode* node) {
     return node->body->accept(this);
 }
 
-Value* Interpreter::visitPrintNode(PrintNode* node) {
-    Value* argValue = nullptr;
+PyObject* Interpreter::visitPrintNode(PrintNode* node) {
+    PyObject* argValue = nullptr;
 
     if (node->args != nullptr) {
         argValue = node->args[0].accept(this);
     }
     if (argValue != nullptr) {
-        std::cout << *(argValue);
+        if((*argValue).isStr()) {
+            const PyStr* value = dynamic_cast<const PyStr*>(argValue);
+            std::cout << (*value).getStr();
+        } else {
+            std::cout << *argValue;
+        }
     }
     std::cout << "\n" << std::flush;
 
-    return new Value(1.0L);
+    return new PyNone();
 }
 
-Value* Interpreter::visitIntNode(IntNode* node){
-    Value* value = new Value(node->getValue());
-    GC->Add_object(value);
+PyObject* Interpreter::visitIntNode(IntNode* node){
+    const std::string& str = node->getLexeme();
+    PyObject* value = new PyInt(str);
+    GC.pushObject(value);
     return value;
 }
 
-Value* Interpreter::visitFloatNode(FloatNode* node){
-    Value* value = new Value(node->getValue());
-    GC->Add_object(value);
+PyObject* Interpreter::visitFloatNode(FloatNode* node){
+    const std::string& str = node->getLexeme();
+    PyObject* value = new PyFloat(str);
+    GC.pushObject(value);
     return value;
 }
 
-Value* Interpreter::visitFunctionNode(FunctionNode* node){
+PyObject* Interpreter::visitFunctionNode(FunctionNode* node){
 
-    Value* value = new Value(node);
     const std::string& fname = node->getName();
-    Global_Environment->define(fname, value);
+    PyFnObj* value = new PyFnObj(node);
+    __globals__->define(fname, value);
     
-    return new Value();
+    return new PyNone();
 }
 
-Value* Interpreter::visitBlockNode(BlockNode* node) {
+PyObject* Interpreter::visitBlockNode(BlockNode* node) {
 
-    Value* ret_value = nullptr;
+    PyObject* ret_value = nullptr;
 
     for(auto statement : node->statements) {
 
@@ -60,26 +67,26 @@ Value* Interpreter::visitBlockNode(BlockNode* node) {
     return ret_value;
 }
 
-Value* Interpreter::visitWhileNode(WhileNode* node){
+PyObject* Interpreter::visitWhileNode(WhileNode* node){
 
-    Value* cond = node->cond->accept(this);
+    PyObject* cond = node->cond->accept(this);
 
      while(cond->isTruthy()){
      	node->body->accept(this);
         cond = node->cond->accept(this);
      }
-     return new Value(-1.0L);
+     return new PyNone();
 }
 
-Value* Interpreter::visitIfNode(IfNode* node) {
+PyObject* Interpreter::visitIfNode(IfNode* node) {
 
-    Value* cond = node->cond->accept(this);
+    PyObject* cond = node->cond->accept(this);
 
     if (cond->isTruthy()) {
         return node->trueBranch->accept(this);
     } else {
         for (const auto& elif : node->elifBranches) {
-            Value* elifCond = elif.first->accept(this);
+            PyObject* elifCond = elif.first->accept(this);
             if (elifCond->isTruthy()) {
                 return elif.second->accept(this);
             }
@@ -88,12 +95,12 @@ Value* Interpreter::visitIfNode(IfNode* node) {
             return node->elseBranch->accept(this);
         }
     }
-    return new Value(-1.0L);
+    return new PyNone();
 }
 
-Value* Interpreter::visitTernaryOpNode(TernaryOpNode* node) {
+PyObject* Interpreter::visitTernaryOpNode(TernaryOpNode* node) {
 
-    Value* cond = node->cond->accept(this);
+    PyObject* cond = node->cond->accept(this);
 
     if(cond->isTruthy()) {
         return node->left->accept(this);
@@ -102,80 +109,80 @@ Value* Interpreter::visitTernaryOpNode(TernaryOpNode* node) {
     }
 }
 
-Value* Interpreter::visitBinaryOpNode(BinaryOpNode* node)  {
+PyObject* Interpreter::visitBinaryOpNode(BinaryOpNode* node)  {
 
-    Value* leftValue = node->left->accept(this);
-    leftValue->Increment_Reference_counting();
+    PyObject* leftValue = node->left->accept(this);
+    leftValue->incRc();
 
-    Value* rightValue = node->right->accept(this);
-    rightValue->Increment_Reference_counting();
+    PyObject* rightValue = node->right->accept(this);
+    rightValue->incRc();
 
-    Value* value = nullptr;
+    PyObject* value = nullptr;
 
     switch(node->op.type) {
         case TokenType::Plus: // TODO: replace with __add__ call
             value = *leftValue + *rightValue;
-            GC->Add_object(value);
+            GC.pushObject(value);
             break;
         case TokenType::Minus: // TODO: replace with __sub__ call
             value = *leftValue - *rightValue;
-            GC->Add_object(value); 
+            GC.pushObject(value); 
             break;
         case TokenType::Star: // TODO: replace with __mul__ call
             value = *leftValue * *rightValue;
-            GC->Add_object(value); 
+            GC.pushObject(value); 
             break;
         case TokenType::Slash: // TODO: replace with __truediv__ call
             value = *leftValue / *rightValue;
-            GC->Add_object(value); 
+            GC.pushObject(value); 
             break;
         case TokenType::Ampersand: // TODO: replace with __and__ call
             value = *leftValue & *rightValue;
-            GC->Add_object(value); 
+            GC.pushObject(value); 
             break;
         case TokenType::Pipe: // TODO: replace with __or__ call
             value = *leftValue | *rightValue;
-            GC->Add_object(value); 
+            GC.pushObject(value); 
             break;
         case TokenType::Caret: // TODO: replace with __xor__ call
             value = *leftValue ^ *rightValue;
-            GC->Add_object(value); 
+            GC.pushObject(value); 
             break;
         case TokenType::Mod: // TODO: replace with __mod__ call
             value = *leftValue % *rightValue;
-            GC->Add_object(value); 
+            GC.pushObject(value); 
             break;
         case TokenType::EqualEqual: // TODO: replace with __eq__ call
             value = *leftValue == *rightValue;
-            GC->Add_object(value); 
+            GC.pushObject(value); 
             break;
         case TokenType::BangEqual: // TODO: replace with __ne__ call
             value = !(*(*leftValue == *rightValue));
-            GC->Add_object(value);
+            GC.pushObject(value);
             break;
         case TokenType::Less: // TODO: replace with __lt__ call
             value = *leftValue < *rightValue; 
-            GC->Add_object(value);
+            GC.pushObject(value);
             break;
         case TokenType::Greater: // TODO: replace with __gt__ call
             value = *leftValue > *rightValue;
-            GC->Add_object(value); 
+            GC.pushObject(value); 
             break;
         case TokenType::LessEqual: // TODO: replace with __le__ call
             value = !(*(*leftValue > *rightValue));
-            GC->Add_object(value);
+            GC.pushObject(value);
             break;
         case TokenType::GreaterEqual: // TODO: replace with __ge__ call
             value = !(*(*leftValue < *rightValue));
-            GC->Add_object(value);
+            GC.pushObject(value);
             break;
         case TokenType::LeftShift: // TODO: replace with __lshift__ call
             value = *leftValue << *rightValue;
-            GC->Add_object(value); 
+            GC.pushObject(value); 
             break;
         case TokenType::RightShift: // TODO: replace with __rshift__ call
             value = *leftValue >> *rightValue;
-            GC->Add_object(value); 
+            GC.pushObject(value); 
             break;
         case TokenType::Or:
             /*
@@ -196,44 +203,46 @@ Value* Interpreter::visitBinaryOpNode(BinaryOpNode* node)  {
         default:
             throw std::runtime_error("Unsupported binary operator");
     } 
-    leftValue->Decrement_Reference_counting();
-    rightValue->Decrement_Reference_counting();
+    leftValue->decRc();
+    rightValue->decRc();
 
     return value;
 }
 
-Value* Interpreter::visitAssignNode(AssignNode* node) {
+PyObject* Interpreter::visitAssignNode(AssignNode* node) {
 
-    auto value = node->value->accept(this);
-    auto var_name = static_cast<NameNode*>(node->name)->getName();
+    PyObject* value = node->value->accept(this);
+    const std::string& varName = static_cast<NameNode*>(node->name)->getLexeme();
 
-    Environment.top()->define(var_name, value);
+    Scope* topEnv = currentEnv.top();
+    topEnv->define(varName, value);
 
     return value;
 }
 
-Value* Interpreter::visitNameNode(NameNode* node){
-    const std::string& varname = node->getName();
-    return Environment.top()->get(varname);
+PyObject* Interpreter::visitNameNode(NameNode* node){
+    const std::string& varname = node->getLexeme();
+    Scope* topEnv = currentEnv.top();
+    return topEnv->get(varname);
 }
 
-Value* Interpreter::visitBooleanNode(BooleanNode* node){
-    Value* value = new Value(node->value);
-    GC->Add_object(value);
+PyObject* Interpreter::visitBooleanNode(BooleanNode* node){
+    PyObject* value = new PyBool(node->value);
+    GC.pushObject(value);
     return value;
 }
 
-Value* Interpreter::visitStringNode(StringNode* node){
+PyObject* Interpreter::visitStringNode(StringNode* node){
     const std::string& str = node->getLexeme();
-    Value* value = new Value(str);
-    GC->Add_object(value);
+    PyObject* value = new PyStr(str);
+    GC.pushObject(value);
     return value;
 }
 
-Value* Interpreter::visitUnaryOpNode(UnaryOpNode* node){
+PyObject* Interpreter::visitUnaryOpNode(UnaryOpNode* node){
 
-    Value* operandValue = node->right->accept(this);
-    Value* result = nullptr;
+    PyObject* operandValue = node->right->accept(this);
+    PyObject* result = nullptr;
 
     switch(node->op.type) {
         case TokenType::Minus:
@@ -248,41 +257,43 @@ Value* Interpreter::visitUnaryOpNode(UnaryOpNode* node){
         default:
             throw std::runtime_error("Unsupported unary operator");
     }
-    GC->Add_object(result);
+    GC.pushObject(result);
     return result;
 }
 
-Value* Interpreter::visitNullNode(NullNode* expr){
-    Value* value = new Value();
-    GC->Add_object(value);
+PyObject* Interpreter::visitNullNode(NullNode* expr){
+    PyObject* value = new PyNone();
+    GC.pushObject(value);
     return value;
 }
 
-Value* Interpreter::visitCallNode(CallNode* expr){
+PyObject* Interpreter::visitCallNode(CallNode* expr){
 
-    const std::string& caller = static_cast<NameNode*>(expr->caller)->getName(); // if is NameNode
-    Value* callee = Global_Environment->get(caller);
-
-    FunctionNode* fndef = callee->getFunc().function_node; // rewrite
-    Scope* func_env = new Scope();
-
+    NameNode* callerNode = static_cast<NameNode*>(expr->caller);
+    const std::string& caller = callerNode->getLexeme(); // if is NameNode
+    PyFnObj* callee = static_cast<PyFnObj*>(__globals__->get(caller));
+    const FunctionNode* fndef = callee->getFunc();
+    
+    Scope* fnEnv = new Scope();
     const std::vector<AstNode*>& params = fndef->getParams();
-
-    for (size_t i = 0; i < expr->args.size(); i++){
-        const std::string& arg_name = static_cast<NameNode*>(params[i])->getName(); // if is NameNode
-        func_env->define(arg_name, expr->args[i]->accept(this));
+    const std::vector<AstNode*>& args = expr->args;
+    
+    for (size_t i = 0; i < args.size(); i++){
+        NameNode* paramNode = static_cast<NameNode*>(params[i]);
+        const std::string& argName = paramNode->getLexeme(); // if is NameNode
+        fnEnv->define(argName, args[i]->accept(this));
     }
-    Environment.push(func_env);
-    Value* return_value = fndef->getBody()->accept(this);
-    if(Environment.size() > 0) Environment.pop();
+    currentEnv.push(fnEnv);
+    PyObject* retValue = fndef->getBody()->accept(this);
+    currentEnv.pop();
 
-    return return_value;
+    return retValue;
 }
 
-Value* Interpreter::visitReturnNode(ReturnNode* node) {
+PyObject* Interpreter::visitReturnNode(ReturnNode* node) {
     return node->value->accept(this);
 }
 
-Value* Interpreter::interpret(ProgramNode* node) {
+PyObject* Interpreter::interpret(ProgramNode* node) {
     return node->accept(this);
 }

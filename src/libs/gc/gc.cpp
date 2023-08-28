@@ -1,13 +1,13 @@
 #include "gc.hpp"
 #include <algorithm>
 
-void GarbageCollector::Delete_objects() {    
+void GarbageCollector::freeUnused() {    
 
     for(auto object : objects) {
                         
-        if(object->Get_Reference_counting() == 0) {
+        if(object->getRc() == 0) {
 
-            std::vector<Value*>::iterator position = std::find(objects.begin(), objects.end(), object);
+            std::vector<PyObject*>::iterator position = std::find(objects.begin(), objects.end(), object);
                     
             if(position != objects.end()){
                 objects.erase(position);
@@ -15,16 +15,15 @@ void GarbageCollector::Delete_objects() {
             }
         }
     }
-
 }
 
-void GarbageCollector::Add_object(Value * value) {
+void GarbageCollector::pushObject(PyObject* value) {
 
-    if(num_times_allocated >= 50){
-        Delete_objects();
-        num_times_allocated = 0; 
+    if(nAllocs >= 50){
+        freeUnused();
+        nAllocs = 0;
     }
-    num_times_allocated++;
+    nAllocs++;
     objects.push_back(value); 
 
     return;

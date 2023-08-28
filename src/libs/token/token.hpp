@@ -9,7 +9,7 @@ public:
     Token(TokenType type, const std::string& lexeme, int line)
         : type(type), lexeme(lexeme), line(line) {}
 
-    friend std::ostream& operator<<(std::ostream& out, Token& token) {
+    friend std::ostream& operator<<(std::ostream& out, const Token& token) {
         
         switch (token.type) {
             case TokenType::LeftParen:

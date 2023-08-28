@@ -1,16 +1,15 @@
 #pragma once
 
-#include <unordered_map>
-#include "../value/value.hpp"
+#include "../value/pyObject.hpp"
 
 class GarbageCollector { 
 
 public:
     GarbageCollector() {};
-    void Delete_objects(); 
-    void Add_object(Value* value);
+    void freeUnused(); 
+    void pushObject(PyObject* value);
         
 private:
-    std::vector<Value*> objects; 
-    unsigned int num_times_allocated = 0;
+    std::vector<PyObject*> objects; 
+    unsigned int nAllocs = 0;
 };

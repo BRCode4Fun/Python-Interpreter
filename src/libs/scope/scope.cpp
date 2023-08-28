@@ -6,31 +6,31 @@ Scope::Scope(Scope* parent) {
  //   assert(parent != nullptr);
 }
 
-void Scope::Decrement_Reference(Value* value){
+void Scope::decRefCount(PyObject* value){
 
-    if(value != nullptr) value->Decrement_Reference_counting();
+    if(value != nullptr) value->decRc();
 }
 
-void Scope::Increment_Reference(Value* value){
+void Scope::incRefCount(PyObject* value){
 
-    if(value != nullptr) value->Increment_Reference_counting();
+    if(value != nullptr) value->incRc();
 }
 
-void Scope::define(const std::string& name, Value* value) {
+void Scope::define(const std::string& name, PyObject* value) {
     
     auto it = values.find(name);
    
     if (it != values.end()) {
-        Decrement_Reference(it->second);
+        decRefCount(it->second);
         it->second = value;
-        Increment_Reference(it->second);
+        incRefCount(it->second);
     } else {
         values.emplace(name, value);
-        Increment_Reference(value);
+        incRefCount(value);
     }
 }
 
-Value * Scope::get(std::string name) {
+PyObject* Scope::get(const std::string& name) {
 
     auto it = values.find(name);
    

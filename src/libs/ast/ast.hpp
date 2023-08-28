@@ -9,7 +9,7 @@
 using llf = long double;
 using lld = long long int;
 
-class Value; 
+class PyObject; 
 class NodeVisitor;
 
 // Define the AST node types
@@ -44,7 +44,7 @@ public:
 
     bool is_name_node() { return type == AstNodeType::Name; }
 
-    virtual Value* accept(NodeVisitor* visitor) = 0; 
+    virtual PyObject* accept(NodeVisitor* visitor) = 0; 
 
     AstNodeType type;
 };
@@ -59,7 +59,7 @@ public:
 
     AstNode* args;
 
-    virtual Value* accept(NodeVisitor* visitor) override;
+    virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
 
@@ -72,7 +72,7 @@ public:
       
     std::vector<AstNode*> statements;
     
-    virtual Value* accept(NodeVisitor* visitor) override;
+    virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
 
@@ -85,7 +85,7 @@ public:
     
     BlockNode* body;
     
-    virtual Value* accept(NodeVisitor* visitor) override;
+    virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
 
@@ -99,7 +99,7 @@ public:
 
     AstNode *cond, *left, *right;
 
-    virtual Value* accept(NodeVisitor* visitor) override;
+    virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
 
@@ -114,7 +114,7 @@ public:
     Token op;
     AstNode *left, *right;
 
-    virtual Value* accept(NodeVisitor* visitor) override;
+    virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
 
@@ -129,7 +129,7 @@ public:
     Token op;
     AstNode* right;
 
-    virtual Value* accept(NodeVisitor* visitor) override;
+    virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
 
@@ -141,10 +141,10 @@ public:
       : AstNode(AstNodeType::Int), value(value) {}
 
     Token value; // TODO: implement the BigInt class
+    
+    const std::string& getLexeme() { return value.lexeme; }
 
-    lld getValue() { return std::stoll(value.lexeme); }
-
-    virtual Value* accept(NodeVisitor* visitor) override;
+    virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
 
@@ -157,9 +157,9 @@ public:
 
     Token value;
     
-    llf getValue() { return std::stold(value.lexeme); }
+    const std::string& getLexeme() { return value.lexeme; }
 
-    virtual Value* accept(NodeVisitor* visitor) override;
+    virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
 
@@ -168,13 +168,13 @@ class NameNode : public AstNode {
 public:
     
     NameNode(Token name) 
-      : AstNode(AstNodeType::Name), name(name) {}
+      : AstNode(AstNodeType::Name), value(name) {}
     
-    Token name;
+    Token value;
     
-    const std::string& getName() { return name.lexeme; }
+    const std::string& getLexeme() { return value.lexeme; }
 
-    virtual Value* accept(NodeVisitor* visitor) override;
+    virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
 
@@ -189,7 +189,7 @@ public:
     
     const std::string& getLexeme() { return value.lexeme; }
 
-    virtual Value* accept(NodeVisitor* visitor) override;
+    virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
 
@@ -202,7 +202,7 @@ public:
     
     bool value;
 
-    virtual Value* accept(NodeVisitor* visitor) override;
+    virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
 
@@ -215,7 +215,7 @@ public:
     
     AstNode* value;
 
-    virtual Value* accept(NodeVisitor* visitor) override;
+    virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
 
@@ -227,7 +227,7 @@ public:
     
     Token none;
 
-    virtual Value* accept(NodeVisitor* visitor) override;
+    virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
 
@@ -241,7 +241,7 @@ public:
     AstNode* caller;
     std::vector<AstNode*> args;
 
-    virtual Value* accept(NodeVisitor * visitor) override;
+    virtual PyObject* accept(NodeVisitor * visitor) override;
 };
 
 
@@ -252,7 +252,7 @@ public:
 
     AstNode *name, *value;
 
-    virtual Value* accept(NodeVisitor* visitor) override;
+    virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
 
@@ -264,7 +264,7 @@ public:
 
     AstNode *cond, *body;
 
-    virtual Value* accept(NodeVisitor* visitor) override;
+    virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
 
@@ -280,7 +280,7 @@ public:
     const std::vector<AstNode*>& getParams() const { return params; }
     AstNode* getBody() const { return body; }
 
-    virtual Value* accept(NodeVisitor* visitor) override;
+    virtual PyObject* accept(NodeVisitor* visitor) override;
 
 private:
     Token fname;
@@ -301,7 +301,7 @@ public:
     AstNode *cond, *trueBranch, *elseBranch;;
     std::vector<std::pair<AstNode*, AstNode*>> elifBranches;
 
-    virtual Value* accept(NodeVisitor* visitor) override;
+    virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
 
@@ -311,23 +311,23 @@ public:
 
     ~NodeVisitor() = default;
 
-    virtual Value* visitProgramNode(ProgramNode* node) = 0;
-    virtual Value* visitBlockNode(BlockNode* node) = 0;
-    virtual Value* visitPrintNode(PrintNode* node) = 0;
-    virtual Value* visitWhileNode(WhileNode* node) = 0;
-    virtual Value* visitIfNode(IfNode* node) = 0;
-    virtual Value* visitAssignNode(AssignNode* node) = 0;
-    virtual Value* visitTernaryOpNode(TernaryOpNode* node) = 0;
-    virtual Value* visitBinaryOpNode(BinaryOpNode* node) = 0;
-    virtual Value* visitUnaryOpNode(UnaryOpNode* node) = 0;
-    virtual Value* visitIntNode(IntNode* node) = 0;
-    virtual Value* visitFloatNode(FloatNode* node) = 0;
-    virtual Value* visitNameNode(NameNode* node) = 0;
-    virtual Value* visitStringNode(StringNode* node) = 0;
-    virtual Value* visitBooleanNode(BooleanNode* node) = 0;
-    virtual Value* visitNullNode(NullNode* node) = 0;
-    virtual Value* visitFunctionNode(FunctionNode* node) = 0;
-    virtual Value* visitCallNode(CallNode* node) = 0;
-    virtual Value* visitReturnNode(ReturnNode* node) = 0;
+    virtual PyObject* visitProgramNode(ProgramNode* node) = 0;
+    virtual PyObject* visitBlockNode(BlockNode* node) = 0;
+    virtual PyObject* visitPrintNode(PrintNode* node) = 0;
+    virtual PyObject* visitWhileNode(WhileNode* node) = 0;
+    virtual PyObject* visitIfNode(IfNode* node) = 0;
+    virtual PyObject* visitAssignNode(AssignNode* node) = 0;
+    virtual PyObject* visitTernaryOpNode(TernaryOpNode* node) = 0;
+    virtual PyObject* visitBinaryOpNode(BinaryOpNode* node) = 0;
+    virtual PyObject* visitUnaryOpNode(UnaryOpNode* node) = 0;
+    virtual PyObject* visitIntNode(IntNode* node) = 0;
+    virtual PyObject* visitFloatNode(FloatNode* node) = 0;
+    virtual PyObject* visitNameNode(NameNode* node) = 0;
+    virtual PyObject* visitStringNode(StringNode* node) = 0;
+    virtual PyObject* visitBooleanNode(BooleanNode* node) = 0;
+    virtual PyObject* visitNullNode(NullNode* node) = 0;
+    virtual PyObject* visitFunctionNode(FunctionNode* node) = 0;
+    virtual PyObject* visitCallNode(CallNode* node) = 0;
+    virtual PyObject* visitReturnNode(ReturnNode* node) = 0;
 };
 
