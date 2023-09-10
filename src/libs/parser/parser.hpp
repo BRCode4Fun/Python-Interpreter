@@ -21,6 +21,8 @@ private:
     AstNode* parseSuite();
     AstNode* parseIfStmt();
     AstNode* parseWhileStmt();
+    AstNode* parseBreakStmt();
+    AstNode* parseContinueStmt();
     AstNode* parseReturnStmt(); 
     AstNode* parseAssign();
     AstNode* parseExpr();
@@ -53,4 +55,7 @@ private:
     Token peek() const;
     Token previous() const;
     Token advance();
+    
+    bool isInsideLoop = false;
+    bool isInsideFunc = false;
 };

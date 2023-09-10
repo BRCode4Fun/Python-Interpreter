@@ -60,6 +60,14 @@ PyObject* WhileNode::accept(NodeVisitor* visitor) {
     return visitor->visitWhileNode(this);
 }
 
+PyObject* BreakNode::accept(NodeVisitor* visitor) {
+    return visitor->visitBreakNode(this);
+}
+
+PyObject* ContinueNode::accept(NodeVisitor* visitor) {
+    return visitor->visitContinueNode(this);
+}
+
 PyObject* IfNode::accept(NodeVisitor* visitor) {
     return visitor->visitIfNode(this);
 }

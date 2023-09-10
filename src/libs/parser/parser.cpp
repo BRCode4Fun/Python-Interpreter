@@ -32,7 +32,7 @@ AstNode* Parser::parseStmt() {
      *                      | for_stmt      TODO
      *                      | try_stmt      TODO
      *                      | with_stmt     TODO
-     *                      | funcdef       TODO
+     *                      | funcdef       
      *                      | classdef      TODO
     */
     if (match(TokenType::If)){
@@ -81,7 +81,9 @@ AstNode* Parser::parseFunctionDef(){
     consume(TokenType::RightParen);
     consume(TokenType::Colon);
 
+    isInsideFunc = true;
     AstNode* body = parseSuite();
+    isInsideFunc = false;
 
     return new FunctionNode(fname, parameters, body);
 }
@@ -110,19 +112,23 @@ AstNode* Parser::parseSimpleStmt() {
      *                   | pass_stmt       TODO
      *                   | del_stmt        TODO
      *                   | print_stmt      
-     *                   | return_stmt     TODO
+     *                   | return_stmt     
      *                   | yield_stmt      TODO
      *                   | raise_stmt      TODO
-     *                   | break_stmt      TODO
-     *                   | continue_stmt   TODO
+     *                   | break_stmt      
+     *                   | continue_stmt   
      *                   | import_stmt     TODO
      *                   | global_stmt     TODO
      *
     */
      if (match(TokenType::Print)) {
         return parsePrintStmt();
-    }else if(match(TokenType::Return)){
+    } else if(match(TokenType::Return)){
         return parseReturnStmt();
+    } else if(match(TokenType::Break)){
+        return parseBreakStmt();
+    } else if(match(TokenType::Continue)){
+        return parseContinueStmt();
     } else {
         return parseAssign();
     }
@@ -132,7 +138,32 @@ AstNode* Parser::parseReturnStmt() {
     /*
      *  return_stmt ::= "return" (expression)?
     */
-    return new ReturnNode(parseExpr());
+    if(!isInsideFunc) error("Return outside Function.");
+    
+    Token keyword = previous();
+    AstNode* expr = match({TokenType::Newline, TokenType::Semicolon}) ? 
+                    nullptr : parseExpr();
+    return new ReturnNode(keyword, expr);
+}
+
+AstNode* Parser::parseBreakStmt() {
+    /*
+     *  break_stmt ::= "break"
+    */
+    if(!isInsideLoop) error("Break outside Loop.");
+    
+    Token keyword = previous();
+    return new BreakNode(keyword);
+}
+
+AstNode* Parser::parseContinueStmt() {
+    /*
+     *  continue_stmt ::= "continue"
+    */
+    if(!isInsideLoop) error("Continue outside Loop.");
+    
+    Token keyword = previous();
+    return new ContinueNode(keyword);
 }
 
 AstNode* Parser::parsePrintStmt() {
@@ -167,9 +198,9 @@ AstNode* Parser::parseSuite() {
 
              auto r = parseStmt();
 
-             if(dynamic_cast<BlockNode *>(r) != nullptr){
+             if(dynamic_cast<BlockNode*>(r) != nullptr){
                  
-                BlockNode* stmt_list =  dynamic_cast<BlockNode *>(r);
+                BlockNode* stmt_list =  dynamic_cast<BlockNode*>(r);
 
                 for(auto stmt : stmt_list->statements)
                      stmts.push_back(stmt);  
@@ -221,9 +252,13 @@ AstNode* Parser::parseWhileStmt() {
      *   while_stmt ::= "while" expression ":" suite
      *                  ("else" ":" suite)?  //TODO
     */
+    isInsideLoop = true;
+    
     AstNode* cond = parseExpr();
     consume(TokenType::Colon);
     AstNode* body = parseSuite();
+
+    isInsideLoop = false;
 
     return new WhileNode(cond, body);
 }
@@ -542,7 +577,7 @@ Token Parser::peek() const {
 }
 
 Token Parser::previous() const {
-    return tokens[current - 1];
+    return tokens[(current > 0) ? current - 1 : 0];
 }
 
 Token Parser::advance() {

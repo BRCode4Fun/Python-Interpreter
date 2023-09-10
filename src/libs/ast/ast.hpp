@@ -21,8 +21,8 @@ enum class AstNodeType {
     Block,
     
     // Statements
-    Print, While, If, Function,
-    Return,
+    Print, While, Break, Continue,
+    If, Function, Return,
 
     // Expressions
     UnaryOp, BinaryOp, TernaryOp,
@@ -210,9 +210,10 @@ class ReturnNode : public AstNode {
 
 public:
 
-    ReturnNode(AstNode* value) 
-      : AstNode(AstNodeType::Return), value(value) {}
+    ReturnNode(Token keyword, AstNode* value) 
+      : AstNode(AstNodeType::Return), kwd(keyword), value(value) {}
     
+    Token kwd;
     AstNode* value;
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
@@ -268,6 +269,32 @@ public:
 };
 
 
+class BreakNode : public AstNode {
+
+public:
+
+    BreakNode(Token keyword) 
+      : AstNode(AstNodeType::Break), kwd(keyword) {}
+    
+    Token kwd;
+
+    virtual PyObject* accept(NodeVisitor* visitor) override;
+};
+
+
+class ContinueNode : public AstNode {
+
+public:
+
+    ContinueNode(Token keyword) 
+      : AstNode(AstNodeType::Continue), kwd(keyword) {}
+    
+    Token kwd;
+
+    virtual PyObject* accept(NodeVisitor* visitor) override;
+};
+
+
 class FunctionNode : public AstNode {
 
 public:
@@ -315,6 +342,8 @@ public:
     virtual PyObject* visitBlockNode(BlockNode* node) = 0;
     virtual PyObject* visitPrintNode(PrintNode* node) = 0;
     virtual PyObject* visitWhileNode(WhileNode* node) = 0;
+    virtual PyObject* visitBreakNode(BreakNode* node) = 0;
+    virtual PyObject* visitContinueNode(ContinueNode* node) = 0;
     virtual PyObject* visitIfNode(IfNode* node) = 0;
     virtual PyObject* visitAssignNode(AssignNode* node) = 0;
     virtual PyObject* visitTernaryOpNode(TernaryOpNode* node) = 0;

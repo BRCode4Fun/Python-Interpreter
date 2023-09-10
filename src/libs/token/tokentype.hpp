@@ -3,7 +3,8 @@
 enum TokenType {
     // Keywords
     Print, Def, Return,
-    While, If, Elif, Else,
+    While, Break, Continue,
+    If, Elif, Else,
     True, False, None,
     And, Or, Not,
     

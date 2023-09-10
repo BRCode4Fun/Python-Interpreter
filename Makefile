@@ -6,11 +6,11 @@ OUTPUT :=  main
 
 # Set the compiler and compiler flags
 CC := g++
-CFLAGS := -std=c++17 -g
+CFLAGS := -std=c++17
 
 # Add DEBUG macro to CFLAGS
 ifdef DEBUG
-CFLAGS += -DDEBUG -Wall -Wextra
+CFLAGS += -DDEBUG -Wall -Wextra -g
 endif
 
 # Build rule

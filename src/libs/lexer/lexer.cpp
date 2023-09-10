@@ -27,7 +27,9 @@ Lexer::Lexer(const std::string& source)
         {"elif", TokenType::Elif},
         {"else", TokenType::Else},
         {"def", TokenType::Def}, 
-        {"return", TokenType::Return}
+        {"return", TokenType::Return},
+        {"break", TokenType::Break},
+        {"continue", TokenType::Continue}
     };
 }
 

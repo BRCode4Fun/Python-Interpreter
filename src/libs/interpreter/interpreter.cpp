@@ -1,9 +1,10 @@
-#include "interpreter.hpp"
-#include "../token/tokentype.hpp"
 #include <stdexcept>
+#include "./interpreter.hpp"
+#include "../token/tokentype.hpp"
+#include "../exceptions/runtime_exceptions.hpp" // break, continue, return
 
 void todo() {
-    throw std::logic_error("Function not implemented yet");
+    throw std::runtime_error("Function not implemented yet");
 }
 
 PyObject* Interpreter::visitProgramNode(ProgramNode* node) {
@@ -54,28 +55,37 @@ PyObject* Interpreter::visitFunctionNode(FunctionNode* node){
 
 PyObject* Interpreter::visitBlockNode(BlockNode* node) {
 
-    PyObject* ret_value = nullptr;
-
     for(auto statement : node->statements) {
-
-    	ret_value = statement->accept(this);
-               
-        if(statement->type == AstNodeType::Return){           
-           break;
-        }
+    	statement->accept(this);
     }
-    return ret_value;
+    return new PyNone();
 }
 
 PyObject* Interpreter::visitWhileNode(WhileNode* node){
 
     PyObject* cond = node->cond->accept(this);
 
-     while(cond->isTruthy()){
-     	node->body->accept(this);
+    while(cond->isTruthy()){
+     	try {
+     	    node->body->accept(this);
+     	} catch(BreakException be) {
+     	    break;
+     	} catch(ContinueException ce) {
+     	    ; // goes to evaluate the condition again
+     	}
         cond = node->cond->accept(this);
-     }
-     return new PyNone();
+    }
+    return new PyNone();
+}
+
+PyObject* Interpreter::visitBreakNode(BreakNode* node) {
+    throw BreakException();
+    return nullptr; // unreachable
+}
+
+PyObject* Interpreter::visitContinueNode(ContinueNode* node) {
+    throw ContinueException();
+    return nullptr; // unreachable
 }
 
 PyObject* Interpreter::visitIfNode(IfNode* node) {
@@ -201,7 +211,7 @@ PyObject* Interpreter::visitBinaryOpNode(BinaryOpNode* node)  {
             value = !(leftValue->isTruthy()) ? leftValue : rightValue;
             break;
         default:
-            throw std::runtime_error("Unsupported binary operator");
+            throw std::logic_error("Unsupported binary operator");
     } 
     leftValue->decRc();
     rightValue->decRc();
@@ -255,7 +265,7 @@ PyObject* Interpreter::visitUnaryOpNode(UnaryOpNode* node){
             result = ~(*operandValue);
             break;
         default:
-            throw std::runtime_error("Unsupported unary operator");
+            throw std::logic_error("Unsupported unary operator");
     }
     GC.pushObject(result);
     return result;
@@ -283,15 +293,26 @@ PyObject* Interpreter::visitCallNode(CallNode* expr){
         const std::string& argName = paramNode->getLexeme(); // if is NameNode
         fnEnv->define(argName, args[i]->accept(this));
     }
+    
     currentEnv.push(fnEnv);
-    PyObject* retValue = fndef->getBody()->accept(this);
+    
+    PyObject* retValue = nullptr;
+    try {
+        fndef->getBody()->accept(this);
+    } catch(ReturnException re) {
+        retValue = re.value;
+    }
     currentEnv.pop();
 
     return retValue;
 }
 
 PyObject* Interpreter::visitReturnNode(ReturnNode* node) {
-    return node->value->accept(this);
+    AstNode* value = node->value;
+    PyObject* ret_value = new PyNone();
+    if(value) ret_value = value->accept(this);
+    throw ReturnException(ret_value);
+    return nullptr; // unreachable
 }
 
 PyObject* Interpreter::interpret(ProgramNode* node) {
