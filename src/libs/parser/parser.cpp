@@ -81,9 +81,9 @@ AstNode* Parser::parseFunctionDef(){
     consume(TokenType::RightParen);
     consume(TokenType::Colon);
 
-    isInsideFunc = true;
+    isInsideFunc++;
     AstNode* body = parseSuite();
-    isInsideFunc = false;
+    isInsideFunc--;
 
     return new FunctionNode(fname, parameters, body);
 }
@@ -252,13 +252,12 @@ AstNode* Parser::parseWhileStmt() {
      *   while_stmt ::= "while" expression ":" suite
      *                  ("else" ":" suite)?  //TODO
     */
-    isInsideLoop = true;
     
     AstNode* cond = parseExpr();
     consume(TokenType::Colon);
+    isInsideLoop++;
     AstNode* body = parseSuite();
-
-    isInsideLoop = false;
+    isInsideLoop--;
 
     return new WhileNode(cond, body);
 }

@@ -56,6 +56,6 @@ private:
     Token previous() const;
     Token advance();
     
-    bool isInsideLoop = false;
-    bool isInsideFunc = false;
+    int isInsideLoop = 0;
+    int isInsideFunc = 0;
 };

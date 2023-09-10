@@ -6,8 +6,7 @@
 class Scope {
 
 public:
-    Scope();
-    Scope(Scope* parent);
+    Scope(Scope* parent = nullptr) : parent(parent){}
 
     void define(const std::string& name, PyObject* value);
     void decRefCount(PyObject* value);
@@ -16,6 +15,6 @@ public:
     PyObject* get(const std::string& name);
 
 private:
-    Scope* parent = nullptr;
     std::unordered_map<std::string, PyObject*> values;
+    Scope* parent;
 };

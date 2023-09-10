@@ -48,7 +48,7 @@ PyObject* Interpreter::visitFunctionNode(FunctionNode* node){
 
     const std::string& fname = node->getName();
     PyFnObj* value = new PyFnObj(node);
-    __globals__->define(fname, value);
+    currentEnv.top()->define(fname, value);
     
     return new PyNone();
 }
@@ -281,10 +281,12 @@ PyObject* Interpreter::visitCallNode(CallNode* expr){
 
     NameNode* callerNode = static_cast<NameNode*>(expr->caller);
     const std::string& caller = callerNode->getLexeme(); // if is NameNode
-    PyFnObj* callee = static_cast<PyFnObj*>(__globals__->get(caller));
+    PyFnObj* callee = static_cast<PyFnObj*>(currentEnv.top()->get(caller));
     const FunctionNode* fndef = callee->getFunc();
     
-    Scope* fnEnv = new Scope();
+    Scope* parentEnv = currentEnv.top();
+    Scope* fnEnv = new Scope(parentEnv);
+    
     const std::vector<AstNode*>& params = fndef->getParams();
     const std::vector<AstNode*>& args = expr->args;
     
@@ -293,7 +295,6 @@ PyObject* Interpreter::visitCallNode(CallNode* expr){
         const std::string& argName = paramNode->getLexeme(); // if is NameNode
         fnEnv->define(argName, args[i]->accept(this));
     }
-    
     currentEnv.push(fnEnv);
     
     PyObject* retValue = nullptr;
