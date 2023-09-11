@@ -47,9 +47,9 @@ PyObject* PyInt::operator*(const PyObject& other) const {
 PyObject* PyInt::operator/(const PyObject& other) const {
     if (other.isInt()) {
         const PyInt* rhs = dynamic_cast<const PyInt*>(&other);
-        ll rvalue = rhs->getInt();
-        if(rvalue == 0L) throw std::runtime_error("Attempted to divide by zero");
-        return new PyInt(getInt() / rvalue);
+        llf rvalue = static_cast<llf>(rhs->getInt());
+        if(rvalue == 0.0) throw std::runtime_error("Attempted to divide by zero");
+        return new PyFloat(static_cast<llf>(getInt()) / rvalue);
     } else if(other.isFloat()) {
         const PyFloat* rhs = dynamic_cast<const PyFloat*>(&other);
         llf rvalue = rhs->getFloat();

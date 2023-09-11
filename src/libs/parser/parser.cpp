@@ -262,18 +262,43 @@ AstNode* Parser::parseWhileStmt() {
     return new WhileNode(cond, body);
 }
 
-AstNode* Parser::parseAssign() {
+AstNode* Parser::parseAssignSimple() {
     /*
-     *  assign_stmt ::= expression ("=" assign_stmt)*
+     *  assign_simple ::= expression ("=" assign_stmt)* // TODO target
     */
     AstNode* left = parseExpr();
     
-    while (match(TokenType::Equals)) {
-        //auto op = previous();
-        AstNode* right = parseAssign();
-        if(!left->is_name_node())
-            error("cannot assign to expression");
-        left = new AssignNode(left, right);
+    if(match(TokenType::Equals)) {
+        Token op = previous();
+        AstNode* right = parseAssignSimple();
+        return new AssignNode(left, right, op);
+    }
+    return left;
+}
+
+AstNode* Parser::parseAssign() {
+    /*
+     *  assign_stmt ::= assign_simple | augmented_assignment_stmt
+     *  augmented_assignment_stmt ::= expression augop expression // TODO target, expression_list
+     *  augop ::= "+="  | "-=" ¦ "*=" | "/=" 
+     *          ¦ "%="  | "&=" | "|=" ¦ "^="
+     *          | "<<=" | ">>="
+    */
+    AstNode* left = parseAssignSimple();
+    
+    if(match({TokenType::PlusEqual, TokenType::MinusEqual,
+              TokenType::StarEqual, TokenType::SlashEqual, TokenType::ModEqual, 
+              TokenType::AndEqual, TokenType::OrEqual, TokenType::XorEqual,
+              TokenType::LeftShiftEqual, TokenType::RightShiftEqual})) {
+        Token op = previous();
+        AstNode* right = parseExpr();
+        
+        if(left->is_name_node()) {
+            return new AssignNode(left, right, op);
+        } else {
+            error("Invalid compound assignment.");
+            return nullptr;
+        }
     }
     return left;
 }

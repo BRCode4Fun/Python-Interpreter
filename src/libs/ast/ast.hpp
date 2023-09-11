@@ -248,10 +248,11 @@ public:
 
 class AssignNode : public AstNode {
 public:
-    AssignNode(AstNode* name, AstNode* value) 
-      : AstNode(AstNodeType::Assign), name(name), value(value) {}
+    AssignNode(AstNode* name, AstNode* value, Token op) 
+      : AstNode(AstNodeType::Assign), name(name), value(value), op(op) {}
 
     AstNode *name, *value;
+    Token op;
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };

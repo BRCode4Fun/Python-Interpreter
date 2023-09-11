@@ -10,13 +10,19 @@ enum TokenType {
     
     // Operators
     Plus, Minus, 
-    Star, DoubleStar, Slash, Mod,
+    Star, DoubleStar, 
+    Slash, DoubleSlash, Mod,
     Pipe, Caret, Ampersand, Tilde,
     LeftShift, RightShift,  
     Less, LessEqual,
     Greater, GreaterEqual,
     Equals, EqualEqual,
     Bang, BangEqual,
+    PlusEqual, MinusEqual,
+    StarEqual, SlashEqual, ModEqual,
+    AndEqual, OrEqual, XorEqual,
+    LeftShiftEqual, 
+    RightShiftEqual,
     Dot,
     
     // Punctuators

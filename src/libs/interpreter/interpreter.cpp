@@ -1,3 +1,4 @@
+#include <iomanip>
 #include <stdexcept>
 #include "./interpreter.hpp"
 #include "../token/tokentype.hpp"
@@ -11,7 +12,22 @@ PyObject* Interpreter::visitProgramNode(ProgramNode* node) {
     return node->body->accept(this);
 }
 
+std::string formatNumber(llf number) {
+    
+    std::ostringstream oss;
+    int intPart = static_cast<int>(number);
+    double fracPart = number - intPart;
+
+    if (fracPart == 0.0) {
+        oss << intPart << ".0";
+    } else {
+        oss << number;
+    }
+    return oss.str();
+}
+
 PyObject* Interpreter::visitPrintNode(PrintNode* node) {
+    
     PyObject* argValue = nullptr;
 
     if (node->args != nullptr) {
@@ -19,8 +35,11 @@ PyObject* Interpreter::visitPrintNode(PrintNode* node) {
     }
     if (argValue != nullptr) {
         if((*argValue).isStr()) {
-            const PyStr* value = dynamic_cast<const PyStr*>(argValue);
-            std::cout << (*value).getStr();
+            const PyStr* obj = dynamic_cast<const PyStr*>(argValue);
+            std::cout << (*obj).getStr();
+        } else if((*argValue).isFloat()) {
+            const PyFloat* obj = dynamic_cast<const PyFloat*>(argValue);
+            std::cout << formatNumber((*obj).getFloat());
         } else {
             std::cout << *argValue;
         }
@@ -220,12 +239,58 @@ PyObject* Interpreter::visitBinaryOpNode(BinaryOpNode* node)  {
 }
 
 PyObject* Interpreter::visitAssignNode(AssignNode* node) {
-
+    
     PyObject* value = node->value->accept(this);
+    value->incRc();
+    
     const std::string& varName = static_cast<NameNode*>(node->name)->getLexeme();
-
+    
     Scope* topEnv = currentEnv.top();
-    topEnv->define(varName, value);
+    
+    if(node->op.type == TokenType::Equals) {
+        topEnv->define(varName, value);
+    } else {
+        PyObject* targetValue = node->name->accept(this);
+        targetValue->incRc();
+        
+        switch(node->op.type) {
+            case TokenType::PlusEqual:
+                value = *targetValue + *value;
+                break;
+            case TokenType::MinusEqual:
+                value = *targetValue - *value;
+                break;
+            case TokenType::StarEqual:
+                value = *targetValue * *value;
+                break;
+            case TokenType::SlashEqual:
+                value = *targetValue / *value;
+                break;
+            case TokenType::ModEqual:
+                value = *targetValue % *value;
+                break;
+            case TokenType::AndEqual:
+                value = *targetValue & *value;
+                break;
+            case TokenType::OrEqual:
+                value = *targetValue | *value;
+                break;
+            case TokenType::XorEqual:
+                value = *targetValue ^ *value;
+                break;
+            case TokenType::LeftShiftEqual:
+                value = *targetValue << *value;
+                break;
+            case TokenType::RightShiftEqual:
+                value = *targetValue >> *value;
+                break;
+            default:
+                throw std::runtime_error("Unsupported assignment operator");
+        }
+        topEnv->define(varName, value);
+        targetValue->decRc();
+    }
+    value->decRc();
 
     return value;
 }

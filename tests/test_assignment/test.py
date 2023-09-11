@@ -38,4 +38,41 @@ h = None
 h = 42.0 if (True and False) else None
 print(h)
 
+# Augmented Assignment
+
+x = 5
+x += 3
+print(x)
+
+y = 10
+y -= 4
+print(y)
+
+z = 3
+z *= 2
+print(z)
+
+w = 20
+w /= 5
+print(w)
+
+a = 5
+a &= 3
+print(a)
+
+b = 5
+b |= 3
+print(b)
+
+c = 5
+c ^= 3
+print(c)
+
+d = 1
+d <<= 3
+print(d)
+
+e = 8
+e >>= 2
+print(e)
 

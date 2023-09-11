@@ -24,6 +24,7 @@ private:
     AstNode* parseBreakStmt();
     AstNode* parseContinueStmt();
     AstNode* parseReturnStmt(); 
+    AstNode* parseAssignSimple();
     AstNode* parseAssign();
     AstNode* parseExpr();
     AstNode* parseConditionalExpr();

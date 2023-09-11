@@ -26,8 +26,12 @@ public:
                 out << "Minus"; break;
             case TokenType::Star:
                 out << "Star"; break;
+            case TokenType::DoubleStar:
+                out << "DoubleStar"; break;
             case TokenType::Slash:
                 out << "Slash"; break;
+            case TokenType::DoubleSlash:
+                out << "DoubleSlash"; break;
             case TokenType::Mod:
                 out << "Mod"; break;
             case TokenType::Pipe:
@@ -42,8 +46,6 @@ public:
                 out << "LeftShift"; break;
             case TokenType::RightShift:
                 out << "RightShift"; break;
-            case TokenType::DoubleStar:
-                out << "DoubleStar"; break;
             case TokenType::Equals:
                 out << "Equals"; break;
             case TokenType::EqualEqual:
@@ -58,6 +60,26 @@ public:
                 out << "Greater"; break;
             case TokenType::GreaterEqual:
                 out << "GreaterEqual"; break;
+            case TokenType::PlusEqual:
+                out << "PlusEqual"; break;
+            case TokenType::MinusEqual:
+                out << "MinusEqual"; break;
+            case TokenType::StarEqual:
+                out << "StarEqual"; break;
+            case TokenType::SlashEqual:
+                out << "SlashEqual"; break;
+            case TokenType::ModEqual:
+                out << "ModEqual"; break;
+            case TokenType::AndEqual:
+                out << "AndEqual"; break;
+            case TokenType::OrEqual:
+                out << "OrEqual"; break;
+            case TokenType::XorEqual:
+                out << "XorEqual"; break;
+            case TokenType::LeftShiftEqual:
+                out << "LeftShiftEqual"; break;
+            case TokenType::RightShiftEqual:
+                out << "RightShiftEqual"; break;
             case TokenType::Semicolon:
                 out << "Semicolon"; break;
             case TokenType::Colon:

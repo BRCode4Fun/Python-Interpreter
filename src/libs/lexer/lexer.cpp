@@ -79,31 +79,33 @@ void Lexer::scanToken() {
             addToken(TokenType::Dot);
             break;
         case '-':
-            addToken(TokenType::Minus);
+            addToken(match('=') ? TokenType::MinusEqual : TokenType::Minus);
             break;
         case '+':
-            addToken(TokenType::Plus);
+            addToken(match('=') ? TokenType::PlusEqual : TokenType::Plus);
             break;
         case ';':
             addToken(TokenType::Semicolon);
             break;
         case '*':
-            addToken(match('*') ? TokenType::DoubleStar : TokenType::Star);
+            addToken(match('*') ? TokenType::DoubleStar : 
+                     match('=') ? TokenType::StarEqual : TokenType::Star);
             break;
         case '/':
-            addToken(TokenType::Slash);
+            addToken(match('/') ? TokenType::DoubleSlash : 
+                     match('=') ? TokenType::SlashEqual : TokenType::Slash);
             break;
         case '%':
-            addToken(TokenType::Mod);
+            addToken(match('=') ? TokenType::ModEqual : TokenType::Mod);
             break;
         case '|':
-            addToken(TokenType::Pipe);
+            addToken(match('=') ? TokenType::OrEqual : TokenType::Pipe);
             break;
         case '&':
-            addToken(TokenType::Ampersand);
+            addToken(match('=') ? TokenType::AndEqual : TokenType::Ampersand);
             break;
         case '^':
-            addToken(TokenType::Caret);
+            addToken(match('=') ? TokenType::XorEqual : TokenType::Caret);
             break;
         case '~':
             addToken(TokenType::Tilde);
@@ -115,11 +117,13 @@ void Lexer::scanToken() {
             addToken(match('=') ? TokenType::EqualEqual : TokenType::Equals);
             break;
         case '<':
-            addToken(match('<') ? TokenType::LeftShift : 
+            addToken(match('<') ? 
+                        (match('=') ? TokenType::LeftShiftEqual : TokenType::LeftShift) : 
                      match('=') ? TokenType::LessEqual : TokenType::Less);
             break;
         case '>':
-            addToken(match('>') ? TokenType::RightShift : 
+            addToken(match('>') ? 
+                        (match('=') ? TokenType::RightShiftEqual : TokenType::RightShift) : 
                      match('=') ? TokenType::GreaterEqual : TokenType::Greater);
             break;
          case '#':
