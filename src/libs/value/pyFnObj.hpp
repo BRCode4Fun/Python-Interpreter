@@ -14,6 +14,9 @@ public:
     const FunctionNode* getFunc() const {
         return getFuncData();
     }
+    void write(std::ostream& out) const override {
+        out << "<function " << getFunc()->getName() << ">";
+    }
         
 private:
     FunctionNode* getFuncData() const {

@@ -68,12 +68,24 @@ PyObject* ContinueNode::accept(NodeVisitor* visitor) {
     return visitor->visitContinueNode(this);
 }
 
+PyObject* PassNode::accept(NodeVisitor* visitor) {
+    return visitor->visitPassNode(this);
+}
+
 PyObject* IfNode::accept(NodeVisitor* visitor) {
     return visitor->visitIfNode(this);
 }
 
 PyObject* FunctionNode::accept(NodeVisitor* visitor) {
     return visitor->visitFunctionNode(this);
+}
+
+PyObject* ClassNode::accept(NodeVisitor* visitor) {
+    return visitor->visitClassNode(this);
+}
+
+PyObject* PropertyNode::accept(NodeVisitor* visitor) {
+    return visitor->visitPropertyNode(this);
 }
 
 PyObject* ReturnNode::accept(NodeVisitor* visitor) {

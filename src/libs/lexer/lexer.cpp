@@ -29,7 +29,9 @@ Lexer::Lexer(const std::string& source)
         {"def", TokenType::Def}, 
         {"return", TokenType::Return},
         {"break", TokenType::Break},
-        {"continue", TokenType::Continue}
+        {"continue", TokenType::Continue},
+        {"pass", TokenType::Pass},
+        {"class", TokenType::Class}
     };
 }
 
@@ -165,7 +167,7 @@ void Lexer::handleNumber() {
     while (isdigit(peek())) advance();    
     
     bool hasDecimal = false;
-    if (peek() == '.' && isdigit(peekNext())) {
+    if (peek() == '.') {
         hasDecimal = true;
         do {
           advance();
@@ -196,7 +198,8 @@ void Lexer::handleIdentifier() {
         case TokenType::Elif:
         case TokenType::Else:
         case TokenType::While:
-        case TokenType::Def: { 
+        case TokenType::Def: 
+        case TokenType::Class: { 
             isBlock = true; 
             break;
         }

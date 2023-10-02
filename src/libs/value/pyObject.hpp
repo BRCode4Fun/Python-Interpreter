@@ -13,7 +13,8 @@ public:
         None, 
         Int, Float,
         Boolean, String,
-        List, Func
+        List, Func, 
+        Klass, Instance
     };
     PyObject(ObjectType type, void* data = nullptr) 
         : type(type), data(data) {}
@@ -27,6 +28,8 @@ public:
     virtual inline bool isBool() const { return false; }
     virtual inline bool isList() const { return false; }
     virtual inline bool isFunc() const { return false; }
+    virtual inline bool isKlass() const { return false; }
+    virtual inline bool isInstance() const { return false; }
     virtual inline bool isNone() const { return false; }
     
     virtual inline bool isTruthy() const { 

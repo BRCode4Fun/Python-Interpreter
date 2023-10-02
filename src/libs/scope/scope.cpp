@@ -34,3 +34,9 @@ PyObject* Scope::get(const std::string& name) {
 
     throw std::runtime_error("Undeclared variable '" + name + "'");
 }
+
+Scope::~Scope() {
+    for (auto& kv : values) {
+        delete kv.second;
+    }
+}

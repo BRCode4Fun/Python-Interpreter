@@ -7,6 +7,7 @@ class Scope {
 
 public:
     Scope(Scope* parent = nullptr) : parent(parent){}
+    ~Scope();
 
     void define(const std::string& name, PyObject* value);
     void decRefCount(PyObject* value);

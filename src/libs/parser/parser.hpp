@@ -23,6 +23,7 @@ private:
     AstNode* parseWhileStmt();
     AstNode* parseBreakStmt();
     AstNode* parseContinueStmt();
+    AstNode* parsePassStmt();
     AstNode* parseReturnStmt(); 
     AstNode* parseAssignSimple();
     AstNode* parseAssign();
@@ -41,9 +42,11 @@ private:
     AstNode* parsePower();
     AstNode* parseUnary();
     AstNode* parseCall(AstNode *func_name);
-    AstNode* parsePrimary();    
+    AstNode* parsePrimary();
+    AstNode* parseAtom();   
     std::vector<AstNode*> parseParameterList();
     AstNode* parseFunctionDef();
+    AstNode* parseClassDef();
     
     const std::vector<Token>& tokens;
     int current = 0;

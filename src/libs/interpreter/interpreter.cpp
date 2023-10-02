@@ -66,9 +66,37 @@ PyObject* Interpreter::visitFloatNode(FloatNode* node){
 PyObject* Interpreter::visitFunctionNode(FunctionNode* node){
 
     const std::string& fname = node->getName();
+    /* python chooses to do not evaluate the function's body, 
+       until it's really needed (lazy evaluation) */
     PyFnObj* value = new PyFnObj(node);
     currentEnv.top()->define(fname, value);
     
+    return new PyNone();
+}
+
+PyObject* Interpreter::visitClassNode(ClassNode* node) {
+    
+    const std::string& kname = node->getName();
+    /* python chooses to do not evaluate the class's body, 
+       until it's really needed (lazy evaluation) */
+    PyClass* value = new PyClass(node);
+    currentEnv.top()->define(kname, value);
+    
+    return new PyNone();
+}
+
+PyObject* Interpreter::visitPropertyNode(PropertyNode* node) {
+    
+    PyObject* object = node->object->accept(this);
+    
+    if(object->isInstance()) {
+        PyInstance* obj = static_cast<PyInstance*>(object);
+        Scope* scope = obj->getScope();
+        currentEnv.push(scope);
+        PyObject* attr = node->attribute->accept(this);
+        currentEnv.pop();
+        return attr;
+    }
     return new PyNone();
 }
 
@@ -105,6 +133,10 @@ PyObject* Interpreter::visitBreakNode(BreakNode* node) {
 PyObject* Interpreter::visitContinueNode(ContinueNode* node) {
     throw ContinueException();
     return nullptr; // unreachable
+}
+
+PyObject* Interpreter::visitPassNode(PassNode* node) {
+    return new PyNone();
 }
 
 PyObject* Interpreter::visitIfNode(IfNode* node) {
@@ -240,17 +272,34 @@ PyObject* Interpreter::visitBinaryOpNode(BinaryOpNode* node)  {
 
 PyObject* Interpreter::visitAssignNode(AssignNode* node) {
     
+    AstNode* targetNode = node->name;
+    Scope* topEnv;
+    
+    std::string varName;
+    
+    if(targetNode->is_name_node()) {
+        NameNode* name = static_cast<NameNode*>(targetNode);
+        varName = name->getLexeme();
+        topEnv = currentEnv.top();
+        
+    } else if(targetNode->is_property_node()) {
+        PropertyNode* ppr = static_cast<PropertyNode*>(targetNode);
+        PyInstance* object = static_cast<PyInstance*>(ppr->object->accept(this));
+        NameNode* attribute = static_cast<NameNode*>(ppr->attribute);
+        varName = attribute->getLexeme();
+        topEnv = object->getScope();
+    
+    } else {
+        throw std::runtime_error("Unsupported target expression");
+    }
+    
     PyObject* value = node->value->accept(this);
     value->incRc();
-    
-    const std::string& varName = static_cast<NameNode*>(node->name)->getLexeme();
-    
-    Scope* topEnv = currentEnv.top();
     
     if(node->op.type == TokenType::Equals) {
         topEnv->define(varName, value);
     } else {
-        PyObject* targetValue = node->name->accept(this);
+        PyObject* targetValue = topEnv->get(varName);
         targetValue->incRc();
         
         switch(node->op.type) {
@@ -343,34 +392,72 @@ PyObject* Interpreter::visitNullNode(NullNode* expr){
 }
 
 PyObject* Interpreter::visitCallNode(CallNode* expr){
-
-    NameNode* callerNode = static_cast<NameNode*>(expr->caller);
-    const std::string& caller = callerNode->getLexeme(); // if is NameNode
-    PyFnObj* callee = static_cast<PyFnObj*>(currentEnv.top()->get(caller));
-    const FunctionNode* fndef = callee->getFunc();
+    
+    PyObject* calleeRef = expr->caller->accept(this);
     
     Scope* parentEnv = currentEnv.top();
-    Scope* fnEnv = new Scope(parentEnv);
+    Scope* objEnv = new Scope(parentEnv);
     
-    const std::vector<AstNode*>& params = fndef->getParams();
-    const std::vector<AstNode*>& args = expr->args;
+    if(calleeRef->isKlass()) {
     
-    for (size_t i = 0; i < args.size(); i++){
-        NameNode* paramNode = static_cast<NameNode*>(params[i]);
-        const std::string& argName = paramNode->getLexeme(); // if is NameNode
-        fnEnv->define(argName, args[i]->accept(this));
-    }
-    currentEnv.push(fnEnv);
-    
-    PyObject* retValue = nullptr;
-    try {
-        fndef->getBody()->accept(this);
-    } catch(ReturnException re) {
-        retValue = re.value;
-    }
-    currentEnv.pop();
+        PyClass* callee = static_cast<PyClass*>(calleeRef);
+        const ClassNode* classdef = callee->getKlass();
+        
+        currentEnv.push(objEnv);
+        classdef->getBody()->accept(this);
+        
+        PyObject* init_target = objEnv->get("__init__");
+        PyFnObj* init = static_cast<PyFnObj*>(init_target);
+        const FunctionNode* constructor = init->getFunc();
+        const std::vector<AstNode*>& params = constructor->getParams();
+        const std::vector<AstNode*>& args = expr->args;
+        
+        PyInstance* self = new PyInstance(objEnv);
+        
+        for (size_t i = 0; i < params.size(); i++){
+            NameNode* paramNode = static_cast<NameNode*>(params[i]);
+            const std::string& argName = paramNode->getLexeme(); // if is NameNode
+            if(i == 0) {
+                objEnv->define(argName, self);
+            } else {
+                objEnv->define(argName, args[i-1]->accept(this));
+            }
+        }
+        constructor->getBody()->accept(this);
+        currentEnv.pop();
+        
+        return self;
+        
+    } else if(calleeRef->isFunc()) {
+        
+        PyFnObj* callee = static_cast<PyFnObj*>(calleeRef);
+        const FunctionNode* fndef = callee->getFunc();
+        
+        const std::vector<AstNode*>& params = fndef->getParams();
+        const std::vector<AstNode*>& args = expr->args;
+        
+        for (size_t i = 0; i < args.size(); i++){
+            NameNode* paramNode = static_cast<NameNode*>(params[i]);
+            const std::string& argName = paramNode->getLexeme(); // if is NameNode
+            objEnv->define(argName, args[i]->accept(this));
+        }
+        
+        currentEnv.push(objEnv);
+        
+        PyObject* retValue = nullptr;
+        try {
+            fndef->getBody()->accept(this);
+        } catch(ReturnException re) {
+            retValue = re.value;
+        }
+        currentEnv.pop();
 
-    return retValue;
+        return retValue;
+        
+    } else {
+        throw std::logic_error("Not a callable.");
+    }
+    return new PyNone();
 }
 
 PyObject* Interpreter::visitReturnNode(ReturnNode* node) {

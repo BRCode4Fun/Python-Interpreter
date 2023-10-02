@@ -33,7 +33,7 @@ AstNode* Parser::parseStmt() {
      *                      | try_stmt      TODO
      *                      | with_stmt     TODO
      *                      | funcdef       
-     *                      | classdef      TODO
+     *                      | classdef      
     */
     if (match(TokenType::If)){
         return parseIfStmt();
@@ -42,8 +42,11 @@ AstNode* Parser::parseStmt() {
         return parseWhileStmt();
         
     } else if (match(TokenType::Def)){
-        return parseFunctionDef();    
-
+        return parseFunctionDef();
+            
+    } else if (match(TokenType::Class)) {
+        return parseClassDef();
+    
     } else {
         std::vector<AstNode*> stmtList = parseStmtList();
         while(match(TokenType::Newline)) continue;
@@ -88,6 +91,18 @@ AstNode* Parser::parseFunctionDef(){
     return new FunctionNode(fname, parameters, body);
 }
 
+AstNode* Parser::parseClassDef(){
+    /*
+    *   classdef  ::= "class" classname (inheritance)? ":" suite // TODO inheritance
+    *   classname ::= identifier
+    */
+    Token kname = consume(TokenType::Name);
+    consume(TokenType::Colon);
+    AstNode* body = parseSuite();
+    
+    return new ClassNode(kname, body);
+}
+
 std::vector<AstNode*> Parser::parseStmtList() {
     /*
      *    stmt_list ::= simple_stmt (";" simple_stmt)* (";")?
@@ -129,6 +144,8 @@ AstNode* Parser::parseSimpleStmt() {
         return parseBreakStmt();
     } else if(match(TokenType::Continue)){
         return parseContinueStmt();
+    } else if(match(TokenType::Pass)) {
+        return parsePassStmt();
     } else {
         return parseAssign();
     }
@@ -164,6 +181,14 @@ AstNode* Parser::parseContinueStmt() {
     
     Token keyword = previous();
     return new ContinueNode(keyword);
+}
+
+AstNode* Parser::parsePassStmt() {
+    /*
+     *  pass_stmt ::= "pass"
+    */
+    Token keyword = previous();
+    return new PassNode(keyword);
 }
 
 AstNode* Parser::parsePrintStmt() {
@@ -252,7 +277,6 @@ AstNode* Parser::parseWhileStmt() {
      *   while_stmt ::= "while" expression ":" suite
      *                  ("else" ":" suite)?  //TODO
     */
-    
     AstNode* cond = parseExpr();
     consume(TokenType::Colon);
     isInsideLoop++;
@@ -293,7 +317,7 @@ AstNode* Parser::parseAssign() {
         Token op = previous();
         AstNode* right = parseExpr();
         
-        if(left->is_name_node()) {
+        if(left->is_name_node() or left->is_property_node()) {
             return new AssignNode(left, right, op);
         } else {
             error("Invalid compound assignment.");
@@ -501,12 +525,10 @@ AstNode* Parser::parseUnary() {
     }
 }
 
-AstNode* Parser::parseCall(AstNode* fname) {
+AstNode* Parser::parseCall(AstNode* callee) {
     /* 
      *  call ::= primary "(" (argument_list)? ")"
     */
-    //consume(TokenType::LeftParen);
-
     std::vector<AstNode*> args; 
 
     if(not match(TokenType::RightParen)) {
@@ -515,19 +537,40 @@ AstNode* Parser::parseCall(AstNode* fname) {
         } while(match(TokenType::Comma));
         consume(TokenType::RightParen);
     }
-    return new CallNode(fname, args);
+    return new CallNode(callee, args);
 }
 
 AstNode* Parser::parsePrimary() {
     /*
      *   primary ::= atom | attributeref
      *               | subscription | slicing | call
-     *   atom ::= identifier | literal
-     *   literal ::= stringliteral | integer | floatnumber 
-     *               | "None" | "True" | "False"
-     *   attributeref ::= primary "." identifier             // TODO
+     *   attributeref ::= primary "." identifier             
      *   subscription ::= primary "[" expression_list "]"    // TODO
      *   slicing ::= simple_slicing | extended_slicing       // TODO
+    */
+    AstNode* left = parseAtom();
+    
+    while(true) {
+        if(match(TokenType::LeftParen)) {
+            left = parseCall(left);
+        
+        } else if(match(TokenType::Dot)) {
+            AstNode* right = parsePrimary();
+            left = new PropertyNode(left, right);
+        
+        } else {
+            break;
+        }
+    }
+    return left;
+}
+
+AstNode* Parser::parseAtom() {
+    /*
+     *  atom ::= identifier | literal | enclosure
+     *  literal ::= stringliteral | integer | floatnumber 
+     *             | "None" | "True" | "False"
+     *  enclosure ::= "(" expression ")"
     */
     if (match(TokenType::LeftParen)) {
         AstNode* expr = parseExpr();
@@ -550,9 +593,7 @@ AstNode* Parser::parsePrimary() {
             case TokenType::String:
                 return new StringNode(tk);
             case TokenType::Name: {
-                AstNode* name = new NameNode(tk);
-                return (match(TokenType::LeftParen)) ? 
-                        parseCall(name) : name;
+                return new NameNode(tk);
             } default: {
                 error("Expected a primary expression");
                 return nullptr; 

@@ -100,10 +100,18 @@ public:
                 out << "None"; break;
             case TokenType::Print:
                 out << "Print"; break;
+            case TokenType::Class:
+                out << "Class"; break;
             case TokenType::Def:
                 out << "Def"; break;
             case TokenType::While:
                 out << "While"; break;
+            case TokenType::Continue:
+                out << "Continue"; break;
+            case TokenType::Break:
+                out << "Break"; break;
+            case TokenType::Pass:
+                out << "Pass"; break;
             case TokenType::If:
                 out << "If"; break;
             case TokenType::Elif:

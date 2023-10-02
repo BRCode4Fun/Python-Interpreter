@@ -8,5 +8,7 @@
 #include "./pyList.hpp"
 #include "./pyNone.hpp"
 #include "./pyFnObj.hpp"
+#include "./pyClass.hpp"
+#include "./pyInstance.hpp"
 
 #endif

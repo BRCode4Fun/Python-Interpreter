@@ -2,11 +2,13 @@
 
 enum TokenType {
     // Keywords
+    Class, 
     Print, Def, Return,
     While, Break, Continue,
     If, Elif, Else,
     True, False, None,
     And, Or, Not,
+    Pass,
     
     // Operators
     Plus, Minus, 

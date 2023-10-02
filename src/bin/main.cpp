@@ -52,6 +52,7 @@ int main(int argc, char* argv[]) {
 
         Interpreter interpreter;
         interpreter.interpret(root);
+        
     } catch (const runtime_error& err) {
         cerr << err.what() << '\n';
         return EXIT_FAILURE;

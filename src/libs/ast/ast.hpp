@@ -23,6 +23,8 @@ enum class AstNodeType {
     // Statements
     Print, While, Break, Continue,
     If, Function, Return,
+    Class, AttrRef,
+    Pass,
 
     // Expressions
     UnaryOp, BinaryOp, TernaryOp,
@@ -43,8 +45,9 @@ public:
     virtual ~AstNode() {}
 
     bool is_name_node() { return type == AstNodeType::Name; }
+    bool is_property_node() { return type == AstNodeType::AttrRef; }
 
-    virtual PyObject* accept(NodeVisitor* visitor) = 0; 
+    virtual PyObject* accept(NodeVisitor* visitor) = 0;
 
     AstNodeType type;
 };
@@ -236,13 +239,13 @@ class CallNode : public AstNode {
 
 public:
     
-    CallNode(AstNode* name, const std::vector<AstNode*>& args) 
-      : AstNode(AstNodeType::Call), caller(name), args(args) {}
+    CallNode(AstNode* caller, const std::vector<AstNode*>& args) 
+      : AstNode(AstNodeType::Call), caller(caller), args(args) {}
 
     AstNode* caller;
     std::vector<AstNode*> args;
 
-    virtual PyObject* accept(NodeVisitor * visitor) override;
+    virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
 
@@ -296,6 +299,19 @@ public:
 };
 
 
+class PassNode : public AstNode {
+
+public:
+
+    PassNode(Token keyword) 
+      : AstNode(AstNodeType::Pass), kwd(keyword) {}
+    
+    Token kwd;
+
+    virtual PyObject* accept(NodeVisitor* visitor) override;
+};
+
+
 class FunctionNode : public AstNode {
 
 public:
@@ -314,6 +330,37 @@ private:
     Token fname;
     std::vector<AstNode*> params;
     AstNode* body;
+};
+
+
+class ClassNode : public AstNode {
+
+public:
+
+    ClassNode(Token kname, AstNode* body)
+        : AstNode(AstNodeType::Class), kname(kname), body(body) {}
+   
+    const std::string& getName() const { return kname.lexeme; }
+    AstNode* getBody() const { return body; }
+
+    virtual PyObject* accept(NodeVisitor* visitor) override;
+
+private:
+    Token kname;
+    AstNode* body;
+};
+
+
+class PropertyNode : public AstNode {
+
+public:
+    
+    PropertyNode(AstNode* object, AstNode* attr)
+        : AstNode(AstNodeType::AttrRef), object(object), attribute(attr) {}
+
+    virtual PyObject* accept(NodeVisitor* visitor) override;
+    
+    AstNode *object, *attribute;
 };
 
 
@@ -345,6 +392,7 @@ public:
     virtual PyObject* visitWhileNode(WhileNode* node) = 0;
     virtual PyObject* visitBreakNode(BreakNode* node) = 0;
     virtual PyObject* visitContinueNode(ContinueNode* node) = 0;
+    virtual PyObject* visitPassNode(PassNode* node) = 0;
     virtual PyObject* visitIfNode(IfNode* node) = 0;
     virtual PyObject* visitAssignNode(AssignNode* node) = 0;
     virtual PyObject* visitTernaryOpNode(TernaryOpNode* node) = 0;
@@ -359,5 +407,7 @@ public:
     virtual PyObject* visitFunctionNode(FunctionNode* node) = 0;
     virtual PyObject* visitCallNode(CallNode* node) = 0;
     virtual PyObject* visitReturnNode(ReturnNode* node) = 0;
+    virtual PyObject* visitClassNode(ClassNode* node) = 0;
+    virtual PyObject* visitPropertyNode(PropertyNode* node) = 0;
 };
 
