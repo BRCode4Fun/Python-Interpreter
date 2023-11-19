@@ -35,14 +35,14 @@ def count_inc(n, m):
     if n > m:
         return;
     print(n)
-    count_inc(n+1)
+    count_inc(n+1, m)
 
 count_inc(1, 10)
 
 def count_dec(n, m):
     if n > m:
         return;
-    count_dec(n+1)
+    count_dec(n+1, m)
     print(n)
     
 count_dec(1, 10)

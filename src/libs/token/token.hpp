@@ -20,6 +20,8 @@ public:
                 out << "Indent"; break;
             case TokenType::Dedent:
                 out << "Dedent"; break;
+            case TokenType::Dot:
+                out << "Dot"; break;
             case TokenType::Plus:
                 out << "Plus"; break;
             case TokenType::Minus:
@@ -84,6 +86,8 @@ public:
                 out << "Semicolon"; break;
             case TokenType::Colon:
                 out << "Colon"; break;
+            case TokenType::Comma:
+                out << "Comma"; break;
             case TokenType::Int:
                 out << "Int"; break;
             case TokenType::Float:

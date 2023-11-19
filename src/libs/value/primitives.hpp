@@ -7,7 +7,7 @@
 #include "./pyStr.hpp"
 #include "./pyList.hpp"
 #include "./pyNone.hpp"
-#include "./pyFnObj.hpp"
+#include "./pyFunction.hpp"
 #include "./pyClass.hpp"
 #include "./pyInstance.hpp"
 

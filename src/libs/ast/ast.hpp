@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include "../token/token.hpp"
+#include "../value/pyInstance.hpp"
 
 using llf = long double;
 using lld = long long int;
@@ -46,6 +47,7 @@ public:
 
     bool is_name_node() { return type == AstNodeType::Name; }
     bool is_property_node() { return type == AstNodeType::AttrRef; }
+    bool is_function() { return type == AstNodeType::Function; }
 
     virtual PyObject* accept(NodeVisitor* visitor) = 0;
 
@@ -172,7 +174,7 @@ public:
     
     NameNode(Token name) 
       : AstNode(AstNodeType::Name), value(name) {}
-    
+
     Token value;
     
     const std::string& getLexeme() { return value.lexeme; }

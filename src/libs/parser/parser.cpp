@@ -529,14 +529,15 @@ AstNode* Parser::parseCall(AstNode* callee) {
     /* 
      *  call ::= primary "(" (argument_list)? ")"
     */
-    std::vector<AstNode*> args; 
+    std::vector<AstNode*> args;
 
-    if(not match(TokenType::RightParen)) {
+    if(peek().type != TokenType::RightParen) {
         do {
-            args.push_back(parseExpr());    
+            args.push_back(parseExpr());
         } while(match(TokenType::Comma));
-        consume(TokenType::RightParen);
     }
+    consume(TokenType::RightParen);
+    
     return new CallNode(callee, args);
 }
 
@@ -544,7 +545,7 @@ AstNode* Parser::parsePrimary() {
     /*
      *   primary ::= atom | attributeref
      *               | subscription | slicing | call
-     *   attributeref ::= primary "." identifier             
+     *   attributeref ::= primary "." identifier
      *   subscription ::= primary "[" expression_list "]"    // TODO
      *   slicing ::= simple_slicing | extended_slicing       // TODO
     */
@@ -555,7 +556,8 @@ AstNode* Parser::parsePrimary() {
             left = parseCall(left);
         
         } else if(match(TokenType::Dot)) {
-            AstNode* right = parsePrimary();
+            Token name = consume(TokenType::Name);
+            AstNode* right = new NameNode(name);
             left = new PropertyNode(left, right);
         
         } else {
