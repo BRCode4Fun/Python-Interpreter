@@ -2,15 +2,19 @@
 
 #include "./pyObject.hpp"
 #include "../ast/ast.hpp"
+#include <functional>
 
-class PyFunction : public PyObject {
-public:    
-    explicit PyFunction(FunctionNode* fnode) 
+class PyFunction: public PyObject {
+public:
+    PyFunction(FunctionNode* fnode)
         : PyObject(ObjectType::Func, std::move(fnode)){}
-    
+
+
+
+
     inline bool isFunc() const override { return true; }
-    inline bool isTruthy() const override { return true; }    
-    
+    inline bool isTruthy() const override { return true; }
+
     FunctionNode* getDecl() const {
         return getFuncData();
     }
@@ -25,12 +29,32 @@ public:
     void write(std::ostream& out) const override {
         out << "<function " << getDecl()->getName() << ">";
     }
-        
+
 private:
+
     FunctionNode* getFuncData() const {
         return static_cast<FunctionNode*>(data);
     }
+
     void deleteData() override {
         delete getFuncData();
     }
+};
+
+using BuiltInfunctionType = std::function< PyObject(std::vector<PyObject>)>;
+
+class PyFunctionBuiltIn : PyFunction
+{
+
+public:
+
+   PyFunctionBuiltIn(BuiltInfunctionType  BuiltInfunction) : PyFunction(nullptr) ,  m_BuiltInfunction(BuiltInfunction)
+   {
+
+   }
+
+private:
+
+  BuiltInfunctionType m_BuiltInfunction;
+
 };
