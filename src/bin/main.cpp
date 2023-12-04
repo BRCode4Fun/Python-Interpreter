@@ -5,6 +5,9 @@
 #include "../libs/parser/parser.hpp"
 #include "../libs/ast/ast.hpp"
 #include "../libs/interpreter/interpreter.hpp"
+#include "../libs/vm/ByteCodeGenerator.hpp"
+#include "../libs/vm/Vm.hpp"
+
 
 #pragma GCC optimize("Ofast")
 #pragma GCC target("avx,avx2,fma")
@@ -48,11 +51,30 @@ int main(int argc, char* argv[]) {
         #endif
 
         Parser parser(tokens);
+
         ProgramNode* root = parser.parse();
 
+/*
+
+        code to this the vm for now
+
+        ProgramNode* root = parser.parse();
+
+        BinaryOpNode *test = static_cast<BinaryOpNode *>(static_cast<BlockNode*>(root->body->statements[0])->statements[0]);
+
+
+        BytecodeGenerator Emitter = BytecodeGenerator();
+
+        test->emit_bytecode(Emitter);
+
+        VirtualMachine Vm;
+
+        Vm.execute(Emitter.instructions);
+
+*/
         Interpreter interpreter;
         interpreter.interpret(root);
-        
+
     } catch (const runtime_error& err) {
         cerr << err.what() << '\n';
         return EXIT_FAILURE;
@@ -60,4 +82,3 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
-

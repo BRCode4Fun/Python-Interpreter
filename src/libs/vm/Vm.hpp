@@ -1,17 +1,18 @@
 #pragma once
 
 #include "./Opcodes.hpp"
-#include "../value/PyObject.h"
+#include "../value/primitives.hpp"
+#include "./Instruction.hpp"
 #include <stack>
 
 class VirtualMachine
 {
 public:
 
-  VirtualMachine() {};
+  VirtualMachine() {}
+  void execute( std::vector<BytecodeInstruction*>& instructions);
 
-  void execute(const Bytecode& bytecode);
 private:
-    std::stack<Value> stack;
-    std::unordered_map<std::string, PyObject> variables;
-}
+
+    std::vector<int> registers;
+};

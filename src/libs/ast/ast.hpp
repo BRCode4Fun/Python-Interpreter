@@ -6,6 +6,9 @@
 #include <memory>
 #include "../token/token.hpp"
 #include "../value/pyInstance.hpp"
+#include "../vm/ByteCodeGenerator.hpp"
+#include "../vm/Opcodes.hpp"
+#include "../vm/Instruction.hpp"
 
 using llf = long double;
 using lld = long long int;
@@ -51,7 +54,7 @@ public:
 
     virtual PyObject* accept(NodeVisitor* visitor) = 0;
 
-  
+
 
     AstNodeType type;
 };
@@ -110,19 +113,6 @@ public:
 };
 
 
-class BinaryOpNode : public AstNode {
-
-public:
-
-    BinaryOpNode(AstNode* left, Token op, AstNode* right)
-      : AstNode(AstNodeType::BinaryOp),
-        left(left), op(op), right(right) {}
-
-    Token op;
-    AstNode *left, *right;
-
-    virtual PyObject* accept(NodeVisitor* visitor) override;
-};
 
 
 class UnaryOpNode : public AstNode {
@@ -152,6 +142,54 @@ public:
     const std::string& getLexeme() { return value.lexeme; }
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
+
+    int emit_bytecode(BytecodeGenerator &Emitter)
+    {
+       int reg =  Emitter.allocateRegister();
+
+
+       int v = std::atoi(value.lexeme.c_str());
+       std::vector<int> regs = { reg , v };
+
+       BytecodeInstruction * value =  new BytecodeInstruction(OpCode::LOAD_INT,  regs);
+
+       Emitter.append_instruction(value);
+
+       return reg;
+    }
+};
+
+
+class BinaryOpNode : public AstNode {
+
+public:
+
+    BinaryOpNode(AstNode* left, Token op, AstNode* right)
+      : AstNode(AstNodeType::BinaryOp),
+        left(left), op(op), right(right) {}
+
+    Token op;
+    AstNode *left, *right;
+
+    virtual PyObject* accept(NodeVisitor* visitor) override;
+
+    int emit_bytecode(BytecodeGenerator &Emitter)
+    {
+       int reg1 =   static_cast<IntNode*>(left)->emit_bytecode(Emitter);
+
+       int reg2 =   static_cast<IntNode*>(right)->emit_bytecode(Emitter);
+
+       int reg3 = Emitter.allocateRegister();
+
+
+       std::vector<int> regs = {reg1 , reg2 , reg3};
+
+       BytecodeInstruction * value =  new BytecodeInstruction(OpCode::ADD,  regs );
+
+       Emitter.append_instruction(value);
+
+       return reg3;
+    }
 };
 
 

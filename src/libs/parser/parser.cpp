@@ -32,21 +32,21 @@ AstNode* Parser::parseStmt() {
      *                      | for_stmt      TODO
      *                      | try_stmt      TODO
      *                      | with_stmt     TODO
-     *                      | funcdef       
-     *                      | classdef      
+     *                      | funcdef
+     *                      | classdef
     */
     if (match(TokenType::If)){
         return parseIfStmt();
-        
+
     } else if (match(TokenType::While)){
         return parseWhileStmt();
-        
+
     } else if (match(TokenType::Def)){
         return parseFunctionDef();
-            
+
     } else if (match(TokenType::Class)) {
         return parseClassDef();
-    
+
     } else {
         std::vector<AstNode*> stmtList = parseStmtList();
         while(match(TokenType::Newline)) continue;
@@ -62,9 +62,9 @@ std::vector<AstNode*> Parser::parseParameterList() {
     do {
         Token tk = consume(TokenType::Name);
         AstNode* pname = new NameNode(tk);
-        parameters.push_back(pname);      
+        parameters.push_back(pname);
     } while (match(TokenType::Comma));
-    
+
     return parameters;
 }
 
@@ -77,9 +77,9 @@ AstNode* Parser::parseFunctionDef(){
     consume(TokenType::LeftParen);
 
     std::vector<AstNode*> parameters;
-    
+
     if (peek().type != TokenType::RightParen) {
-       parameters = parseParameterList();   
+       parameters = parseParameterList();
     }
     consume(TokenType::RightParen);
     consume(TokenType::Colon);
@@ -99,7 +99,7 @@ AstNode* Parser::parseClassDef(){
     Token kname = consume(TokenType::Name);
     consume(TokenType::Colon);
     AstNode* body = parseSuite();
-    
+
     return new ClassNode(kname, body);
 }
 
@@ -108,15 +108,15 @@ std::vector<AstNode*> Parser::parseStmtList() {
      *    stmt_list ::= simple_stmt (";" simple_stmt)* (";")?
     */
     std::vector<AstNode*> stmts;
-    
+
     stmts.push_back(parseSimpleStmt());
-    
+
     while(match(TokenType::Semicolon)){
         if(peek().type == TokenType::Newline) break;
         stmts.push_back(parseSimpleStmt());
     }
     if(peek().type == TokenType::Semicolon) ++current;
-    
+
     return stmts;
 }
 
@@ -126,12 +126,12 @@ AstNode* Parser::parseSimpleStmt() {
      *                   | assert_stmt     TODO
      *                   | pass_stmt       TODO
      *                   | del_stmt        TODO
-     *                   | print_stmt      
-     *                   | return_stmt     
+     *                   | print_stmt
+     *                   | return_stmt
      *                   | yield_stmt      TODO
      *                   | raise_stmt      TODO
-     *                   | break_stmt      
-     *                   | continue_stmt   
+     *                   | break_stmt
+     *                   | continue_stmt
      *                   | import_stmt     TODO
      *                   | global_stmt     TODO
      *
@@ -156,9 +156,9 @@ AstNode* Parser::parseReturnStmt() {
      *  return_stmt ::= "return" (expression)?
     */
     if(!isInsideFunc) error("Return outside Function.");
-    
+
     Token keyword = previous();
-    AstNode* expr = match({TokenType::Newline, TokenType::Semicolon}) ? 
+    AstNode* expr = match({TokenType::Newline, TokenType::Semicolon}) ?
                     nullptr : parseExpr();
     return new ReturnNode(keyword, expr);
 }
@@ -168,7 +168,7 @@ AstNode* Parser::parseBreakStmt() {
      *  break_stmt ::= "break"
     */
     if(!isInsideLoop) error("Break outside Loop.");
-    
+
     Token keyword = previous();
     return new BreakNode(keyword);
 }
@@ -178,7 +178,7 @@ AstNode* Parser::parseContinueStmt() {
      *  continue_stmt ::= "continue"
     */
     if(!isInsideLoop) error("Continue outside Loop.");
-    
+
     Token keyword = previous();
     return new ContinueNode(keyword);
 }
@@ -210,32 +210,32 @@ AstNode* Parser::parseSuite() {
      *              | stmt_list NEWLINE
     */
     if(match(TokenType::Newline)) {
-    
+
         while(match(TokenType::Newline)) continue;
 
         consume(TokenType::Indent);
-        
+
         std::vector<AstNode*> stmts;
-    
+
         //stmts.push_back(parseStmt());
-    
+
         while(peek().type != TokenType::Dedent){
 
              auto r = parseStmt();
 
              if(dynamic_cast<BlockNode*>(r) != nullptr){
-                 
+
                 BlockNode* stmt_list =  dynamic_cast<BlockNode*>(r);
 
                 for(auto stmt : stmt_list->statements)
-                     stmts.push_back(stmt);  
-                                  
+                     stmts.push_back(stmt);
+
              } else {
-                 stmts.push_back(r);       
+                 stmts.push_back(r);
              }
         }
         consume(TokenType::Dedent);
-        
+
         return new BlockNode(stmts);
 
     } else {
@@ -262,13 +262,13 @@ AstNode* Parser::parseIfStmt() {
         AstNode* elifSuite = parseSuite();
         elifBranches.emplace_back(elifCond, elifSuite);
     }
-    
+
     AstNode* elseBranch = nullptr;
     if(match(TokenType::Else)) {
         consume(TokenType::Colon);
         elseBranch = parseSuite();
     }
-    
+
     return new IfNode(cond, trueBranch, elifBranches, elseBranch);
 }
 
@@ -291,7 +291,7 @@ AstNode* Parser::parseAssignSimple() {
      *  assign_simple ::= expression ("=" assign_stmt)* // TODO target
     */
     AstNode* left = parseExpr();
-    
+
     if(match(TokenType::Equals)) {
         Token op = previous();
         AstNode* right = parseAssignSimple();
@@ -304,19 +304,19 @@ AstNode* Parser::parseAssign() {
     /*
      *  assign_stmt ::= assign_simple | augmented_assignment_stmt
      *  augmented_assignment_stmt ::= expression augop expression // TODO target, expression_list
-     *  augop ::= "+="  | "-=" ¦ "*=" | "/=" 
+     *  augop ::= "+="  | "-=" ¦ "*=" | "/="
      *          ¦ "%="  | "&=" | "|=" ¦ "^="
      *          | "<<=" | ">>="
     */
     AstNode* left = parseAssignSimple();
-    
+
     if(match({TokenType::PlusEqual, TokenType::MinusEqual,
-              TokenType::StarEqual, TokenType::SlashEqual, TokenType::ModEqual, 
+              TokenType::StarEqual, TokenType::SlashEqual, TokenType::ModEqual,
               TokenType::AndEqual, TokenType::OrEqual, TokenType::XorEqual,
               TokenType::LeftShiftEqual, TokenType::RightShiftEqual})) {
         Token op = previous();
         AstNode* right = parseExpr();
-        
+
         if(left->is_name_node() or left->is_property_node()) {
             return new AssignNode(left, right, op);
         } else {
@@ -329,7 +329,7 @@ AstNode* Parser::parseAssign() {
 
 AstNode* Parser::parseExpr() {
     /*
-     *  expression ::= conditional_expression 
+     *  expression ::= conditional_expression
      *                 | lambda_form // TODO
     */
     return parseConditionalExpr();
@@ -340,7 +340,7 @@ AstNode* Parser::parseConditionalExpr() {
      *  conditional_expression ::= disjunction ("if" disjunction "else" expression)?
     */
     AstNode* left = parseDisjunction();
-    
+
     if(match(TokenType::If)) {
         AstNode* condition = parseDisjunction();
         consume(TokenType::Else);
@@ -355,7 +355,7 @@ AstNode* Parser::parseDisjunction() {
      *  disjunction ::= conjunction ("or" conjunction)*
     */
     AstNode* left = parseConjunction();
-    
+
     while (match(TokenType::Or)) {
         Token op = previous();
         AstNode* right = parseConjunction();
@@ -369,7 +369,7 @@ AstNode* Parser::parseConjunction() {
      *  conjunction ::= inversion ("and" inversion)*
     */
     AstNode* left = parseInversion();
-    
+
     while (match(TokenType::And)) {
         Token op = previous();
         AstNode* right = parseInversion();
@@ -399,9 +399,9 @@ AstNode* Parser::parseComparison() {
                            | "is" ("not")? | ("not")? "in"  // TODO
     */
     AstNode* left = parseBitwiseOr();
-    
-    while (match({TokenType::Less, TokenType::Greater, 
-                  TokenType::EqualEqual, TokenType::GreaterEqual, 
+
+    while (match({TokenType::Less, TokenType::Greater,
+                  TokenType::EqualEqual, TokenType::GreaterEqual,
                   TokenType::LessEqual, TokenType::BangEqual})) {
         Token op = previous();
         AstNode* right = parseBitwiseOr();
@@ -411,11 +411,11 @@ AstNode* Parser::parseComparison() {
 }
 
 AstNode* Parser::parseBitwiseOr() {
-    /*  
+    /*
      *    bitwise_or ::= bitwise_xor ("|" bitwise_xor)*
     */
     AstNode* left = parseBitwiseXor();
-    
+
     while(match(TokenType::Pipe)) {
         Token op = previous();
         AstNode* right = parseBitwiseXor();
@@ -425,11 +425,11 @@ AstNode* Parser::parseBitwiseOr() {
 }
 
 AstNode* Parser::parseBitwiseXor() {
-    /*  
+    /*
      *    bitwise_xor ::= bitwise_and ("^" bitwise_and)*
     */
     AstNode* left = parseBitwiseAnd();
-    
+
     while(match(TokenType::Caret)) {
         Token op = previous();
         AstNode* right = parseBitwiseAnd();
@@ -471,7 +471,7 @@ AstNode* Parser::parseFactor() {
      *   factor ::= term (("+" | "-") term)*
     */
     AstNode* left = parseTerm();
-    
+
     while (match({TokenType::Plus, TokenType::Minus})) {
         Token op = previous();
         AstNode* right = parseTerm();
@@ -485,7 +485,7 @@ AstNode* Parser::parseTerm() {
      *   term ::= unary (("*" | "/" | "%") unary)*
     */
     AstNode* left = parseUnary();
-    
+
     while (match({TokenType::Star, TokenType::Slash, TokenType::Mod})) {
         Token op = previous();
         AstNode* right = parseUnary();
@@ -497,9 +497,9 @@ AstNode* Parser::parseTerm() {
 /*AstNode* Parser::parsePower() {
     /*
      *  power ::= unary ("**" power)*
-    
+
     auto left = parseUnary();
-    
+
     if (match(TokenType::DoubleStar)) {
         auto op = previous();
         auto right = parsePower();
@@ -516,17 +516,17 @@ AstNode* Parser::parseUnary() {
         Token op = previous();
         AstNode* right = parseUnary();
         return new UnaryOpNode(op, right);
-        
+
     } else if (match(TokenType::Plus)) {
         return parseUnary();
-        
+
     } else {
         return parsePrimary();
     }
 }
 
 AstNode* Parser::parseCall(AstNode* callee) {
-    /* 
+    /*
      *  call ::= primary "(" (argument_list)? ")"
     */
     std::vector<AstNode*> args;
@@ -537,7 +537,7 @@ AstNode* Parser::parseCall(AstNode* callee) {
         } while(match(TokenType::Comma));
     }
     consume(TokenType::RightParen);
-    
+
     return new CallNode(callee, args);
 }
 
@@ -550,16 +550,16 @@ AstNode* Parser::parsePrimary() {
      *   slicing ::= simple_slicing | extended_slicing       // TODO
     */
     AstNode* left = parseAtom();
-    
+
     while(true) {
         if(match(TokenType::LeftParen)) {
             left = parseCall(left);
-        
+
         } else if(match(TokenType::Dot)) {
             Token name = consume(TokenType::Name);
             AstNode* right = new NameNode(name);
             left = new PropertyNode(left, right);
-        
+
         } else {
             break;
         }
@@ -570,7 +570,7 @@ AstNode* Parser::parsePrimary() {
 AstNode* Parser::parseAtom() {
     /*
      *  atom ::= identifier | literal | enclosure
-     *  literal ::= stringliteral | integer | floatnumber 
+     *  literal ::= stringliteral | integer | floatnumber
      *             | "None" | "True" | "False"
      *  enclosure ::= "(" expression ")"
     */
@@ -580,7 +580,7 @@ AstNode* Parser::parseAtom() {
         return expr;
     } else {
         Token tk = advance();
-        
+
         switch(tk.type) {
             case TokenType::Int:
                 return new IntNode(tk);
@@ -598,7 +598,7 @@ AstNode* Parser::parseAtom() {
                 return new NameNode(tk);
             } default: {
                 error("Expected a primary expression");
-                return nullptr; 
+                return nullptr;
             }
         }
     }
@@ -623,9 +623,9 @@ bool Parser::match(TokenType type) {
 }
 
 bool Parser::match(std::initializer_list<TokenType> types) {
-    
+
     if(isAtEnd()) return false;
-    
+
     for(const auto& type : types) {
         if(peek().type == type) {
             ++current;

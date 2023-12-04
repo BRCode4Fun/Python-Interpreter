@@ -1,19 +1,18 @@
 #pragma once
 
 #include "./Opcodes.hpp"
-#include "../value/PyObject.h"
 #include <vector>
 
 
 class BytecodeInstruction
 {
 public:
-    BytecodeInstruction(OpCode op, std::vector<PyObject> operands) : opCode(op), operand(opd) {}
+    BytecodeInstruction(OpCode op, std::vector<int> operands) : opCode(op), operands(operands) {}
 
     OpCode getOpCode() const { return opCode; }
-    PyObject getOperands() const { return operands; }
+    std::vector<int>  getOperands() const { return operands; }
 
-private:
+
     OpCode opCode;
-    std::vector<PyObject> operands;
+    std::vector<int> operands;
 };
