@@ -147,13 +147,9 @@ public:
     {
        int reg =  Emitter.allocateRegister();
 
+       BytecodeInstruction * inst =  new Int_Load(OpCode::LOAD_INT,   std::atoi(value.lexeme.c_str()) );
 
-       int v = std::atoi(value.lexeme.c_str());
-       std::vector<int> regs = { reg , v };
-
-       BytecodeInstruction * value =  new BytecodeInstruction(OpCode::LOAD_INT,  regs);
-
-       Emitter.append_instruction(value);
+       Emitter.append_instruction(inst);
 
        return reg;
     }
@@ -175,18 +171,19 @@ public:
 
     int emit_bytecode(BytecodeGenerator &Emitter)
     {
+
        int reg1 =   static_cast<IntNode*>(left)->emit_bytecode(Emitter);
 
        int reg2 =   static_cast<IntNode*>(right)->emit_bytecode(Emitter);
 
        int reg3 = Emitter.allocateRegister();
 
-
-       std::vector<int> regs = {reg1 , reg2 , reg3};
-
+/*
        BytecodeInstruction * value =  new BytecodeInstruction(OpCode::ADD,  regs );
 
        Emitter.append_instruction(value);
+
+*/
 
        return reg3;
     }

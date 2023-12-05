@@ -1,18 +1,34 @@
 #pragma once
 
 #include "./Opcodes.hpp"
-#include <vector>
+
+
+class VirtualMachine;
 
 
 class BytecodeInstruction
 {
 public:
-    BytecodeInstruction(OpCode op, std::vector<int> operands) : opCode(op), operands(operands) {}
+    BytecodeInstruction(OpCode op) : opCode(op) {}
 
     OpCode getOpCode() const { return opCode; }
-    std::vector<int>  getOperands() const { return operands; }
-
+    virtual void execute(VirtualMachine &) = 0;
 
     OpCode opCode;
-    std::vector<int> operands;
+};
+
+
+
+class Int_Load : public BytecodeInstruction
+{
+public:
+    Int_Load(OpCode op , int value) : BytecodeInstruction(op), value(value) {}
+
+    void execute(VirtualMachine &) override;
+
+    OpCode getOpCode() const { return opCode; }
+
+
+    int dest_reg;
+    int value;
 };

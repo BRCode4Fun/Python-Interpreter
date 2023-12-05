@@ -4,15 +4,16 @@
 #include "../value/primitives.hpp"
 #include "./Instruction.hpp"
 #include <stack>
+#include <vector>
+
+class BytecodeInstruction;
 
 class VirtualMachine
 {
 public:
 
   VirtualMachine() {}
+
   void execute( std::vector<BytecodeInstruction*>& instructions);
-
-private:
-
-    std::vector<int> registers;
+  std::vector<int> registers;
 };
