@@ -10,5 +10,14 @@ void ADD::execute(VirtualMachine &VM)
 {
    VM.registers[dest] =  VM.registers[src1] + VM.registers[src2];
 
-   std::cout << "Sum value: " <<  VM.registers[dest] << std::endl;
+   std::cout  << "ADD value: " << VM.registers[dest] << std::endl;
+
+}
+
+
+void SUB::execute(VirtualMachine &VM)
+{
+
+   VM.registers[dest] =  VM.registers[src1] - VM.registers[src2];
+   std::cout  << "SUB value: " << VM.registers[dest] << std::endl;
 }

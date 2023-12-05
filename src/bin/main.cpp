@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
 /*
       //  code to this the vm for now
 
-        ProgramNode* root = parser.parse();
+    //    ProgramNode* root = parser.parse();
 
         BytecodeGenerator Emitter = BytecodeGenerator();
 
@@ -68,9 +68,10 @@ int main(int argc, char* argv[]) {
         VirtualMachine Vm;
 
         Vm.execute(Emitter.instructions);
-*/
-        return 0;
 
+  */
+
+        return 0;
 
         Interpreter interpreter;
         interpreter.interpret(root);

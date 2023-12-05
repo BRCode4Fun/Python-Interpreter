@@ -56,7 +56,7 @@ public:
 
     virtual int emit_bytecode(BytecodeGenerator &Emitter)
     {
-        return -1; 
+        return -1;
     }
 
 
@@ -173,7 +173,7 @@ public:
     {
        int reg =  Emitter.allocateRegister();
 
-       BytecodeInstruction * inst =  new Int_Load(OpCode::LOAD_INT,   std::atoi(value.lexeme.c_str()) , reg);
+       BytecodeInstruction * inst =  new Int_Load(std::atoi(value.lexeme.c_str()) , reg);
 
        Emitter.append_instruction(inst);
 
@@ -205,9 +205,20 @@ public:
        int reg3 = Emitter.allocateRegister();
 
 
-       BytecodeInstruction * value =  new ADD(OpCode::ADD,  reg3 , reg1 , reg2);
+      BytecodeInstruction * value  = nullptr;
+
+      if(op.GetType() == TokenType::Plus)
+      {
+            value =   new ADD(reg3 , reg1 , reg2);
+      }
+      else if (op.GetType() == TokenType::Minus)
+      {
+            value  =  new SUB(reg3 , reg1 , reg2);
+      }
+
 
        Emitter.append_instruction(value);
+
        return reg3;
     }
 };

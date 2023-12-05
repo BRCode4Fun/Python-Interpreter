@@ -9,25 +9,20 @@ class VirtualMachine;
 class BytecodeInstruction
 {
 public:
-    BytecodeInstruction(OpCode op) : opCode(op) { }
 
-    OpCode getOpCode() const { return opCode; }
+    BytecodeInstruction() { }
     virtual void execute(VirtualMachine &) = 0;
 
-    OpCode opCode;
+
 };
-
-
 
 class Int_Load : public BytecodeInstruction
 {
 public:
-    Int_Load(OpCode op , int value , int dest_reg) : BytecodeInstruction(op), value(value)
+    Int_Load(int value , int dest_reg) : value(value)
     , dest_reg(dest_reg) {}
 
     void execute(VirtualMachine &) override;
-
-    OpCode getOpCode() const { return opCode; }
 
 
     int dest_reg;
@@ -39,15 +34,29 @@ class ADD : public BytecodeInstruction
 {
 public:
 
-    ADD(OpCode op , int dest , int src1 , int src2) : BytecodeInstruction(op)
-    , dest(dest) , src1(src1) , src2(src2) {}
+    ADD(int dest , int src1 , int src2) :
+     dest(dest) , src1(src1) , src2(src2) {}
 
     void execute(VirtualMachine &) override;
 
-    OpCode getOpCode() const { return opCode; }
+    int dest;
+    int src1;
+    int src2;
 
+    int value;
+};
+
+class SUB : public BytecodeInstruction
+{
+public:
+
+    SUB(int dest , int src1 , int src2) :
+     dest(dest) , src1(src1) , src2(src2) {}
+
+    void execute(VirtualMachine &) override;
 
     int dest;
+    
     int src1;
     int src2;
 

@@ -9,8 +9,10 @@ public:
     Token(TokenType type, const std::string& lexeme, int line)
         : type(type), lexeme(lexeme), line(line) {}
 
+
+
     friend std::ostream& operator<<(std::ostream& out, const Token& token) {
-        
+
         switch (token.type) {
             case TokenType::LeftParen:
                 out << "LeftParen"; break;
@@ -137,9 +139,9 @@ public:
             default:
                 out << "Error"; break;
         }
-        
+
         out << " <- " << "\'";
-            
+
         for (char c : token.lexeme) {
             if (c == '\n') {
                 out << "\\n";
@@ -148,10 +150,15 @@ public:
             }
         }
         out << "\'";
-  
+
         return out;
     }
-    
+
+    TokenType GetType()
+    {
+        return type;
+    }
+
     TokenType type;
     std::string lexeme;
     int line;
