@@ -52,11 +52,11 @@ int main(int argc, char* argv[]) {
 
         Parser parser(tokens);
 
-        ProgramNode* root = parser.parse();
+        //ProgramNode* root = parser.parse();
 
-/*
 
-        code to this the vm for now
+
+      //  code to this the vm for now
 
         ProgramNode* root = parser.parse();
 
@@ -70,8 +70,9 @@ int main(int argc, char* argv[]) {
         VirtualMachine Vm;
 
         Vm.execute(Emitter.instructions);
+        return 0;
 
-*/
+
         Interpreter interpreter;
         interpreter.interpret(root);
 

@@ -147,7 +147,7 @@ public:
     {
        int reg =  Emitter.allocateRegister();
 
-       BytecodeInstruction * inst =  new Int_Load(OpCode::LOAD_INT,   std::atoi(value.lexeme.c_str()) );
+       BytecodeInstruction * inst =  new Int_Load(OpCode::LOAD_INT,   std::atoi(value.lexeme.c_str()) , reg);
 
        Emitter.append_instruction(inst);
 
@@ -178,12 +178,12 @@ public:
 
        int reg3 = Emitter.allocateRegister();
 
-/*
-       BytecodeInstruction * value =  new BytecodeInstruction(OpCode::ADD,  regs );
+
+       BytecodeInstruction * value =  new ADD(OpCode::ADD,  reg3 , reg1 , reg2);
 
        Emitter.append_instruction(value);
 
-*/
+
 
        return reg3;
     }

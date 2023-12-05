@@ -13,8 +13,7 @@ void VirtualMachine::execute( std::vector<BytecodeInstruction*>& instructions)
 
   for (BytecodeInstruction* instruction : instructions)
   {
-
-
+             instruction->execute(*this);
   }
 
 }
