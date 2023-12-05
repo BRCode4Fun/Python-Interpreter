@@ -9,7 +9,7 @@ class VirtualMachine;
 class BytecodeInstruction
 {
 public:
-    BytecodeInstruction(OpCode op) : opCode(op) {}
+    BytecodeInstruction(OpCode op) : opCode(op) { }
 
     OpCode getOpCode() const { return opCode; }
     virtual void execute(VirtualMachine &) = 0;
