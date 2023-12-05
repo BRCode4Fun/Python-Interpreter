@@ -54,6 +54,11 @@ public:
 
     virtual PyObject* accept(NodeVisitor* visitor) = 0;
 
+    virtual int emit_bytecode(BytecodeGenerator &Emitter)
+    {
+        return -1; 
+    }
+
 
 
     AstNodeType type;
@@ -82,6 +87,19 @@ public:
 
     std::vector<AstNode*> statements;
 
+    int emit_bytecode(BytecodeGenerator &Emitter)
+    {
+
+      for(auto statement : statements)
+      {
+          statement->emit_bytecode(Emitter);
+      }
+
+       return -1;
+    }
+
+
+
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
@@ -94,6 +112,14 @@ public:
       : AstNode(AstNodeType::Program), body(body) {}
 
     BlockNode* body;
+
+    int emit_bytecode(BytecodeGenerator &Emitter)
+    {
+
+       body->emit_bytecode(Emitter);
+
+       return -1;
+    }
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
@@ -182,9 +208,6 @@ public:
        BytecodeInstruction * value =  new ADD(OpCode::ADD,  reg3 , reg1 , reg2);
 
        Emitter.append_instruction(value);
-
-
-
        return reg3;
     }
 };

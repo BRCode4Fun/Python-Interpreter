@@ -52,24 +52,23 @@ int main(int argc, char* argv[]) {
 
         Parser parser(tokens);
 
-        //ProgramNode* root = parser.parse();
+        ProgramNode* root = parser.parse();
 
 
 
+/*
       //  code to this the vm for now
 
         ProgramNode* root = parser.parse();
 
-        BinaryOpNode *test = static_cast<BinaryOpNode *>(static_cast<BlockNode*>(root->body->statements[0])->statements[0]);
-
-
         BytecodeGenerator Emitter = BytecodeGenerator();
 
-        test->emit_bytecode(Emitter);
+        root->emit_bytecode(Emitter);
 
         VirtualMachine Vm;
 
         Vm.execute(Emitter.instructions);
+*/
         return 0;
 
 
