@@ -459,9 +459,9 @@ PyObject* Interpreter::visitCallNode(CallNode* expr)
                  builtin_args.push_back(arg->accept(this));
             }
 
-            PyFunctionBuiltIn builtin_func = static_cast<PyFunctionBuiltIn*>(calleeRef)->get_builtin();
+            BuiltInfunctionType builtin_func = static_cast<PyFunctionBuiltIn*>(calleeRef)->get_builtin();
 
-            return  maxx(builtin_args);
+            return  builtin_func(builtin_args);
         }
 
         // execute  user defined function call
