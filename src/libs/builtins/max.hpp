@@ -4,6 +4,6 @@
 
 
 
-bool myfn(PyObject * i,  PyObject * j);
+bool compute_max_int(PyObject * i,  PyObject * j);
 
-PyObject* maxx(std::vector<PyObject*>& values);
+PyObject* max_builtin(std::vector<PyObject*>& values);

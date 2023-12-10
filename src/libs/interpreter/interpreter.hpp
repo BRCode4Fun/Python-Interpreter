@@ -15,7 +15,7 @@ public:
     Interpreter() {
         __globals__ = new Scope();
 
-        __globals__->define("max" , new PyFunctionBuiltIn(maxx));
+        __globals__->define("max" , new PyFunctionBuiltIn(max_builtin));
         currentEnv.push(__globals__);
     }
 

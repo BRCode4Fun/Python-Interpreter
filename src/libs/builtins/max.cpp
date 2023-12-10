@@ -6,7 +6,7 @@ bool compute_max_int(PyObject * i,  PyObject * j)
    return static_cast<PyInt*>(i)->getInt() < static_cast<PyInt *>(j)->getInt();
 }
 
-PyObject* maxx(std::vector<PyObject*>& values)
+PyObject* max_builtin(std::vector<PyObject*>& values)
 {
 
   if (values.empty())
