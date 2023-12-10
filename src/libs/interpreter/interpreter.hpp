@@ -5,20 +5,25 @@
 #include "../value/primitives.hpp"
 #include "../scope/scope.hpp"
 #include "../gc/gc.hpp"
+#include "../builtins/max.hpp"
+
 
 class Interpreter : public NodeVisitor {
-   
+
 public:
+
     Interpreter() {
         __globals__ = new Scope();
+
+        __globals__->define("max" , new PyFunctionBuiltIn(maxx));
         currentEnv.push(__globals__);
     }
-        
+
     PyObject* interpret(ProgramNode* node);
 
-    virtual PyObject* visitProgramNode( ProgramNode* node) override;
-    virtual PyObject* visitBlockNode( BlockNode* node) override;
-    virtual PyObject* visitPrintNode( PrintNode* node) override;
+    virtual PyObject* visitProgramNode(ProgramNode* node) override;
+    virtual PyObject* visitBlockNode(BlockNode* node) override;
+    virtual PyObject* visitPrintNode(PrintNode* node) override;
     virtual PyObject* visitWhileNode(WhileNode* node) override;
     virtual PyObject* visitBreakNode(BreakNode* node) override;
     virtual PyObject* visitContinueNode(ContinueNode* node) override;

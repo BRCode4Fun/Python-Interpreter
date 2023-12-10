@@ -17,6 +17,7 @@ class PyObject;
 class NodeVisitor;
 
 // Define the AST node types
+
 enum class AstNodeType {
     // Root
     Program,

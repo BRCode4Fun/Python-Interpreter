@@ -7,6 +7,7 @@
 #include "../libs/interpreter/interpreter.hpp"
 #include "../libs/vm/ByteCodeGenerator.hpp"
 #include "../libs/vm/Vm.hpp"
+#include "../libs/builtins/max.hpp"
 
 
 #pragma GCC optimize("Ofast")
@@ -71,7 +72,6 @@ int main(int argc, char* argv[]) {
 
   */
 
-        return 0;
 
         Interpreter interpreter;
         interpreter.interpret(root);

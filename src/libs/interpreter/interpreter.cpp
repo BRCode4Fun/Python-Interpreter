@@ -353,6 +353,7 @@ PyObject* Interpreter::visitAssignNode(AssignNode* node) {
 PyObject* Interpreter::visitNameNode(NameNode* node){
     const std::string& varname = node->getLexeme();
     Scope* topEnv = currentEnv.top();
+
     return topEnv->get(varname);
 }
 
@@ -400,7 +401,6 @@ PyObject* Interpreter::visitNullNode(NullNode* expr){
 PyObject* Interpreter::visitCallNode(CallNode* expr)
 {
 
-
     AstNode* caller = expr->caller;
     PyObject* calleeRef = caller->accept(this);
 
@@ -445,10 +445,26 @@ PyObject* Interpreter::visitCallNode(CallNode* expr)
 
 
 
-        // check if is built_in
+        // check if is builtin function and run it
 
-             
+        if(dynamic_cast<PyFunctionBuiltIn*>(calleeRef))
+        {
 
+            std::vector<PyObject *> builtin_args;
+
+            const std::vector<AstNode*>& args = expr->args;
+
+            for(AstNode*  arg : args)
+            {
+                 builtin_args.push_back(arg->accept(this));
+            }
+
+            PyFunctionBuiltIn builtin_func = static_cast<PyFunctionBuiltIn*>(calleeRef)->get_builtin();
+
+            return  maxx(builtin_args);
+        }
+
+        // execute  user defined function call
 
         Scope* parentEnv = currentEnv.top();
         Scope* objEnv = new Scope(parentEnv);

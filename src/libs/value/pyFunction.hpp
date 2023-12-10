@@ -9,9 +9,6 @@ public:
     PyFunction(FunctionNode* fnode)
         : PyObject(ObjectType::Func, std::move(fnode)){}
 
-
-
-
     inline bool isFunc() const override { return true; }
     inline bool isTruthy() const override { return true; }
 
@@ -41,9 +38,9 @@ private:
     }
 };
 
-using BuiltInfunctionType = std::function< PyObject(std::vector<PyObject>)>;
+using BuiltInfunctionType = std::function<PyObject*(std::vector<PyObject*>&)>;
 
-class PyFunctionBuiltIn : PyFunction
+class PyFunctionBuiltIn : public PyFunction
 {
 
 public:
@@ -52,6 +49,13 @@ public:
    {
 
    }
+
+
+   BuiltInfunctionType get_builtin()
+   {
+      return m_BuiltInfunction;
+   }
+
 
 private:
 
