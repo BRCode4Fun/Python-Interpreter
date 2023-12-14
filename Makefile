@@ -13,6 +13,7 @@ ifdef DEBUG
 CFLAGS += -DDEBUG -Wall -Wextra -g
 endif
 
+
 # Build rule
 build: $(OUTPUT)
 
@@ -27,4 +28,3 @@ test:
 # Clean rule
 clean:
 	@rm -f $(OUTPUT)
-

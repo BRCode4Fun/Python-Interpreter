@@ -7,13 +7,17 @@
 #include "../gc/gc.hpp"
 #include "../builtins/max.hpp"
 
+#ifndef DEBUG_INTERPRETER
+#define DEBUG_INTERPRETER 1
+#endif
+
 
 class Interpreter : public NodeVisitor {
 
 public:
 
     Interpreter() {
-        __globals__ = new Scope();
+        __globals__ = new Scope(nullptr , ScopeType::NOT_ALL);
 
         __globals__->define("max" , new PyFunctionBuiltIn(max_builtin));
         currentEnv.push(__globals__);
@@ -48,5 +52,6 @@ public:
 private:
     Scope* __globals__;
     std::stack<Scope*> currentEnv;
+    std::stack<PyInstance*> currentInstance;
     GarbageCollector GC;
 };
