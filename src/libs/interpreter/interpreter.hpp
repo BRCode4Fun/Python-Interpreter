@@ -8,12 +8,7 @@ class PyObject;
 class Interpreter : public NodeVisitor {
    
 public:
-    Interpreter() {
-        Scope* builtins = new Scope();
-        pushContext(builtins);
-        Scope* globals = new Scope(builtins);
-        pushContext(globals);
-    }
+    Interpreter();
         
     PyObject* interpret(ProgramNode* node);
 

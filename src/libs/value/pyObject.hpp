@@ -14,7 +14,8 @@ public:
         Int, Float,
         Boolean, String,
         List, Func, 
-        Klass, Instance
+        Klass, Instance,
+        Builtin
     };
     PyObject(ObjectType type, void* data = nullptr) 
         : type(type), data(data) {}
@@ -32,10 +33,8 @@ public:
     virtual inline bool isKlass() const { return false; }
     virtual inline bool isInstance() const { return false; }
     virtual inline bool isNone() const { return false; }
+    virtual inline bool isCallable() const { return false; }
     
-    bool isCallable() {
-        return isKlass() || isFunc();
-    }
     virtual inline bool isTruthy() const { 
         throw std::runtime_error("Yet not evaluatable object.");
     }

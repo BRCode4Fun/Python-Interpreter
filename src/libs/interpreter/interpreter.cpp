@@ -5,9 +5,21 @@
 #include "../token/tokentype.hpp"
 #include "../exceptions/runtime_exceptions.hpp" // break, continue, return
 #include "../value/primitives.hpp"
+#include "../builtin/builtins.hpp"
 
 void todo() {
     throw std::runtime_error("Feature not implemented yet");
+}
+
+Interpreter::Interpreter() {
+    
+    Scope* builtins = new Scope();
+    pushContext(builtins);
+    Scope* globals = new Scope(builtins);
+    pushContext(globals);
+    
+    std::string inputRepr("input");    
+    builtins->define(inputRepr, new Input());
 }
 
 PyObject* Interpreter::interpret(ProgramNode* node) {
