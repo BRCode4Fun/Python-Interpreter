@@ -5,7 +5,7 @@ void GarbageCollector::freeUnused() {
 
     for(auto object : objects) {
                         
-        if(object->getRc() == 0) {
+        if(object->getRefCount() == 0) {
 
             std::vector<PyObject*>::iterator position = std::find(objects.begin(), objects.end(), object);
                     

@@ -47,3 +47,11 @@ def count_dec(n, m):
     
 count_dec(1, 10)
 
+def f(n):
+    def g(m):
+        def h(o):
+            return n + m + o
+        return h
+    return g
+
+print(f(3)(4)(5))

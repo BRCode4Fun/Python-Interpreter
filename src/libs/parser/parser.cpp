@@ -50,7 +50,12 @@ AstNode* Parser::parseStmt() {
     } else {
         std::vector<AstNode*> stmtList = parseStmtList();
         while(match(TokenType::Newline)) continue;
-        return new BlockNode(stmtList);
+        
+        if(stmtList.size() == 1) {
+            return stmtList[0];
+        } else {
+            return new BlockNode(stmtList);
+        }
     }
 }
 
@@ -196,7 +201,9 @@ AstNode* Parser::parsePrintStmt() {
      *    print_stmt ::= "print" "(" (expression)? ")"
     */
     consume(TokenType::LeftParen);
+    
     AstNode* expr = nullptr;
+    
     if(peek().type != TokenType::RightParen) {
         expr = parseExpr();
     } consume(TokenType::RightParen);
@@ -210,29 +217,27 @@ AstNode* Parser::parseSuite() {
      *              | stmt_list NEWLINE
     */
     if(match(TokenType::Newline)) {
-    
+        
+        // consumes '\n'
         while(match(TokenType::Newline)) continue;
 
         consume(TokenType::Indent);
         
         std::vector<AstNode*> stmts;
+        stmts.push_back(parseStmt());
     
-        //stmts.push_back(parseStmt());
-    
-        while(peek().type != TokenType::Dedent){
-
-             auto r = parseStmt();
-
-             if(dynamic_cast<BlockNode*>(r) != nullptr){
-                 
-                BlockNode* stmt_list =  dynamic_cast<BlockNode*>(r);
-
-                for(auto stmt : stmt_list->statements)
-                     stmts.push_back(stmt);  
-                                  
-             } else {
-                 stmts.push_back(r);       
-             }
+        while(peek().type != TokenType::Dedent) {
+            AstNode* node = parseStmt();
+            
+            if(node->is_block()) {
+                BlockNode* block = dynamic_cast<BlockNode*>(node);
+                
+                for(auto stmt : block->statements) {
+                    stmts.push_back(stmt);
+                }
+            } else {
+                stmts.push_back(node);
+            }
         }
         consume(TokenType::Dedent);
         
@@ -556,8 +561,7 @@ AstNode* Parser::parsePrimary() {
             left = parseCall(left);
         
         } else if(match(TokenType::Dot)) {
-            Token name = consume(TokenType::Name);
-            AstNode* right = new NameNode(name);
+            AstNode* right = new NameNode(consume(TokenType::Name));
             left = new PropertyNode(left, right);
         
         } else {

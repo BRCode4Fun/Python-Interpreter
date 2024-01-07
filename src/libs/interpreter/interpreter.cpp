@@ -4,12 +4,13 @@
 #include "../token/token.hpp"
 #include "../token/tokentype.hpp"
 #include "../exceptions/runtime_exceptions.hpp" // break, continue, return
+#include "../value/primitives.hpp"
 
 void todo() {
-    throw std::runtime_error("Function not implemented yet");
+    throw std::runtime_error("Feature not implemented yet");
 }
 
-PyObject* Interpreter::visitProgramNode(ProgramNode* node) {
+PyObject* Interpreter::interpret(ProgramNode* node) {
     return node->body->accept(this);
 }
 
@@ -51,6 +52,7 @@ PyObject* Interpreter::visitPrintNode(PrintNode* node) {
 }
 
 PyObject* Interpreter::visitIntNode(IntNode* node){
+    
     const std::string& str = node->getLexeme();
     PyObject* value = new PyInt(str);
     GC.pushObject(value);
@@ -58,6 +60,7 @@ PyObject* Interpreter::visitIntNode(IntNode* node){
 }
 
 PyObject* Interpreter::visitFloatNode(FloatNode* node){
+    
     const std::string& str = node->getLexeme();
     PyObject* value = new PyFloat(str);
     GC.pushObject(value);
@@ -67,26 +70,25 @@ PyObject* Interpreter::visitFloatNode(FloatNode* node){
 PyObject* Interpreter::visitFunctionNode(FunctionNode* node){
 
     const std::string& fname = node->getName();
-    PyFunction* value = new PyFunction(node);
-    currentEnv.top()->define(fname, value);
+    PyFunction* value = new PyFunction(node, this->currentContext());
+    defineOnContext(fname, value);
 
     return new PyNone();
 }
 
 PyObject* Interpreter::visitClassNode(ClassNode* node) {
     
-    Scope* parentEnv = currentEnv.top();
-    Scope* objEnv = new Scope(parentEnv);
+    Scope* closure = this->currentContext();
+    Scope* classEnv = new Scope(closure);
     
-    currentEnv.push(objEnv);
+    this->pushContext(classEnv);
     node->getBody()->accept(this);
-    currentEnv.pop();
+    this->popContext();
     
     const std::string& kname = node->getName();
-    
-    PyClass* value = new PyClass(kname, objEnv);
-    
-    currentEnv.top()->define(kname, value);
+    PyClass* value = new PyClass(kname, classEnv);
+
+    closure->define(kname, value);
     
     return new PyNone();
 }
@@ -94,20 +96,35 @@ PyObject* Interpreter::visitClassNode(ClassNode* node) {
 PyObject* Interpreter::visitPropertyNode(PropertyNode* node) {
     
     PyObject* object = node->object->accept(this);
+    NameNode* attr = static_cast<NameNode*>(node->attribute);
+    const std::string& name = attr->getLexeme();
     
     if(object->isInstance()) {
-        PyInstance* obj = static_cast<PyInstance*>(object);
-        Scope* scope = obj->getScope();
-        currentEnv.push(scope);
-        PyObject* attr = node->attribute->accept(this);
-        //currentEnv.pop();
-        return attr;
+    
+        PyInstance* instance = static_cast<PyInstance*>(object);
+        
+        Scope* context = instance->getContext();
+        PyObject* value = context->get(name);
+        
+        if(value->isFunc()) {
+            return static_cast<PyFunction*>(value)->bind(instance);
+        } else {
+            return value;
+        }
+        
+    } else if(object->isFunc()) {
+        
+        PyFunction* function = static_cast<PyFunction*>(object);
+        
+        Scope* context = function->getContext();
+        return context->get(name);
     }
+    
     return new PyNone();
 }
 
 PyObject* Interpreter::visitBlockNode(BlockNode* node) {
-
+    
     for(auto statement : node->statements) {
     	statement->accept(this);
     }
@@ -121,10 +138,10 @@ PyObject* Interpreter::visitWhileNode(WhileNode* node){
     while(cond->isTruthy()){
      	try {
      	    node->body->accept(this);
-     	} catch(BreakException be) {
+     	} catch(BreakException& be) {
      	    break;
-     	} catch(ContinueException ce) {
-     	    ; // goes to evaluate the condition again
+     	} catch(ContinueException& ce) {
+     	    ; // goes back to evaluate the condition again
      	}
         cond = node->cond->accept(this);
     }
@@ -174,15 +191,16 @@ PyObject* Interpreter::visitTernaryOpNode(TernaryOpNode* node) {
     } else {
         return node->right->accept(this);
     }
+    return nullptr; // unreachable
 }
 
 PyObject* Interpreter::visitBinaryOpNode(BinaryOpNode* node)  {
 
     PyObject* leftValue = node->left->accept(this);
-    leftValue->incRc();
+    leftValue->incRefCount();
 
     PyObject* rightValue = node->right->accept(this);
-    rightValue->incRc();
+    rightValue->incRefCount();
 
     PyObject* value = nullptr;
 
@@ -270,8 +288,8 @@ PyObject* Interpreter::visitBinaryOpNode(BinaryOpNode* node)  {
         default:
             throw std::logic_error("Unsupported binary operator");
     } 
-    leftValue->decRc();
-    rightValue->decRc();
+    leftValue->decRefCount();
+    rightValue->decRefCount();
 
     return value;
 }
@@ -279,34 +297,34 @@ PyObject* Interpreter::visitBinaryOpNode(BinaryOpNode* node)  {
 PyObject* Interpreter::visitAssignNode(AssignNode* node) {
     
     AstNode* targetNode = node->name;
-    Scope* topEnv;
-    
     std::string varName;
+    Scope* currCtx = nullptr;
     
     if(targetNode->is_name_node()) {
         NameNode* name = static_cast<NameNode*>(targetNode);
         varName = name->getLexeme();
-        topEnv = currentEnv.top();
+        currCtx = this->currentContext();
         
-    } else if(targetNode->is_property_node()) {
-        PropertyNode* ppr = static_cast<PropertyNode*>(targetNode);
-        PyInstance* object = static_cast<PyInstance*>(ppr->object->accept(this));
-        NameNode* attribute = static_cast<NameNode*>(ppr->attribute);
+    } else if (targetNode->is_property_node()) {
+        PropertyNode* propertyNode = static_cast<PropertyNode*>(targetNode);
+        PyObject* object = propertyNode->object->accept(this);
+        PyInstance* instance = static_cast<PyInstance*>(object);
+        NameNode* attribute = static_cast<NameNode*>(propertyNode->attribute);
         varName = attribute->getLexeme();
-        topEnv = object->getScope();
-    
+        currCtx = instance->getContext();
+        
     } else {
         throw std::runtime_error("Unsupported target expression");
     }
     
     PyObject* value = node->value->accept(this);
-    value->incRc();
+    value->incRefCount();
     
     if(node->op.type == TokenType::Equals) {
-        topEnv->define(varName, value);
+        currCtx->define(varName, value);
     } else {
-        PyObject* targetValue = topEnv->get(varName);
-        targetValue->incRc();
+        PyObject* targetValue = currCtx->get(varName);
+        targetValue->incRefCount();
         
         switch(node->op.type) {
             case TokenType::PlusEqual:
@@ -342,18 +360,17 @@ PyObject* Interpreter::visitAssignNode(AssignNode* node) {
             default:
                 throw std::runtime_error("Unsupported assignment operator");
         }
-        topEnv->define(varName, value);
-        targetValue->decRc();
+        currCtx->define(varName, value);
+        targetValue->decRefCount();
     }
-    value->decRc();
+    value->decRefCount();
 
     return value;
 }
 
 PyObject* Interpreter::visitNameNode(NameNode* node){
     const std::string& varname = node->getLexeme();
-    Scope* topEnv = currentEnv.top();
-    return topEnv->get(varname);
+    return getFromContext(varname);
 }
 
 PyObject* Interpreter::visitBooleanNode(BooleanNode* node){
@@ -397,109 +414,29 @@ PyObject* Interpreter::visitNullNode(NullNode* expr){
     return value;
 }
 
-PyObject* Interpreter::visitCallNode(CallNode* expr){
+PyObject* Interpreter::visitCallNode(CallNode* expr) {
     
-    AstNode* caller = expr->caller;
-    PyObject* calleeRef = caller->accept(this);
+    PyObject* callee = expr->caller->accept(this);
     
-    if(calleeRef->isKlass()) {
-    
-        PyClass* callee = static_cast<PyClass*>(calleeRef);
-
-        Scope* parentEnv = callee->getScope(); // get class's scope
-        Scope* objEnv = new Scope(parentEnv);
-        
-        PyInstance* self = new PyInstance(objEnv);
-        
-        /*Token fname = Token(TokenType::Name, "__init__", 0);
-        CallNode* init_target = new CallNode(new NameNode(fname), expr->args);
-        init_target->accept(this, self);*/
-
-        PyFunction* constructor = static_cast<PyFunction*>(objEnv->get("__init__"));
-        
-        //AstNode* init = constructor->getDecl();
-        //CallNode* init_target = new CallNode(init, expr->args);
-        //init_target->accept(this, self);
-        
-        const std::vector<AstNode*>& params = constructor->getParams();
-        const std::vector<AstNode*>& args = expr->args;
-
-        for (size_t i = 0; i < params.size(); i++){
-            NameNode* paramNode = static_cast<NameNode*>(params[i]);
-            const std::string& argName = paramNode->getLexeme(); // if is NameNode
-            if(i == 0) {
-                objEnv->define(argName, self);
-            } else {
-                objEnv->define(argName, args[i-1]->accept(this));
-            }
-        }
-        currentEnv.push(objEnv);
-        constructor->getBody()->accept(this);
-        currentEnv.pop();
-
-        return self;
-        
-    } else if(calleeRef->isFunc()) {
-
-        Scope* parentEnv = currentEnv.top();
-        Scope* objEnv = new Scope(parentEnv);
-        currentEnv.push(objEnv);
-        
-        PyFunction* callee = static_cast<PyFunction*>(calleeRef);
-        
-        const std::vector<AstNode*>& params = callee->getParams();
-        const std::vector<AstNode*>& args = expr->args;
-        
-        PyInstance* bound = (caller->is_property_node() ? new PyInstance(objEnv) : nullptr);
-        
-        if((args.size() + (bound ? 1 : 0)) != params.size()) {
-            throw std::runtime_error("error on positional args");
-        }
-        
-        if(bound) {
-            for (size_t i = 0; i < params.size(); i++){
-                NameNode* paramNode = static_cast<NameNode*>(params[i]);
-                const std::string& argName = paramNode->getLexeme(); // if is NameNode
-                
-                if(i == 0) {
-                    objEnv->define(argName, bound);
-                } else {
-                    objEnv->define(argName, args[i-1]->accept(this));
-                }
-            }
-            
-        } else {
-            for (size_t i = 0; i < args.size(); i++){
-                NameNode* paramNode = static_cast<NameNode*>(params[i]);
-                const std::string& argName = paramNode->getLexeme(); // if is NameNode
-                objEnv->define(argName, args[i]->accept(this));
-            }
-        }
-        
-        PyObject* retValue = nullptr;
-        try {
-            callee->getBody()->accept(this);
-        } catch(ReturnException re) {
-            retValue = re.value;
-        }
-        currentEnv.pop();
-
-        return retValue;
-        
-    } else {
-        throw std::logic_error("Not a callable.");
+    if (!callee->isCallable()) {
+        throw std::runtime_error("not a callable object");
     }
-    return new PyNone();
+    PyCallable* callable = static_cast<PyCallable*>(callee);
+    
+    std::vector<PyObject*> arguments;
+    arguments.reserve(expr->args.size());
+    
+    for(AstNode* argumentNode : expr->args) {
+        arguments.push_back(argumentNode->accept(this));
+    }
+    return (*callable).call(this, arguments);
 }
+
 
 PyObject* Interpreter::visitReturnNode(ReturnNode* node) {
+    
     AstNode* value = node->value;
-    PyObject* retValue = new PyNone();
-    if(value) retValue = value->accept(this);
+    PyObject* retValue = value ? value->accept(this) : new PyNone();
     throw ReturnException(retValue);
     return nullptr; // unreachable
-}
-
-PyObject* Interpreter::interpret(ProgramNode* node) {
-    return node->accept(this);
 }

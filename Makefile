@@ -11,6 +11,7 @@ CFLAGS := -std=c++17
 # Add DEBUG macro to CFLAGS
 ifdef DEBUG
 CFLAGS += -DDEBUG -Wall -Wextra -g
+CFLAGS += -Wno-unused-variable -Wno-unused-parameter -Wno-reorder
 endif
 
 # Build rule

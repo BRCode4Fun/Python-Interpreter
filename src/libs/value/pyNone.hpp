@@ -1,3 +1,5 @@
+#pragma once
+
 #include "./pyObject.hpp"
 #include "./pyBool.hpp"
 

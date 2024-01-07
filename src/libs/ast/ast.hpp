@@ -10,7 +10,7 @@
 using llf = long double;
 using lld = long long int;
 
-class PyObject; 
+class PyObject;
 class NodeVisitor;
 
 // Define the AST node types
@@ -47,6 +47,7 @@ public:
 
     bool is_name_node() { return type == AstNodeType::Name; }
     bool is_property_node() { return type == AstNodeType::AttrRef; }
+    bool is_block() { return type == AstNodeType::Block; }
     bool is_function() { return type == AstNodeType::Function; }
 
     virtual PyObject* accept(NodeVisitor* visitor) = 0;
