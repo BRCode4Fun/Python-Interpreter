@@ -3,33 +3,70 @@
   <h1>Python Interpreter</h1>
 </div>
 
-Custom Python interpreter implemented in C++ to provide developers with a versatile and extensible tool for executing Python code, fostering learning, and encouraging contributions to the open-source Python ecosystem. 
+_A custom-built interpreter designed from the ground up to execute Python code. It also serves as an educational resource, promoting learning and encouraging contributions to the open-source Python ecosystem._
 
-## Project Overview
+# Project Overview
 
-The Python Interpreter project aims to develop a fully functional interpreter for the Python programming language from scratch, using C++ as the implementation language. This project serves as an impressive demonstration of technical expertise and deep understanding of both Python and C++.
+Welcome to this Python Interpreter in C++ project! This project aims to provide a robust and feature-rich interpreter for the Python programming language, built entirely from scratch in C++. Whether you're looking to explore the internals of how an interpreter works, experiment with language features, or simply explore the intersection of C++ and Python, this interpreter is a powerful tool designed with flexibility and extensibility in mind. 
 
-### Key Features
+# 🔑 _Key Features_
 
-   + Language Parsing: The interpreter includes a robust parser capable of parsing Python source code and generating an abstract syntax tree (AST) representation.
+  ### 🔧 _Support for Python's Built-in Data Types_
+This interpreter already supports various built-in Python data types, enabling the manipulation of variables, strings, numbers, and more, similarly to the original Python.
 
-   + Lexical Analysis: A comprehensive lexer/tokenizer module is implemented to break down the input source code into tokens, facilitating the subsequent parsing and interpretation stages.
+  ### 🧠 _Dynamic Typing_
+Just like Python, this interpreter supports dynamic typing, allowing variables to change types at runtime. This feature provides flexibility and mimics Python’s behavior, making it easier to write and execute dynamic code.
 
-   + Semantic Analysis: The interpreter performs semantic analysis on the parsed AST to detect and report any language-specific errors, such as undeclared variables or type mismatches.
+  ### 🗂️ _Classes and Instances_
+Support for Object-Oriented Programming is implemented! You can define your own classes, create instances, and access attributes and methods just as you would in Python.
 
-   + Execution Engine: A powerful execution engine is designed to execute the parsed Python code, implementing the language's semantics and executing statements, expressions, and control flow constructs.
+  ### ➕ _Operator Overloading_
+The interpreter supports operator overloading, allowing you to define specific behaviors for operators like +, -, *, /, and more, within your custom classes.
 
-   + Standard Library Support: Efforts are made to provide support for a subset of Python's standard library modules, enabling the interpreter to execute a wide range of Python programs.
+### 📜 _Execution System and Parser_
+The architecture of the interpreter includes a robust parser and execution system that translates Python code into executable operations. This allows for dynamic interpretation and real-time code execution.
 
-### Why This Project Matters
+ ### ♻️ _Garbage Collector_
+To manage memory efficiently, the project includes an integrated garbage collector, which helps prevent memory leaks by automatically freeing unused objects.
 
-   * Showcasing Expertise: Developing a Python interpreter from scratch demonstrates a deep understanding of programming languages, language design, and compiler/interpreter construction. It highlights your ability to tackle complex projects and showcases your skills to potential employers or collaborators.
+## What This Interpreter Can Do
+To illustrate the capabilities of this interpreter, consider the following Python code that demonstrates complex object-oriented features such as class definitions, method overloading, and recursive function calls. The interpreter is designed to handle these operations with precision, just as the standard Python interpreter would.
 
-   * Technical Proficiency: By working on this project, you gain hands-on experience with language parsing, lexical analysis, semantic analysis, and execution engines. These skills are highly valuable for software development roles involving language design, compiler development, or performance optimization.
+```python
+class Number:
+    def __init__(self, n):
+        self._n = n
+        
+    def __add__(self, other):
+        return Number(self._n + other._n)
+    
+    def __sub__(self, other):
+        return Number(self._n - other._n)
+    
+    def __eq__(self, other):
+        return self._n == other._n
+    
+    def __le__(self, other):
+        return self._n <= other._n
+    
+    def get_value(self):
+        return self._n
 
-   * Curriculum Enhancement: Adding this project to your curriculum vitae (CV) or portfolio demonstrates your commitment to learning and improving your programming skills. It sets you apart from other candidates and shows your dedication to exploring advanced concepts in computer science.
+def fib(n):
+    if n <= Number(1):
+        return Number(1)
+    else:
+        return fib(n - Number(1)) + fib(n - Number(2))
 
-## Building
+def main():
+    
+    print(fib(Number(5)).get_value()) # 8
+
+main()
+```
+
+
+# 🛠️ Building
 
 ```bash
 $ git clone https://github.com/BRCode4Fun/Python-Interpreter
@@ -37,8 +74,33 @@ $ cd Python-Interpreter
 $ make
 ```
 
-## Running Tests
+# ✅ Running Tests
 
 ```bash
   $ make test
 ```
+
+# 🚀 Future steps:
+
+  + List, Set, Dict.
+  + BigInt class with Karatsuba algorithm.
+  + REPL mode.
+  + Virtual Machine.
+  + Better type checking and error handling.
+  + Modules.
+  + Iterator and generator objects.
+  + Inheritance.
+  + etc.
+
+# 🤝 Contributions
+This project is under continuous development, with new features being added regularly. If you’re passionate about Python, C++, or just interested in contributing to an exciting open-source project, feel free to jump in!
+
+## How to Contribute
+
+ + Fork this repository.
+ + Create a new branch for your feature (git checkout -b feature/NewFeature).
+ + Commit your changes (git commit -m 'Add NewFeature').
+ + Push to the branch (git push origin feature/NewFeature).
+ + Open a Pull Request.
+
+Any form of contribution is welcome, whether it’s code, documentation, or testing. Additionally, feel free to share this project with friends, colleagues, or within developer communities.
