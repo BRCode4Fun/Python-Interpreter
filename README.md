@@ -1,5 +1,5 @@
 <div>
-  <img src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg" alt="Python Logo" align="left" width="100" height="100">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg" alt="Python Logo" align="left" width="130" height="130">
   <h1>Python Interpreter</h1>
 </div>
 
