@@ -4,34 +4,24 @@
 
 class PyInt : public PyObject {
 public:
-    explicit PyInt(const std::string& v);
-    explicit PyInt(ll v);
+    explicit PyInt(const std::string&);
+    explicit PyInt(lld v);
 
-    inline bool isInt() const override { return true; }
-    inline bool isTruthy() const override { return getInt() != 0L; }
+    inline bool is_int_type() const override { return true; }
+        
+    lld getInt() const {
+        return *getIntData();
+    }
+
+protected:
+    void registerMethods() override;
     
-    PyObject* operator+(const PyObject& other) const override;
-    PyObject* operator-(const PyObject& other) const override;
-    PyObject* operator*(const PyObject& other) const override;
-    PyObject* operator/(const PyObject& other) const override;
-    PyObject* operator%(const PyObject& other) const override;
-    PyObject* operator&(const PyObject& other) const override;
-    PyObject* operator|(const PyObject& other) const override;
-    PyObject* operator^(const PyObject& other) const override;
-    PyObject* operator<<(const PyObject& other) const override;
-    PyObject* operator>>(const PyObject& other) const override;
-    PyObject* operator==(const PyObject& other) const override;
-    PyObject* operator<(const PyObject& other) const override;
-    PyObject* operator>(const PyObject& other) const override;
-    PyObject* operator-() const override;
-    PyObject* operator~() const override;
-    PyObject* operator!() const override;
-    
-    ll getInt() const;
-    void write(std::ostream& out) const override;
-    
+    void deleteData() override {
+        delete getIntData();
+    }
+
 private:
-    const ll* getIntData() const;
-    void deleteData() override;
+    lld* getIntData() const {
+        return static_cast<lld*>(data);
+    }
 };
-

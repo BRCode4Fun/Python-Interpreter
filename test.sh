@@ -10,8 +10,15 @@ reset="\e[0m"
 
 has_failed=false
 
-# Traverse the tests/ folder and look for subfolders
-for testfolder in tests/test_*; do
+# Check if a specific test was provided
+if [ -n "$1" ]; then
+  testfolders=("tests/test_$1")
+else
+  testfolders=(tests/test_*)
+fi
+
+# Traverse the tests/ folder or a specific test
+for testfolder in "${testfolders[@]}"; do
 
   # Extract the test name from the folder name
   testname=$(basename "$testfolder" | sed 's/^test_//')
@@ -23,8 +30,9 @@ for testfolder in tests/test_*; do
   # Run the test and capture the output
   output=$(./main "$inputfile")
   
-  # Compare the output to the expected output
-  expected=$(cat "$expectedfile")
+  # Normalize line endings for comparison
+  output=$(echo "$output" | tr -d '\r')
+  expected=$(cat "$expectedfile" | tr -d '\r')
   
   if [ "$output" = "$expected" ]; then
     echo -e "${green}Test ${testname}: PASSED${reset}"
@@ -45,4 +53,3 @@ else
   echo -e "${red}Test failure.${reset}"
   exit 1
 fi
-

@@ -1,14 +1,12 @@
-#ifndef PRIMITIVES_HPP
-#define PRIMITIVES_HPP
+#pragma once
 
-#include "./pyInt.hpp"
-#include "./pyFloat.hpp"
-#include "./pyBool.hpp"
 #include "./pyStr.hpp"
-#include "./pyList.hpp"
 #include "./pyNone.hpp"
+#include "./pyInt.hpp"
+#include "./pyBool.hpp"
+#include "./pyFloat.hpp"
 #include "./pyFunction.hpp"
+#include "./pyMethodWrapper.hpp"
 #include "./pyClass.hpp"
 #include "./pyInstance.hpp"
-
-#endif
+#include "./pyBuiltin.hpp"

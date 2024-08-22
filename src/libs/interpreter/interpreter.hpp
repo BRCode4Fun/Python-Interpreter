@@ -2,6 +2,7 @@
 
 #include "../ast/ast.hpp"
 #include "../gc/gc.hpp"
+#include "../scope/scope.hpp"
 
 class PyObject;
 
@@ -82,4 +83,12 @@ public:
 private:
     GarbageCollector GC;
     std::vector<Scope*> contextStack;
+
+    // auxiliar methods
+    PyObject* resolve(const std::string& method_name, PyObject* object, 
+                std::vector<PyObject*> args = std::vector<PyObject*>());
+
+    inline const std::string& getString(PyObject* object);
+    inline long long getInteger(PyObject* object);
+    inline bool isTruthy(PyObject* object);
 };

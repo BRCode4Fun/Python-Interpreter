@@ -9,38 +9,37 @@
 #pragma GCC optimize("Ofast")
 #pragma GCC target("avx,avx2,fma")
 
-using namespace std;
-
-inline void show_tokens(const vector<Token>& tokens) {
+#ifdef DEBUG
+inline void show_tokens(const std::vector<Token>& tokens) {
     for (const auto& token : tokens) {
-        cout << token << '\n';
+        std::cout << token << '\n';
     }
-    cout << flush;
+    std::cout << std::flush;
 }
+#endif
 
 int main(int argc, char* argv[]) {
-    ios_base::sync_with_stdio(false);
-    cin.tie(nullptr);
-    cout.tie(nullptr);
+    std::ios_base::sync_with_stdio(false);
+    std::cin.tie(nullptr); std::cout.tie(nullptr);
 
     if (argc != 2) {
-        cerr << "Usage: " << argv[0] << " [filename].py\n";
+        std::cerr << "Usage: " << argv[0] << " [filename].py\n";
         return 1;
     }
 
     const char* const filename = argv[1];
-    ifstream inputFile(filename);
+    std::ifstream inputFile(filename);
 
     if (!inputFile) {
-        cerr << "Error: could not open file '" << filename << "'\n";
+        std::cerr << "Error: could not open file '" << filename << "'\n";
         return 1;
     }
 
-    string source((istreambuf_iterator<char>(inputFile)), {});
+    std::string source((std::istreambuf_iterator<char>(inputFile)), {});
 
     try {
         Lexer lexer(source);
-        vector<Token> tokens = lexer.scanTokens();
+        std::vector<Token> tokens = lexer.scanTokens();
 
         #ifdef DEBUG
             /* To define DEBUG, use `make DEBUG=1` when compiling */
@@ -53,8 +52,8 @@ int main(int argc, char* argv[]) {
         Interpreter interpreter;
         interpreter.interpret(root);
         
-    } catch (const runtime_error& err) {
-        cerr << err.what() << '\n';
+    } catch (const std::runtime_error& err) {
+        std::cerr << err.what() << '\n';
         return EXIT_FAILURE;
     }
 

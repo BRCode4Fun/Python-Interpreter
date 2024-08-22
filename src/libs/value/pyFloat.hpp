@@ -4,26 +4,24 @@
 
 class PyFloat : public PyObject {
 public:
-    explicit PyFloat(const std::string& v);
+    explicit PyFloat(const std::string&);
     explicit PyFloat(llf v);
+
+    inline bool is_float_type() const override { return true; }
         
-    inline bool isFloat() const override { return true; } 
-    inline bool isTruthy() const override { return getFloat() != 0.0; }
+    llf getFloat() const {
+        return *getFloatData();
+    }
+
+protected:
+    void registerMethods() override;
     
-    PyObject* operator+(const PyObject& other) const override;
-    PyObject* operator-(const PyObject& other) const override;
-    PyObject* operator*(const PyObject& other) const override;
-    PyObject* operator/(const PyObject& other) const override;
-    PyObject* operator==(const PyObject& other) const override;
-    PyObject* operator<(const PyObject& other) const override;
-    PyObject* operator>(const PyObject& other) const override;
-    PyObject* operator-() const override;
-    PyObject* operator!() const override;
-    
-    llf getFloat() const;
-    void write(std::ostream& out) const override;
-        
+    void deleteData() override {
+        delete getFloatData();
+    }
+
 private:
-    const llf* getFloatData() const;
-    void deleteData() override;
+    llf* getFloatData() const {
+        return static_cast<llf*>(data);
+    }
 };

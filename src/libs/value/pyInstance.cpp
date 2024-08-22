@@ -1,15 +1,14 @@
 #include "./pyInstance.hpp"
-#include "./pyClass.hpp"
+#include "../scope/scope.hpp"
+#include "./pyFunction.hpp"
+#include "./pyStr.hpp"
+#include "./pyBool.hpp"
 
-PyInstance::PyInstance(PyClass* klass)
- : PyObject(ObjectType::Instance), base(klass){
-    fields = new Scope(klass->getContext());
+PyInstance::PyInstance(PyClass* klass) 
+    : PyObject(ObjectType::Instance, nullptr, new Scope(klass->getContext())), base(klass) {}
+
+void PyInstance::registerMethods() {
+    
+    this->define("__class__", this->base);
 }
 
-PyObject* PyInstance::operator==(const PyObject& other) const {
-    return new PyBool(other.isNone() ? false : true);
-}
-
-void PyInstance::write(std::ostream& out) const {
-    out << "<\'" << base->kname << "\' instance>";
-}

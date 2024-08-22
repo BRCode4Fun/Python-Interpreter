@@ -1,113 +1,75 @@
 #pragma once
 
 #include <vector>
-#include <stdexcept>
-#include <iostream>
+#include <string>
+#include <sstream>
 
-using ll = long long int;
+#define ASSERT_ARG_SIZE(args, expected_size) \
+    do { \
+        if ((args).size() != (expected_size)) { \
+            std::ostringstream oss; \
+            oss << "expected " << (expected_size) << ", got " << (args).size(); \
+            throw std::logic_error(oss.str()); \
+        } \
+    } while (0)
+
+class Scope;
+class Interpreter;
+
 using llf = long double;
+using lld = long long int;
 
 class PyObject {
+
 public:
     enum class ObjectType {
         None, 
         Int, Float,
         Boolean, String,
-        List, Func, 
+        List, Func, Method,
         Klass, Instance,
         Builtin
     };
-    PyObject(ObjectType type, void* data = nullptr) 
-        : type(type), data(data) {}
-        
-    ~PyObject() {
-        deleteData();
-    }
     
-    virtual inline bool isInt() const { return false; }
-    virtual inline bool isFloat() const { return false; }
-    virtual inline bool isStr() const { return false; }
-    virtual inline bool isBool() const { return false; }
-    virtual inline bool isList() const { return false; }
-    virtual inline bool isFunc() const { return false; }
-    virtual inline bool isKlass() const { return false; }
-    virtual inline bool isInstance() const { return false; }
-    virtual inline bool isNone() const { return false; }
-    virtual inline bool isCallable() const { return false; }
+    PyObject(ObjectType, void* data = nullptr, Scope* context = nullptr);
+    ~PyObject();
     
-    virtual inline bool isTruthy() const { 
-        throw std::runtime_error("Yet not evaluatable object.");
-    }
-    virtual PyObject* operator+(const PyObject& other) const {
-        throw std::runtime_error("Unsupported operands for +.");
-    }
-    virtual PyObject* operator-(const PyObject& other) const {
-        throw std::runtime_error("Unsupported operands for -.");
-    }
-    virtual PyObject* operator*(const PyObject& other) const {
-        throw std::runtime_error("Unsupported operands for *.");
-    }
-    virtual PyObject* operator/(const PyObject& other) const {
-        throw std::runtime_error("Unsupported operands for /.");
-    }
-    virtual PyObject* operator%(const PyObject& other) const {
-        throw std::runtime_error("Unsupported operands for %.");
-    }
-    virtual PyObject* operator&(const PyObject& other) const {
-        throw std::runtime_error("Unsupported operands for &.");
-    }
-    virtual PyObject* operator|(const PyObject& other) const {
-        throw std::runtime_error("Unsupported operands for |.");
-    }
-    virtual PyObject* operator^(const PyObject& other) const {
-        throw std::runtime_error("Unsupported operands for ^.");
-    }
-    virtual PyObject* operator<<(const PyObject& other) const {
-        throw std::runtime_error("Unsupported operands for <<.");
-    }
-    virtual PyObject* operator>>(const PyObject& other) const {
-        throw std::runtime_error("Unsupported operands for >>.");
-    }
-    virtual PyObject* operator==(const PyObject& other) const {
-        throw std::runtime_error("Unsupported operands for ==.");
-    }
-    virtual PyObject* operator<(const PyObject& other) const {
-        throw std::runtime_error("Unsupported operands for <.");
-    }
-    virtual PyObject* operator>(const PyObject& other) const {
-        throw std::runtime_error("Unsupported operands for >.");
-    }
-    virtual PyObject* operator-() const {
-        throw std::runtime_error("Unsupported operands for unary -.");
-    }
-    virtual PyObject* operator~() const {
-        throw std::runtime_error("Unsupported operands for unary ~.");
-    }
-    virtual PyObject* operator!() const {
-        throw std::runtime_error("Unsupported operands for unary !.");
-    }
-        
-    ObjectType getType() const {
-        return type;
-    }
+    virtual inline bool is_str_type() const { return false; }
+    virtual inline bool is_none_type() const { return false; }
+    virtual inline bool is_fn_type() const { return false; }
+    virtual inline bool is_method_wrapper_type() const { return false; }
+    virtual inline bool is_int_type() const { return false; }
+    virtual inline bool is_float_type() const { return false; }
+    virtual inline bool is_bool_type() const { return false; }
+    virtual inline bool is_klass_type() const { return false; }
+    virtual inline bool is_instance_type() const { return false; }
+    virtual inline bool is_builtin_fn_type() const { return false; }
+
+    void incRefCount();
+    void decRefCount();
+    int getRefCount();
     
-    void incRefCount() { ++rc; }
-    void decRefCount() { if(rc > 0) --rc; }
-    int getRefCount() const { return rc; }
+    Scope* getContext();
     
-    friend std::ostream& operator<<(std::ostream& out, const PyObject& value) {
-        value.write(out);
-        return out;
-    }
-    
-    virtual void write(std::ostream& out) const {
-        throw std::runtime_error("Yet not printable object.");
-    }
-    
+    void define(const std::string&, PyObject*);
+    PyObject* find(const std::string&);
+
+    class PyStr* unwrap_str_obj();
+    class PyInt* unwrap_int_obj();
+    class PyFloat* unwrap_float_obj();
+    class PyBool* unwrap_bool_obj();
+    class PyFunction* unwrap_function_obj();
+    class PyMethodWrapper* unwrap_method_obj();
+    class PyClass* unwrap_class_obj();
+    class PyBuiltin* unwrap_builtin_fn_obj();
+
 protected:
-    // TODO: move Scope here
-    void* data;
     ObjectType type;
     int rc; // reference counting
+
+    void* data;
     virtual void deleteData() {}
+    
+    Scope* scope;
+    virtual void registerMethods(){}
 };

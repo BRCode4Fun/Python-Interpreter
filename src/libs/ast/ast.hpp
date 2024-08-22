@@ -1,11 +1,10 @@
 #pragma once
 
-#include <iostream>
 #include <string>
 #include <vector>
 #include <memory>
 #include "../token/token.hpp"
-#include "../value/pyInstance.hpp"
+//#include "../value/pyInstance.hpp"
 
 using llf = long double;
 using lld = long long int;
@@ -47,10 +46,34 @@ public:
 
     bool is_name_node() { return type == AstNodeType::Name; }
     bool is_property_node() { return type == AstNodeType::AttrRef; }
-    bool is_block() { return type == AstNodeType::Block; }
-    bool is_function() { return type == AstNodeType::Function; }
+    bool is_block_node() { return type == AstNodeType::Block; }
+    bool is_function_node() { return type == AstNodeType::Function; }
 
     virtual PyObject* accept(NodeVisitor* visitor) = 0;
+    
+    class ProgramNode*   unwrap_program_node();
+    class BlockNode*     unwrap_block_node();
+    class TernaryOpNode* unwrap_ternary_op_node();
+    class BinaryOpNode*  unwrap_binary_op_node();
+    class UnaryOpNode*   unwrap_unary_op_node();
+    class AssignNode*    unwrap_assign_node();
+    class IntNode*       unwrap_int_node();
+    class BooleanNode*   unwrap_bool_node();
+    class FloatNode*     unwrap_float_node();
+    class StringNode*    unwrap_string_node();
+    class NullNode*      unwrap_null_node();
+    class NameNode*      unwrap_name_node();
+    class IfNode*        unwrap_cond_node();
+    class WhileNode*     unwrap_rep_node();
+    class BreakNode*     unwrap_break_node();
+    class ContinueNode*  unwrap_continue_node();
+    class PassNode*      unwrap_pass_node();
+    class CallNode*      unwrap_call_node();
+    class FunctionNode*  unwrap_function_node();
+    class ReturnNode*    unwrap_ret_node();
+    class ClassNode*     unwrap_class_node();
+    class PropertyNode*  unwrap_property_node();
+    class PrintNode*     unwrap_print_node();
 
     AstNodeType type;
 };
@@ -148,7 +171,7 @@ public:
 
     Token value; // TODO: implement the BigInt class
     
-    const std::string& getLexeme() { return value.lexeme; }
+    const std::string& get_lexeme() { return value.lexeme; }
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
@@ -163,7 +186,7 @@ public:
 
     Token value;
     
-    const std::string& getLexeme() { return value.lexeme; }
+    const std::string& get_lexeme() { return value.lexeme; }
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
@@ -178,7 +201,7 @@ public:
 
     Token value;
     
-    const std::string& getLexeme() { return value.lexeme; }
+    const std::string& get_lexeme() { return value.lexeme; }
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
@@ -193,7 +216,7 @@ public:
     
     Token value;
     
-    const std::string& getLexeme() { return value.lexeme; }
+    const std::string& get_lexeme() { return value.lexeme; }
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
@@ -230,9 +253,9 @@ class NullNode : public AstNode {
 
 public:
     
-    NullNode(Token none) : AstNode(AstNodeType::Null), none(none) {}
+    NullNode(Token none) : AstNode(AstNodeType::Null), kwd(none) {}
     
-    Token none;
+    Token kwd;
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
@@ -323,9 +346,9 @@ public:
         : AstNode(AstNodeType::Function), 
           fname(fname), params(params), body(body) {}
    
-    const std::string& getName() const { return fname.lexeme; };
-    const std::vector<AstNode*>& getParams() const { return params; }
-    AstNode* getBody() const { return body; }
+    const std::string& get_name() const { return fname.lexeme; };
+    const std::vector<AstNode*>& get_params() const { return params; }
+    AstNode* get_body() const { return body; }
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 
@@ -343,8 +366,8 @@ public:
     ClassNode(Token kname, AstNode* body)
         : AstNode(AstNodeType::Class), kname(kname), body(body) {}
    
-    const std::string& getName() const { return kname.lexeme; }
-    AstNode* getBody() const { return body; }
+    const std::string& get_name() const { return kname.lexeme; }
+    AstNode* get_body() const { return body; }
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 
@@ -376,7 +399,7 @@ public:
            AstNode* elseBranch) : AstNode(AstNodeType::If), cond(cond), 
           trueBranch(trueBranch), elifBranches(elifBranches), elseBranch(elseBranch) {}
 
-    AstNode *cond, *trueBranch, *elseBranch;;
+    AstNode *cond, *trueBranch, *elseBranch;
     std::vector<std::pair<AstNode*, AstNode*>> elifBranches;
 
     virtual PyObject* accept(NodeVisitor* visitor) override;

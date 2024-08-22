@@ -229,8 +229,8 @@ AstNode* Parser::parseSuite() {
         while(peek().type != TokenType::Dedent) {
             AstNode* node = parseStmt();
             
-            if(node->is_block()) {
-                BlockNode* block = dynamic_cast<BlockNode*>(node);
+            if(node->is_block_node()) {
+                BlockNode* block = node->unwrap_block_node();
                 
                 for(auto stmt : block->statements) {
                     stmts.push_back(stmt);

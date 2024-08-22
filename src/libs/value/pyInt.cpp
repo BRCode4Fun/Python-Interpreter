@@ -1,182 +1,456 @@
 #include "./pyInt.hpp"
-#include "./pyFloat.hpp"
+#include "./pyFunction.hpp"
+#include "./pyStr.hpp"
 #include "./pyBool.hpp"
+#include "./pyFloat.hpp"
 
-PyInt::PyInt(const std::string& v)
-    : PyObject(ObjectType::Int, new ll(std::stoll(v))) {}
+PyInt::PyInt(const std::string& v) 
+    : PyObject(ObjectType::Int, new lld(std::stoll(v))) {}
 
-PyInt::PyInt(ll v)
-    : PyObject(ObjectType::Int, new ll(v)) {}
+PyInt::PyInt(lld v)
+    : PyObject(ObjectType::Int, new lld(v)) {}
 
-PyObject* PyInt::operator+(const PyObject& other) const {
-    if (other.isInt()) {
-        const PyInt* rhs = dynamic_cast<const PyInt*>(&other);
-        return new PyInt(getInt() + rhs->getInt());
-    } else if(other.isFloat()) {
-        const PyFloat* rhs = dynamic_cast<const PyFloat*>(&other);
-        return new PyFloat((llf)getInt() + rhs->getFloat());
-    } else {
-        throw std::runtime_error("Unsupported operands for +.");
-    }
- }
+void PyInt::registerMethods() {
 
-PyObject* PyInt::operator-(const PyObject& other) const {
-    if (other.isInt()) {
-        const PyInt* rhs = dynamic_cast<const PyInt*>(&other);
-        return new PyInt(getInt() - rhs->getInt());
-    } else if(other.isFloat()) {
-        const PyFloat* rhs = dynamic_cast<const PyFloat*>(&other);
-        return new PyFloat((llf)getInt() - rhs->getFloat());
-    } else {
-        throw std::runtime_error("Unsupported operands for -.");
-    }
+    this->define("__int__", 
+        new PyFunction([](std::vector<PyObject*> args, Interpreter* interpreter) -> PyObject* {
+
+            ASSERT_ARG_SIZE(args, 1);
+
+            return args[0]; // self
+        })
+    );
+
+    this->define("__str__", 
+        new PyFunction([](std::vector<PyObject*> args, Interpreter* interpreter) -> PyObject* {
+            
+            ASSERT_ARG_SIZE(args, 1);
+
+            PyInt* self = args[0]->unwrap_int_obj();
+
+            lld n = self->getInt();
+
+            return new PyStr(std::to_string(n));
+        })
+    );
+
+    this->define("__bool__", 
+        new PyFunction([](std::vector<PyObject*> args, Interpreter* interpreter) -> PyObject* {
+            
+            ASSERT_ARG_SIZE(args, 1);
+
+            PyInt* self = args[0]->unwrap_int_obj();
+
+            lld n = self->getInt();
+            
+            return new PyBool(n != 0L);
+        })
+    );
+
+    this->define("__add__", 
+        new PyFunction([](std::vector<PyObject*> args, Interpreter* interpreter) -> PyObject* {
+            
+            ASSERT_ARG_SIZE(args, 2);
+
+            PyInt* self = args[0]->unwrap_int_obj();
+            lld lhs_value = self->getInt();
+
+            PyObject* other = args[1];
+
+            if(other->is_int_type()){
+                lld rhs_value = other->unwrap_int_obj()->getInt();
+                return new PyInt(lhs_value + rhs_value);
+            
+            } else if(other->is_float_type()){
+                llf rhs_value = other->unwrap_float_obj()->getFloat();
+                llf lhs_float_value = static_cast<llf>(lhs_value);
+                return new PyFloat(lhs_float_value + rhs_value);
+            
+            } else {
+                throw std::logic_error("unsupported operand types(s) for +.");
+            }
+        })
+    );
+
+    this->define("__sub__", 
+        new PyFunction([](std::vector<PyObject*> args, Interpreter* interpreter) -> PyObject* {
+            
+            ASSERT_ARG_SIZE(args, 2);
+
+            PyInt* self = args[0]->unwrap_int_obj();
+            lld lhs_value = self->getInt();
+
+            PyObject* other = args[1];
+
+            if(other->is_int_type()){
+                lld rhs_value = other->unwrap_int_obj()->getInt();
+                return new PyInt(lhs_value - rhs_value);
+            
+            } else if(other->is_float_type()){
+                llf rhs_value = other->unwrap_float_obj()->getFloat();
+                llf lhs_float_value = static_cast<llf>(lhs_value);
+                return new PyFloat(lhs_float_value - rhs_value);
+            
+            } else {
+                throw std::logic_error("unsupported operand types(s) for -.");
+            }
+        })
+    );
+
+    this->define("__mul__", 
+        new PyFunction([](std::vector<PyObject*> args, Interpreter* interpreter) -> PyObject* {
+            
+            ASSERT_ARG_SIZE(args, 2);
+
+            PyInt* self = args[0]->unwrap_int_obj();
+            lld lhs_value = self->getInt();
+
+            PyObject* other = args[1];
+
+            if(other->is_int_type()){
+                lld rhs_value = other->unwrap_int_obj()->getInt();
+                return new PyInt(lhs_value * rhs_value);
+            
+            } else if(other->is_float_type()){
+                llf rhs_value = other->unwrap_float_obj()->getFloat();
+                llf lhs_float_value = static_cast<llf>(lhs_value);
+                return new PyFloat(lhs_float_value * rhs_value);
+            
+            } else {
+                throw std::logic_error("unsupported operand types(s) for *.");
+            }
+        })
+    );
+
+    this->define("__truediv__", 
+        new PyFunction([](std::vector<PyObject*> args, Interpreter* interpreter) -> PyObject* {
+            
+            ASSERT_ARG_SIZE(args, 2);
+
+            PyInt* self = args[0]->unwrap_int_obj();
+            llf lhs_value = static_cast<llf>(self->getInt());
+
+            PyObject* other = args[1];
+
+            if(other->is_int_type()){
+                llf rhs_value = static_cast<llf>(other->unwrap_int_obj()->getInt());
+                if(rhs_value == 0.0) {
+                    throw std::logic_error("division by zero");
+                } else {
+                    return new PyFloat(lhs_value / rhs_value);
+                }
+            
+            } else if(other->is_float_type()){
+                llf rhs_value = other->unwrap_float_obj()->getFloat();
+                if(rhs_value == 0.0) {
+                    throw std::logic_error("division by zero");
+                } else {
+                    return new PyFloat(lhs_value / rhs_value);
+                }
+            
+            } else {
+                throw std::logic_error("unsupported operand types(s) for /.");
+            }
+        })
+    );
+
+    this->define("__mod__", 
+        new PyFunction([](std::vector<PyObject*> args, Interpreter* interpreter) -> PyObject* {
+            
+            ASSERT_ARG_SIZE(args, 2);
+
+            PyInt* self = args[0]->unwrap_int_obj();
+            lld lhs_value = self->getInt();
+
+            PyObject* other = args[1];
+
+            if(other->is_int_type()){
+                lld rhs_value = other->unwrap_int_obj()->getInt();
+                if(rhs_value == 0) {
+                    throw std::logic_error("modulo by zero");
+                } else {
+                    return new PyInt(lhs_value % rhs_value);
+                }
+            
+            } else {
+                throw std::logic_error("unsupported operand types(s) for %.");
+            }
+        })
+    );
+
+    this->define("__and__", 
+        new PyFunction([](std::vector<PyObject*> args, Interpreter* interpreter) -> PyObject* {
+            
+            ASSERT_ARG_SIZE(args, 2);
+
+            PyObject* other = args[1];
+
+            if(!other->is_int_type()){
+                throw std::logic_error("unsupported operand type(s) for &.");
+            }
+            PyInt* lhs = args[0]->unwrap_int_obj();
+            PyInt* rhs = other->unwrap_int_obj();
+
+            lld a = lhs->getInt();
+            lld b = rhs->getInt();
+            
+            return new PyInt(a & b);
+        })
+    );
+
+    this->define("__or__", 
+        new PyFunction([](std::vector<PyObject*> args, Interpreter* interpreter) -> PyObject* {
+            
+            ASSERT_ARG_SIZE(args, 2);
+
+            PyObject* other = args[1];
+
+            if(!other->is_int_type()){
+                throw std::logic_error("unsupported operand type(s) for |.");
+            }
+            PyInt* lhs = args[0]->unwrap_int_obj();
+            PyInt* rhs = other->unwrap_int_obj();
+
+            lld a = lhs->getInt();
+            lld b = rhs->getInt();
+            
+            return new PyInt(a | b);
+        })
+    );
+
+    this->define("__xor__", 
+        new PyFunction([](std::vector<PyObject*> args, Interpreter* interpreter) -> PyObject* {
+            
+            ASSERT_ARG_SIZE(args, 2);
+
+            PyObject* other = args[1];
+
+            if(!other->is_int_type()){
+                throw std::logic_error("unsupported operand type(s) for ^.");
+            }
+            PyInt* lhs = args[0]->unwrap_int_obj();
+            PyInt* rhs = other->unwrap_int_obj();
+
+            lld a = lhs->getInt();
+            lld b = rhs->getInt();
+            
+            return new PyInt(a ^ b);
+        })
+    );
+
+    this->define("__lshift__", 
+        new PyFunction([](std::vector<PyObject*> args, Interpreter* interpreter) -> PyObject* {
+            
+            ASSERT_ARG_SIZE(args, 2);
+
+            PyObject* other = args[1];
+
+            if(!other->is_int_type()){
+                throw std::logic_error("unsupported operand type(s) for <<.");
+            }
+            PyInt* lhs = args[0]->unwrap_int_obj();
+            PyInt* rhs = other->unwrap_int_obj();
+
+            lld a = lhs->getInt();
+            lld b = rhs->getInt();
+            
+            return new PyInt(a << b);
+        })
+    );
+
+    this->define("__rshift__", 
+        new PyFunction([](std::vector<PyObject*> args, Interpreter* interpreter) -> PyObject* {
+            
+            ASSERT_ARG_SIZE(args, 2);
+
+            PyObject* other = args[1];
+
+            if(!other->is_int_type()){
+                throw std::logic_error("unsupported operand type(s) for >>.");
+            }
+            PyInt* lhs = args[0]->unwrap_int_obj();
+            PyInt* rhs = other->unwrap_int_obj();
+
+            lld a = lhs->getInt();
+            lld b = rhs->getInt();
+            
+            return new PyInt(a >> b);
+        })
+    );
+
+    this->define("__lt__", 
+        new PyFunction([](std::vector<PyObject*> args, Interpreter* interpreter) -> PyObject* {
+            
+            ASSERT_ARG_SIZE(args, 2);
+
+            PyInt* self = args[0]->unwrap_int_obj();
+            lld lhs_value = self->getInt();
+
+            PyObject* other = args[1];
+
+            if(other->is_int_type()){
+                lld rhs_value = other->unwrap_int_obj()->getInt();
+                return new PyBool(lhs_value < rhs_value);
+            
+            } else if(other->is_float_type()){
+                llf rhs_value = other->unwrap_float_obj()->getFloat();
+                llf lhs_float_value = static_cast<llf>(lhs_value);
+                return new PyBool(lhs_float_value < rhs_value);
+            
+            } else {
+                throw std::logic_error("unsupported operand types(s) for <.");
+            }
+        })
+    );
+
+    this->define("__gt__", 
+        new PyFunction([](std::vector<PyObject*> args, Interpreter* interpreter) -> PyObject* {
+            
+            ASSERT_ARG_SIZE(args, 2);
+
+            PyInt* self = args[0]->unwrap_int_obj();
+            lld lhs_value = self->getInt();
+
+            PyObject* other = args[1];
+
+            if(other->is_int_type()){
+                lld rhs_value = other->unwrap_int_obj()->getInt();
+                return new PyBool(lhs_value > rhs_value);
+            
+            } else if(other->is_float_type()){
+                llf rhs_value = other->unwrap_float_obj()->getFloat();
+                llf lhs_float_value = static_cast<llf>(lhs_value);
+                return new PyBool(lhs_float_value > rhs_value);
+            
+            } else {
+                throw std::logic_error("unsupported operand types(s) for >.");
+            }
+        })
+    );
+
+    this->define("__le__", 
+        new PyFunction([](std::vector<PyObject*> args, Interpreter* interpreter) -> PyObject* {
+            
+            ASSERT_ARG_SIZE(args, 2);
+
+            PyInt* self = args[0]->unwrap_int_obj();
+            lld lhs_value = self->getInt();
+
+            PyObject* other = args[1];
+
+            if(other->is_int_type()){
+                lld rhs_value = other->unwrap_int_obj()->getInt();
+                return new PyBool(lhs_value <= rhs_value);
+            
+            } else if(other->is_float_type()){
+                llf rhs_value = other->unwrap_float_obj()->getFloat();
+                llf lhs_float_value = static_cast<llf>(lhs_value);
+                return new PyBool(lhs_float_value <= rhs_value);
+            
+            } else {
+                throw std::logic_error("unsupported operand types(s) for <=.");
+            }
+        })
+    );
+
+    this->define("__ge__", 
+        new PyFunction([](std::vector<PyObject*> args, Interpreter* interpreter) -> PyObject* {
+            
+            ASSERT_ARG_SIZE(args, 2);
+
+            PyInt* self = args[0]->unwrap_int_obj();
+            lld lhs_value = self->getInt();
+
+            PyObject* other = args[1];
+
+            if(other->is_int_type()){
+                lld rhs_value = other->unwrap_int_obj()->getInt();
+                return new PyBool(lhs_value >= rhs_value);
+            
+            } else if(other->is_float_type()){
+                llf rhs_value = other->unwrap_float_obj()->getFloat();
+                llf lhs_float_value = static_cast<llf>(lhs_value);
+                return new PyBool(lhs_float_value >= rhs_value);
+            
+            } else {
+                throw std::logic_error("unsupported operand types(s) for >=.");
+            }
+        })
+    );
+
+    this->define("__eq__", 
+        new PyFunction([](std::vector<PyObject*> args, Interpreter* interpreter) -> PyObject* {
+            
+            ASSERT_ARG_SIZE(args, 2);
+
+            PyInt* self = args[0]->unwrap_int_obj();
+            lld lhs_value = self->getInt();
+
+            PyObject* other = args[1];
+
+            if(other->is_int_type()){
+                lld rhs_value = other->unwrap_int_obj()->getInt();
+                return new PyBool(lhs_value == rhs_value);
+            
+            } else if(other->is_float_type()){
+                llf rhs_value = other->unwrap_float_obj()->getFloat();
+                llf lhs_float_value = static_cast<llf>(lhs_value);
+                return new PyBool(lhs_float_value == rhs_value);
+            
+            } else {
+                return new PyBool(false);
+            }
+        })
+    );
+
+    this->define("__ne__", 
+        new PyFunction([](std::vector<PyObject*> args, Interpreter* interpreter) -> PyObject* {
+            
+            ASSERT_ARG_SIZE(args, 2);
+
+            PyInt* self = args[0]->unwrap_int_obj();
+            lld lhs_value = self->getInt();
+
+            PyObject* other = args[1];
+
+            if(other->is_int_type()){
+                lld rhs_value = other->unwrap_int_obj()->getInt();
+                return new PyBool(lhs_value != rhs_value);
+            
+            } else if(other->is_float_type()){
+                llf rhs_value = other->unwrap_float_obj()->getFloat();
+                llf lhs_float_value = static_cast<llf>(lhs_value);
+                return new PyBool(lhs_float_value != rhs_value);
+            
+            } else {
+                return new PyBool(true);
+            }
+        })
+    );
+
+    this->define("__neg__", 
+        new PyFunction([](std::vector<PyObject*> args, Interpreter* interpreter) -> PyObject* {
+            
+            ASSERT_ARG_SIZE(args, 1);
+
+            PyInt* self = args[0]->unwrap_int_obj();
+
+            lld self_value = self->getInt();
+            
+            return new PyInt(-self_value);
+        })
+    );
+
+    this->define("__invert__", 
+        new PyFunction([](std::vector<PyObject*> args, Interpreter* interpreter) -> PyObject* {
+            
+            ASSERT_ARG_SIZE(args, 1);
+
+            PyInt* self = args[0]->unwrap_int_obj();
+
+            lld self_value = self->getInt();
+            
+            return new PyInt(~self_value);
+        })
+    );
 }
-
-PyObject* PyInt::operator*(const PyObject& other) const {
-    if (other.isInt()) {
-        const PyInt* rhs = dynamic_cast<const PyInt*>(&other);
-        return new PyInt(getInt() * rhs->getInt());
-    } else if(other.isFloat()) {
-        const PyFloat* rhs = dynamic_cast<const PyFloat*>(&other);
-        return new PyFloat(static_cast<llf>(getInt()) * rhs->getFloat());
-    } else {
-        throw std::runtime_error("Unsupported operands for *.");
-    }
-}
-
-PyObject* PyInt::operator/(const PyObject& other) const {
-    if (other.isInt()) {
-        const PyInt* rhs = dynamic_cast<const PyInt*>(&other);
-        llf rvalue = static_cast<llf>(rhs->getInt());
-        if(rvalue == 0.0) throw std::runtime_error("Attempted to divide by zero");
-        return new PyFloat(static_cast<llf>(getInt()) / rvalue);
-    } else if(other.isFloat()) {
-        const PyFloat* rhs = dynamic_cast<const PyFloat*>(&other);
-        llf rvalue = rhs->getFloat();
-        if(rvalue == 0.0) throw std::runtime_error("Attempted to divide by zero");
-        return new PyFloat(static_cast<llf>(getInt()) / rvalue);
-    } else {
-        throw std::runtime_error("Unsupported operands for /.");
-    }
-}
-
-PyObject* PyInt::operator%(const PyObject& other) const {
-    if (other.isInt()) {
-        const PyInt* rhs = dynamic_cast<const PyInt*>(&other);
-        ll rvalue = rhs->getInt();
-        if(rvalue == 0L) throw std::runtime_error("Modulo by zero");
-        return new PyInt(getInt() % rvalue);
-    } else {
-        throw std::runtime_error("Unsupported operands for %.");
-    }
-}
-
-PyObject* PyInt::operator&(const PyObject& other) const {
-    if (other.isInt()) {
-        const PyInt* rhs = dynamic_cast<const PyInt*>(&other);
-        return new PyInt(getInt() & rhs->getInt());
-    } else {
-        throw std::runtime_error("Unsupported operands for &.");
-    }
-}
-
-PyObject* PyInt::operator<<(const PyObject& other) const {
-    if (other.isInt()) {
-        const PyInt* rhs = dynamic_cast<const PyInt*>(&other);
-        return new PyInt(getInt() << rhs->getInt());
-    } else {
-        throw std::runtime_error("Unsupported operands for <<.");
-    }
-}
-
-PyObject* PyInt::operator>>(const PyObject& other) const {
-    if (other.isInt()) {
-        const PyInt* rhs = dynamic_cast<const PyInt*>(&other);
-        return new PyInt(getInt() >> rhs->getInt());
-    } else {
-        throw std::runtime_error("Unsupported operands for >>.");
-    }
-}
-
-PyObject* PyInt::operator|(const PyObject& other) const {
-    if (other.isInt()) {
-        const PyInt* rhs = dynamic_cast<const PyInt*>(&other);
-        return new PyInt(getInt() | rhs->getInt());
-    } else {
-        throw std::runtime_error("Unsupported operands for |.");
-    }
-}
-
-PyObject* PyInt::operator^(const PyObject& other) const {
-    if (other.isInt()) {
-        const PyInt* rhs = dynamic_cast<const PyInt*>(&other);
-        return new PyInt(getInt() ^ rhs->getInt());
-    } else {
-        throw std::runtime_error("Unsupported operands for ^.");
-    }
-}
-
-PyObject* PyInt::operator==(const PyObject& other) const {
-    if (other.isInt()) {
-        const PyInt* rhs = dynamic_cast<const PyInt*>(&other);
-        return new PyBool(getInt() == rhs->getInt());
-    } else if(other.isFloat()) {
-        const PyFloat* rhs = dynamic_cast<const PyFloat*>(&other);
-        return new PyBool(static_cast<llf>(getInt()) == rhs->getFloat());
-    } else {
-        return new PyBool(false);
-    }
-}
-
-PyObject* PyInt::operator<(const PyObject& other) const {
-    if (other.isInt()) {
-        const PyInt* rhs = dynamic_cast<const PyInt*>(&other);
-        return new PyBool(getInt() < rhs->getInt());
-    } else if(other.isFloat()) {
-        const PyFloat* rhs = dynamic_cast<const PyFloat*>(&other);
-        return new PyBool(static_cast<llf>(getInt()) < rhs->getFloat());
-    } else {
-        throw std::runtime_error("Unsupported operands for <.");
-    }
-}
-
-PyObject* PyInt::operator>(const PyObject& other) const {
-    if (other.isInt()) {
-        const PyInt* rhs = dynamic_cast<const PyInt*>(&other);
-        return new PyBool(getInt() > rhs->getInt());
-    } else if(other.isFloat()) {
-        const PyFloat* rhs = dynamic_cast<const PyFloat*>(&other);
-        return new PyBool(static_cast<llf>(getInt()) > rhs->getFloat());
-    } else {
-        throw std::runtime_error("Unsupported operands for >.");
-    }
-}
-
-PyObject* PyInt::operator-() const {
-    return new PyInt(-getInt());
-}
-
-PyObject* PyInt::operator~() const {
-    return new PyInt(~getInt());
-}
-
-PyObject* PyInt::operator!() const {
-    return new PyBool(!(this->isTruthy()));
-}
-
-ll PyInt::getInt() const {
-    return *getIntData();
-}
-
-void PyInt::write(std::ostream& out) const {
-    out << getInt();
-}
-
-const ll* PyInt::getIntData() const {
-    return static_cast<const ll*>(data);
-}
-
-void PyInt::deleteData() {
-    delete getIntData();
-}
-
