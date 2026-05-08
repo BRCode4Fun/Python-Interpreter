@@ -1,11 +1,12 @@
 #include <iostream>
 #include "ast.hpp"
+#include "../exceptions/python_errors.hpp"
 
 ProgramNode* AstNode::unwrap_program_node() {
     if (type == AstNodeType::Program) {
         return dynamic_cast<ProgramNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 
@@ -13,7 +14,7 @@ BlockNode* AstNode::unwrap_block_node() {
     if (type == AstNodeType::Block) {
         return dynamic_cast<BlockNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 
@@ -21,7 +22,7 @@ TernaryOpNode* AstNode::unwrap_ternary_op_node() {
     if (type == AstNodeType::TernaryOp) {
         return dynamic_cast<TernaryOpNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 
@@ -29,7 +30,7 @@ BinaryOpNode* AstNode::unwrap_binary_op_node() {
     if (type == AstNodeType::BinaryOp) {
         return dynamic_cast<BinaryOpNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 
@@ -37,7 +38,7 @@ UnaryOpNode* AstNode::unwrap_unary_op_node() {
     if (type == AstNodeType::UnaryOp) {
         return dynamic_cast<UnaryOpNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 
@@ -45,7 +46,7 @@ AssignNode* AstNode::unwrap_assign_node() {
     if (type == AstNodeType::Assign) {
         return dynamic_cast<AssignNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 
@@ -53,7 +54,7 @@ IntNode* AstNode::unwrap_int_node() {
     if (type == AstNodeType::Int) {
         return dynamic_cast<IntNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 
@@ -61,7 +62,7 @@ BooleanNode* AstNode::unwrap_bool_node() {
     if (type == AstNodeType::Boolean) {
         return dynamic_cast<BooleanNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 
@@ -69,7 +70,7 @@ FloatNode* AstNode::unwrap_float_node() {
     if (type == AstNodeType::Float) {
         return dynamic_cast<FloatNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 
@@ -77,7 +78,7 @@ StringNode* AstNode::unwrap_string_node() {
     if (type == AstNodeType::String) {
         return dynamic_cast<StringNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 
@@ -85,7 +86,7 @@ NullNode* AstNode::unwrap_null_node() {
     if (type == AstNodeType::Null) {
         return dynamic_cast<NullNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 
@@ -93,7 +94,7 @@ NameNode* AstNode::unwrap_name_node() {
     if (type == AstNodeType::Name) {
         return dynamic_cast<NameNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 
@@ -101,7 +102,7 @@ IfNode* AstNode::unwrap_cond_node() {
     if (type == AstNodeType::If) {
         return dynamic_cast<IfNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 
@@ -109,7 +110,7 @@ WhileNode* AstNode::unwrap_rep_node() {
     if (type == AstNodeType::While) {
         return dynamic_cast<WhileNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 
@@ -117,7 +118,7 @@ BreakNode* AstNode::unwrap_break_node() {
     if (type == AstNodeType::Break) {
         return dynamic_cast<BreakNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 
@@ -125,7 +126,7 @@ ContinueNode* AstNode::unwrap_continue_node() {
     if (type == AstNodeType::Continue) {
         return dynamic_cast<ContinueNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 
@@ -133,7 +134,7 @@ PassNode* AstNode::unwrap_pass_node() {
     if (type == AstNodeType::Pass) {
         return dynamic_cast<PassNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 
@@ -141,7 +142,7 @@ CallNode* AstNode::unwrap_call_node() {
     if (type == AstNodeType::Call) {
         return dynamic_cast<CallNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 
@@ -149,7 +150,7 @@ FunctionNode* AstNode::unwrap_function_node() {
     if (type == AstNodeType::Function) {
         return dynamic_cast<FunctionNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 
@@ -157,7 +158,7 @@ ReturnNode* AstNode::unwrap_ret_node() {
     if (type == AstNodeType::Return) {
         return dynamic_cast<ReturnNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 
@@ -165,7 +166,7 @@ ClassNode* AstNode::unwrap_class_node() {
     if (type == AstNodeType::Class) {
         return dynamic_cast<ClassNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 
@@ -173,7 +174,7 @@ PropertyNode* AstNode::unwrap_property_node() {
     if (type == AstNodeType::AttrRef) {
         return dynamic_cast<PropertyNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 
@@ -181,7 +182,7 @@ PrintNode* AstNode::unwrap_print_node() {
     if (type == AstNodeType::Print) {
         return dynamic_cast<PrintNode*>(this);
     } else {
-        throw std::runtime_error("Failed to unwrap AstNode.");
+        throw RuntimeError("Failed to unwrap AstNode.");
     }
 }
 

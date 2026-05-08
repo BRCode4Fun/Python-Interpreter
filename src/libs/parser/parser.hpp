@@ -55,7 +55,6 @@ private:
     Token consume(TokenType type);
     bool match(TokenType type);
     bool match(std::initializer_list<TokenType> types);
-    void error(const std::string& message);
     Token peek() const;
     Token previous() const;
     Token advance();

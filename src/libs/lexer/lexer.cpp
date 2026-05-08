@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include "./lexer.hpp"
+#include "../exceptions/python_errors.hpp"
 
 Lexer::Lexer(const std::string& source) 
     : source(source), current(0), line(1) {
@@ -152,7 +153,7 @@ void Lexer::scanToken() {
             } else if (isalpha(c) or c == '_') {
                 handleIdentifier();
             } else {
-                throw std::runtime_error("Unexpected character.");
+                throw SyntaxError("Unexpected character.");
             }
             break;
     }
@@ -217,7 +218,7 @@ void Lexer::handleString(char quoteType){
     char c;
     while(c = peek(), c != quoteType && c != '\n') advance();
     if(peek() == '\n') {
-        throw std::runtime_error("Unterminated string at line " + std::to_string(line));
+        throw SyntaxError("Unterminated string at line " + std::to_string(line));
     }
     advance(); // Consume the closing quote
     
@@ -287,7 +288,7 @@ void Lexer::handleIndentation() {
         return;
     }
     if(indent and not isBlock) {
-        throw std::runtime_error("Unexpected indentation at line " + std::to_string(line));
+        throw SyntaxError("Unexpected indentation at line " + std::to_string(line));
     }
     int prevIndentLevel = indentLevels.top();
     
@@ -300,7 +301,7 @@ void Lexer::handleIndentation() {
             indentLevels.pop();
         }
         if (indentLevels.empty() or indent != indentLevels.top()) {
-            throw std::runtime_error("Inconsistent indentation at line " + std::to_string(line));
+            throw SyntaxError("Inconsistent indentation at line " + std::to_string(line));
         }
     } /*else if(indent == prevIndentLevel) {
         // dont generate Indent token

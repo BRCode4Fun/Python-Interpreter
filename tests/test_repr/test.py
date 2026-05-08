@@ -1,0 +1,7 @@
+print(repr(None))
+print(repr(True))
+print(repr(False))
+print(repr(10))
+print(repr(2.0))
+print(repr(str("abc")))
+print(repr(type))

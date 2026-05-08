@@ -3,6 +3,7 @@
 #include "../ast/ast.hpp"
 #include "../gc/gc.hpp"
 #include "../scope/scope.hpp"
+#include "../exceptions/python_errors.hpp"
 
 class PyObject;
 
@@ -47,7 +48,7 @@ public:
             //delete contextStack.back();
             contextStack.pop_back();
         } else {
-            throw std::runtime_error("Cannot pop context from empty stack");
+            throw RuntimeError("Cannot pop context from empty stack");
         }
     }
     
@@ -66,7 +67,7 @@ public:
             Scope* lastFrame = contextStack.back();
             lastFrame->define(name, value);
         } else {
-            throw std::runtime_error("Cannot define variable outside of context");
+            throw RuntimeError("Cannot define variable outside of context");
         }
     }
     
@@ -76,19 +77,42 @@ public:
             Scope* lastFrame = contextStack.back();
             return lastFrame->get(name);
         } else {
-            throw std::runtime_error("Cannot access variable outside of context");
+            throw RuntimeError("Cannot access variable outside of context");
         }
     }
 
 private:
     GarbageCollector GC;
     std::vector<Scope*> contextStack;
+    PyTypeObject* object_type = nullptr;
+    PyTypeObject* type_type = nullptr;
+    PyTypeObject* int_type = nullptr;
+    PyTypeObject* float_type = nullptr;
+    PyTypeObject* bool_type = nullptr;
+    PyTypeObject* str_type = nullptr;
+    PyTypeObject* none_type = nullptr;
+    PyTypeObject* function_type = nullptr;
+    PyTypeObject* builtin_fn_type = nullptr;
+    PyTypeObject* method_wrapper_type = nullptr;
 
     // auxiliar methods
     PyObject* resolve(const std::string& method_name, PyObject* object, 
                 std::vector<PyObject*> args = std::vector<PyObject*>());
+    PyObject* try_resolve(const std::string& method_name, PyObject* object,
+                std::vector<PyObject*> args = std::vector<PyObject*>());
+    TokenType assignment_to_binary(TokenType assignment_op);
+    PyObject* make_bool_obj(bool value);
+    PyObject* make_int_obj(lld value);
+    PyObject* make_float_obj(llf value);
+    PyObject* make_str_obj(const std::string& value);
+    PyObject* negate_truthy_obj(PyObject* value);
+    [[noreturn]] void throw_missing_method_error(PyObject* object, const std::string& method_name);
+    void validate_call_arity(PyObject* callable, size_t provided_arg_count);
 
     inline const std::string& getString(PyObject* object);
     inline long long getInteger(PyObject* object);
     inline bool isTruthy(PyObject* object);
+    inline bool isNumeric(PyObject* object);
+    inline long double toFloat(PyObject* object);
+    PyObject* evalBinary(TokenType op, PyObject* lhs, PyObject* rhs);
 };

@@ -1,10 +1,11 @@
 #include <stdexcept>
 #include "./scope.hpp"
 #include "../value/pyObject.hpp"
+#include "../exceptions/python_errors.hpp"
 
 Scope::~Scope() {
-    for(auto& [key, value] : this->values){
-        value->decRefCount();
+    for(std::unordered_map<std::string, PyObject*>::value_type& entry : this->values){
+        entry.second->decRefCount();
     }
 }
 
@@ -14,7 +15,7 @@ bool Scope::empty() {
 
 void Scope::define(const std::string& name, PyObject* value){
     
-    auto it = this->values.find(name);
+    std::unordered_map<std::string, PyObject*>::iterator it = this->values.find(name);
     
     if(it != values.end()){
         PyObject* tp_object = it->second;   
@@ -29,7 +30,7 @@ void Scope::define(const std::string& name, PyObject* value){
 
 PyObject* Scope::get(const std::string& name){
     
-    auto it = this->values.find(name);
+    std::unordered_map<std::string, PyObject*>::iterator it = this->values.find(name);
     
     if(it != values.end()) {
         return it->second;
@@ -38,7 +39,7 @@ PyObject* Scope::get(const std::string& name){
         return enclosing->get(name);
         
     } else {
-        throw std::runtime_error("Undeclared variable '" + name + "'.");
+        throw NameError("Undeclared variable '" + name + "'.");
     }
     return nullptr;
 }

@@ -1,0 +1,12 @@
+print(None == None)
+print(True == True)
+print(False == False)
+a = None
+b = None
+print(a == b)
+x = True
+y = True
+print(x == y)
+p = False
+q = False
+print(p == q)

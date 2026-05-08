@@ -1,4 +1,6 @@
 23
+23
+True
 Inorder traversal:
 2
 3

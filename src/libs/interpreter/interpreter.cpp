@@ -1,9 +1,12 @@
 #include "./interpreter.hpp"
+#include <cmath>
+#include <sstream>
 #include "../token/token.hpp"
 #include "../token/tokentype.hpp"
 #include "../exceptions/runtime_exceptions.hpp" // break, continue, return
+#include "../exceptions/python_errors.hpp"
 #include "../value/primitives.hpp"
-//#include "../builtin/builtins.hpp"
+#include "../value/runtime_types.hpp"
 
 Interpreter::Interpreter() {
     
@@ -11,18 +14,17 @@ Interpreter::Interpreter() {
     pushContext(builtins);
     Scope* globals = new Scope(builtins);
     pushContext(globals);
-
-    builtins->define("input", new PyBuiltin(
-        [](std::vector<PyObject*> args, Interpreter* interpreter) -> PyObject* {
-            
-            ASSERT_ARG_SIZE(args, 0);
-
-            std::string buffer;
-            std::getline(std::cin, buffer);
-
-            return new PyStr(buffer);
-        }
-    ));
+    RuntimeTypes types = initialize_runtime_types(builtins, this);
+    this->object_type = types.object_type;
+    this->type_type = types.type_type;
+    this->none_type = types.none_type;
+    this->int_type = types.int_type;
+    this->float_type = types.float_type;
+    this->bool_type = types.bool_type;
+    this->str_type = types.str_type;
+    this->function_type = types.function_type;
+    this->builtin_fn_type = types.builtin_fn_type;
+    this->method_wrapper_type = types.method_wrapper_type;
 }
 
 PyObject* Interpreter::interpret(ProgramNode* node) {
@@ -33,42 +35,228 @@ PyObject* Interpreter::resolve(const std::string& method_name, PyObject* object,
     
     PyObject* method_obj = object->find(method_name);
 
-    if(method_obj && method_obj->is_fn_type()){
-        PyFunction* target = method_obj->unwrap_function_obj();
-        return target->bind(object)->call(args, this);
+    if(method_obj == nullptr) {
+        this->throw_missing_method_error(object, method_name);
+    }
+
+    if(method_obj->is_fn_type()){
+        PyObject* bound = method_obj->bind_callable(object, this->method_wrapper_type, method_name);
+        this->validate_call_arity(bound, args.size());
+        return bound->call_callable(args, this);
     
     } else {
-        throw std::runtime_error("Method not found or is not callable");
+        std::string type_name = "unknown";
+        if(object != nullptr && object->get_type() != nullptr) {
+            type_name = object->get_type()->get_name();
+        }
+        throw TypeError("Method '" + method_name + "' on type '" + type_name + "' is not callable");
+    }
+}
+
+PyObject* Interpreter::try_resolve(const std::string& method_name, PyObject* object, std::vector<PyObject*> args) {
+    try {
+        return this->resolve(method_name, object, args);
+    } catch(std::runtime_error&) {
+        return nullptr;
+    }
+}
+
+TokenType Interpreter::assignment_to_binary(TokenType assignment_op) {
+    switch(assignment_op) {
+        case TokenType::PlusEqual: return TokenType::Plus;
+        case TokenType::MinusEqual: return TokenType::Minus;
+        case TokenType::StarEqual: return TokenType::Star;
+        case TokenType::SlashEqual: return TokenType::Slash;
+        case TokenType::ModEqual: return TokenType::Mod;
+        case TokenType::AndEqual: return TokenType::Ampersand;
+        case TokenType::OrEqual: return TokenType::Pipe;
+        case TokenType::XorEqual: return TokenType::Caret;
+        case TokenType::LeftShiftEqual: return TokenType::LeftShift;
+        case TokenType::RightShiftEqual: return TokenType::RightShift;
+        default:
+            throw RuntimeError("Unsupported assignment operator");
+    }
+}
+
+PyObject* Interpreter::make_bool_obj(bool value) {
+    return PyObject::create_bool(value, this->bool_type);
+}
+
+PyObject* Interpreter::make_int_obj(lld value) {
+    return PyObject::create_int(value, this->int_type);
+}
+
+PyObject* Interpreter::make_float_obj(llf value) {
+    return PyObject::create_float(value, this->float_type);
+}
+
+PyObject* Interpreter::make_str_obj(const std::string& value) {
+    return PyObject::create_string(value, this->str_type);
+}
+
+PyObject* Interpreter::negate_truthy_obj(PyObject* value) {
+    if(value == nullptr) {
+        return nullptr;
+    }
+    return this->make_bool_obj(!this->isTruthy(value));
+}
+
+void Interpreter::throw_missing_method_error(PyObject* object, const std::string& method_name) {
+    std::string type_name = "unknown";
+    if(object != nullptr && object->get_type() != nullptr) {
+        type_name = object->get_type()->get_name();
+    }
+    throw TypeError("Type '" + type_name + "' does not implement method '" + method_name + "'");
+}
+
+void Interpreter::validate_call_arity(PyObject* callable, size_t provided_arg_count) {
+    if(callable == nullptr || !callable->is_callable_type()) {
+        return;
+    }
+    size_t expected_arg_count = callable->expected_call_arity();
+    if(expected_arg_count != provided_arg_count) {
+        throw TypeError("Expected " + std::to_string(expected_arg_count) + " argument(s), but got " + std::to_string(provided_arg_count));
     }
 }
 
 inline const std::string& Interpreter::getString(PyObject* object){
-    PyStr* _data = this->resolve("__str__", object)->unwrap_str_obj();
-    return _data->getStr();
+    PyObject* text = this->resolve("__str__", object)->unwrap_str_obj();
+    return text->as_string();
 }
 
 inline long long Interpreter::getInteger(PyObject* object){
-    PyInt* _data = this->resolve("__int__", object)->unwrap_int_obj();
-    return _data->getInt();
+    PyObject* numeric = this->resolve("__int__", object)->unwrap_int_obj();
+    return numeric->as_int();
 }
 
 inline bool Interpreter::isTruthy(PyObject* object){
-    try {
-        PyBool* _data = this->resolve("__bool__", object)->unwrap_bool_obj();
-        return _data->getBool();
-    
-    } catch(std::runtime_error&){
-        // if no boolean method is found, try resolving the __len__ method
-        try {
-            PyInt* _data = this->resolve("__len__", object)->unwrap_int_obj();
-            return _data->getInt() ? true : false;
-
-        } catch(std::runtime_error&){
-            // In the absence of a __bool__() or __len__() method, 
-            // Python treats the existence of the object as an indicator of truth.
-            return true;
-        }
+    PyObject* boolean_method_value = this->try_resolve("__bool__", object);
+    if(boolean_method_value != nullptr && boolean_method_value->is_bool_type()) {
+        return boolean_method_value->as_bool();
     }
+
+    PyObject* len_method_value = this->try_resolve("__len__", object);
+    if(len_method_value != nullptr && len_method_value->is_int_type()) {
+        return len_method_value->as_int() != 0LL;
+    }
+    return true; // the single existence of an object is considered truthy by default
+}
+
+inline bool Interpreter::isNumeric(PyObject* object){
+    return object->is_int_type() || object->is_float_type() || object->is_bool_type();
+}
+
+inline long double Interpreter::toFloat(PyObject* object){
+    PyObject* float_value = this->resolve("__float__", object)->unwrap_float_obj();
+    return float_value->as_float();
+}
+
+PyObject* Interpreter::evalBinary(TokenType op, PyObject* lhs, PyObject* rhs){
+    
+    std::vector<PyObject*> args = {rhs};
+    std::vector<PyObject*> reverse_args = {lhs};
+
+    PyObject* result = nullptr;
+    switch(op) {
+        case TokenType::Plus:
+            return this->resolve("__add__", lhs, args); // a + b
+
+        case TokenType::Minus:
+            return this->resolve("__sub__", lhs, args); // a - b
+
+        case TokenType::Star:
+            return this->resolve("__mul__", lhs, args); // a * b
+
+        case TokenType::Slash:
+            return this->resolve("__truediv__", lhs, args); // a / b
+
+        case TokenType::Ampersand:
+            return this->resolve("__and__", lhs, args); // a & b
+
+        case TokenType::Pipe:
+            return this->resolve("__or__", lhs, args); // a | b
+
+        case TokenType::Caret:
+            return this->resolve("__xor__", lhs, args); // a ^ b
+
+        case TokenType::Mod:
+            return this->resolve("__mod__", lhs, args); // a % b
+
+        case TokenType::LeftShift:
+            return this->resolve("__lshift__", lhs, args); // a << b
+
+        case TokenType::RightShift:
+            return this->resolve("__rshift__", lhs, args); // a >> b
+
+        case TokenType::EqualEqual:
+            result = this->try_resolve("__eq__", lhs, args); // a == b
+
+            if(result) return result;
+            return this->resolve("__eq__", rhs, reverse_args); // b == a
+            
+        case TokenType::BangEqual:
+            result = this->try_resolve("__ne__", lhs, args); // a != b
+            if(result) return result;
+            result = this->negate_truthy_obj(this->try_resolve("__eq__", lhs, args)); // !(a == b)
+            if(result) return result;
+            result = this->try_resolve("__ne__", rhs, reverse_args); // b != a
+            if(result) return result;
+            result = this->negate_truthy_obj(this->try_resolve("__eq__", rhs, reverse_args)); // !(b == a)
+            if(result) return result;
+            this->throw_missing_method_error(lhs, "__ne__");
+
+        case TokenType::Less:
+            result = this->try_resolve("__lt__", lhs, args); // a < b
+            if(result) return result;
+            result = this->try_resolve("__gt__", rhs, reverse_args); // b > a
+            if(result) return result;
+            result = this->negate_truthy_obj(this->try_resolve("__ge__", lhs, args)); // !(a >= b)
+            if(result) return result;
+            result = this->negate_truthy_obj(this->try_resolve("__le__", rhs, reverse_args)); // !(b <= a)
+            if(result) return result;
+            this->throw_missing_method_error(lhs, "__lt__");
+
+        case TokenType::Greater:
+            result = this->try_resolve("__gt__", lhs, args); // a > b
+            if(result) return result;
+            result = this->try_resolve("__lt__", rhs, reverse_args); // b < a
+            if(result) return result;
+            result = this->negate_truthy_obj(this->try_resolve("__le__", lhs, args)); // !(a <= b)
+            if(result) return result;
+            result = this->negate_truthy_obj(this->try_resolve("__ge__", rhs, reverse_args)); // !(b >= a)
+            if(result) return result;
+            this->throw_missing_method_error(lhs, "__gt__");
+
+        case TokenType::LessEqual:
+            result = this->try_resolve("__le__", lhs, args); // a <= b
+            if(result) return result;
+            result = this->try_resolve("__ge__", rhs, reverse_args); // b >= a
+            if(result) return result;
+            result = this->try_resolve("__lt__", lhs, args); // a < b
+            if(result) return result;
+            result = this->negate_truthy_obj(this->try_resolve("__gt__", lhs, args)); // !(a > b)
+            if(result) return result;
+            result = this->negate_truthy_obj(this->try_resolve("__lt__", rhs, reverse_args)); // !(b < a)
+            if(result) return result;
+            this->throw_missing_method_error(lhs, "__le__");
+
+        case TokenType::GreaterEqual:
+            result = this->try_resolve("__ge__", lhs, args); // a >= b
+            if(result) return result;
+            result = this->try_resolve("__le__", rhs, reverse_args); // b <= a
+            if(result) return result;
+            result = this->try_resolve("__gt__", lhs, args); // a > b
+            if(result) return result;
+            result = this->negate_truthy_obj(this->try_resolve("__lt__", lhs, args)); // !(a < b)
+            if(result) return result;
+            result = this->negate_truthy_obj(this->try_resolve("__gt__", rhs, reverse_args)); // !(b > a)
+            if(result) return result;
+            this->throw_missing_method_error(lhs, "__ge__");
+
+        default:
+            break;
+    }
+    throw RuntimeError("Unsupported binary operator");
 }
 
 PyObject* Interpreter::visitPrintNode(PrintNode* node) {
@@ -80,13 +268,13 @@ PyObject* Interpreter::visitPrintNode(PrintNode* node) {
     
     std::cout << '\n' << std::flush;
 
-    return new PyNone();
+    return PyObject::create_none(this->none_type);
 }
 
 PyObject* Interpreter::visitIntNode(IntNode* node){
     
     const std::string& lexeme = node->get_lexeme();
-    PyObject* value = new PyInt(lexeme);
+    PyObject* value = PyObject::create_int(std::stoll(lexeme), this->int_type);
     GC.pushObject(value);
     return value;
 }
@@ -94,7 +282,7 @@ PyObject* Interpreter::visitIntNode(IntNode* node){
 PyObject* Interpreter::visitFloatNode(FloatNode* node){
     
     const std::string& lexeme = node->get_lexeme();
-    PyObject* value = new PyFloat(lexeme);
+    PyObject* value = PyObject::create_float(std::stold(lexeme), this->float_type);
     GC.pushObject(value);
     return value;
 }
@@ -102,10 +290,10 @@ PyObject* Interpreter::visitFloatNode(FloatNode* node){
 PyObject* Interpreter::visitFunctionNode(FunctionNode* node){
 
     const std::string& fname = node->get_name();
-    PyFunction* value = new PyFunction(node, this->currentContext());
+    PyObject* value = PyObject::create_user_function(node, this->currentContext(), this->function_type);
     this->defineOnContext(fname, value);
 
-    return new PyNone();
+    return PyObject::create_none(this->none_type);
 }
 
 PyObject* Interpreter::visitClassNode(ClassNode* node) {
@@ -118,11 +306,11 @@ PyObject* Interpreter::visitClassNode(ClassNode* node) {
     this->popContext();
 
     const std::string& kname = node->get_name();
-    PyClass* value = new PyClass(kname, classScope);
+    PyTypeObject* value = new PyTypeObject(kname, this->type_type, {this->object_type}, classScope);
 
     context->define(kname, value);
 
-    return new PyNone();
+    return PyObject::create_none(this->none_type);
 }
 
 PyObject* Interpreter::visitPropertyNode(PropertyNode* node) {
@@ -134,15 +322,15 @@ PyObject* Interpreter::visitPropertyNode(PropertyNode* node) {
     
     PyObject* value = tp_object->find(target_name);
     
-    return (value->is_fn_type() ? value->unwrap_function_obj()->bind(tp_object) : value);
+    return (value->is_fn_type() ? value->bind_callable(tp_object, this->method_wrapper_type, target_name) : value);
 }
 
 PyObject* Interpreter::visitBlockNode(BlockNode* node) {
     
-    for(auto& stt : node->statements){
+    for(AstNode* stt : node->statements){
         stt->accept(this);
     }
-    return new PyNone();
+    return PyObject::create_none(this->none_type);
 }
 
 PyObject* Interpreter::visitWhileNode(WhileNode* node){
@@ -159,21 +347,25 @@ PyObject* Interpreter::visitWhileNode(WhileNode* node){
         }
         condition = node->cond->accept(this);
     }
-    return new PyNone();
+    return PyObject::create_none(this->none_type);
 }
 
 PyObject* Interpreter::visitBreakNode(BreakNode* node) {
+    
     throw BreakException();
-    return nullptr; // unreachable
+
+    return PyObject::create_none(this->none_type); // unreachable
 }
 
 PyObject* Interpreter::visitContinueNode(ContinueNode* node) {
+    
     throw ContinueException();
-    return nullptr; // unreachable
+
+    return PyObject::create_none(this->none_type); // unreachable
 }
 
 PyObject* Interpreter::visitPassNode(PassNode* node) {
-    return new PyNone(); // pass
+    return PyObject::create_none(this->none_type); // pass
 }
 
 PyObject* Interpreter::visitIfNode(IfNode* node) {
@@ -184,7 +376,7 @@ PyObject* Interpreter::visitIfNode(IfNode* node) {
         return node->trueBranch->accept(this);
         
     } else {
-        for(const auto& elif : node->elifBranches){
+        for(const std::pair<AstNode*, AstNode*>& elif : node->elifBranches){
             PyObject* elifCond = elif.first->accept(this);
             if(isTruthy(elifCond)){
                 return elif.second->accept(this);
@@ -194,7 +386,7 @@ PyObject* Interpreter::visitIfNode(IfNode* node) {
             return node->elseBranch->accept(this);
         }
     }
-    return new PyNone(); // unreachable
+    return PyObject::create_none(this->none_type); // unreachable
 }
 
 PyObject* Interpreter::visitTernaryOpNode(TernaryOpNode* node) {
@@ -206,190 +398,48 @@ PyObject* Interpreter::visitTernaryOpNode(TernaryOpNode* node) {
     } else {
         return node->right->accept(this);
     }
-    return new PyNone(); // unreachable
+    return PyObject::create_none(this->none_type); // unreachable
 }
 
 PyObject* Interpreter::visitBinaryOpNode(BinaryOpNode* node)  {
-
     PyObject* lhs = node->left->accept(this);
     lhs->incRefCount();
+    if(node->op.type == TokenType::Or) { // a or b
+        /*
+        *  try to do short-circuit: if after evaluating the left operand, 
+        *  the result of the logical expression is known, 
+        *  do not evaluate the right operand
+        */
+        if(isTruthy(lhs)) {
+            lhs->decRefCount();
+            return lhs;
+        }
+        PyObject* rhs = node->right->accept(this);
+        lhs->decRefCount();
+        return rhs;
+    }
+
+    if(node->op.type == TokenType::And) { // a and b
+        /*
+        *  try to do short-circuit: if after evaluating the left operand, 
+        *  the result of the logical expression is known, 
+        *  do not evaluate the right operand
+        */
+        if(!isTruthy(lhs)) {
+            lhs->decRefCount();
+            return lhs;
+        }
+        PyObject* rhs = node->right->accept(this);
+        lhs->decRefCount();
+        return rhs;
+    }
 
     PyObject* rhs = node->right->accept(this);
     rhs->incRefCount();
-
-    std::vector<PyObject*> args = {rhs};
-    PyObject* value = nullptr;
-
-    switch((*node).op.type){
-
-        case TokenType::Plus: // a + b
-            value = this->resolve("__add__", lhs, args);
-            GC.pushObject(value);
-            break;
-
-        case TokenType::Minus: // a - b
-            value = this->resolve("__sub__", lhs, args);
-            GC.pushObject(value);
-            break;
-
-        case TokenType::Star: // a * b
-            value = this->resolve("__mul__", lhs, args);
-            GC.pushObject(value);
-            break;
-
-        case TokenType::Slash: // a / b
-            value = this->resolve("__truediv__", lhs, args);
-            GC.pushObject(value);
-            break;
-
-        case TokenType::Ampersand: // a & b
-            value = this->resolve("__and__", lhs, args);
-            GC.pushObject(value);
-            break;
-
-        case TokenType::Pipe: // a | b
-            value = this->resolve("__or__", lhs, args);
-            GC.pushObject(value);
-            break;
-        
-        case TokenType::Caret: // a ^ b
-            value = this->resolve("__xor__", lhs, args);
-            GC.pushObject(value);
-            break;
-
-        case TokenType::Mod: // a % b
-            value = this->resolve("__mod__", lhs, args);
-            GC.pushObject(value);
-            break;
-
-        case TokenType::EqualEqual: // a == b
-            try {
-                value = this->resolve("__eq__", lhs, args);
-            } catch(std::runtime_error&){
-                
-                try { // if a == b cannot be resolved, try b == a, which is equivalent
-                    value = this->resolve("__eq__", rhs, {lhs});
-                } catch(std::runtime_error&){
-                    throw; // TODO: NotImplemented error
-                }
-            }
-            GC.pushObject(value);
-            break;
-
-        case TokenType::BangEqual: // a != b
-            try {
-                value = this->resolve("__ne__", lhs, args);
-            } catch(std::runtime_error&){
-
-                try { // if a != b cannot be resolved, try not (a == b), which is equivalent
-                    PyObject* temp = this->resolve("__eq__", lhs, args);
-                    value = new PyBool(!isTruthy(temp));
-                
-                } catch(std::runtime_error&){
-
-                    try { // if above methods cannot be resolved, try b != a, which is equivalent
-                        value = this->resolve("__ne__", rhs, {lhs});
-                    } catch(std::runtime_error&){
-                        
-                        try { // if above methods cannot be resolved, try not (b == a), which is equivalent
-                            PyObject* temp = this->resolve("__eq__", rhs, {lhs});
-                            value = new PyBool(!isTruthy(temp));
-                        
-                        } catch(std::runtime_error&) {
-                            throw;
-                        } 
-                    }
-                }
-            }
-            GC.pushObject(value);
-            break;
-
-        case TokenType::Less: // a < b
-            try {
-                value = this->resolve("__lt__", lhs, args);
-            } catch(std::runtime_error&){
-                try { // if a < b cannot be resolved, try b > a, which is equivalent
-                    value = this->resolve("__gt__", rhs, {lhs});
-                } catch(std::runtime_error&){
-                    throw;
-                }
-            }
-            GC.pushObject(value);
-            break;
-
-        case TokenType::Greater: // a > b
-            try {
-                value = this->resolve("__gt__", lhs, args);
-            } catch(std::runtime_error&){
-                try { // if a > b cannot be resolved, try b < a, which is equivalent
-                    value = this->resolve("__lt__", rhs, {lhs});
-                } catch(std::runtime_error&){
-                    throw;
-                }
-            }
-            GC.pushObject(value);
-            break;
-
-        case TokenType::LessEqual: // a <= b
-            try {
-                value = this->resolve("__le__", lhs, args);
-            } catch(std::runtime_error&){
-                try { // if a <= b cannot be resolved, try b >= a, which is equivalent
-                    value = this->resolve("__ge__", rhs, {lhs});
-                } catch(std::runtime_error&){
-                    throw;
-                }
-            }
-            GC.pushObject(value);
-            break;
-
-        case TokenType::GreaterEqual: // a >= b
-            try {
-                value = this->resolve("__ge__", lhs, args);
-            } catch(std::runtime_error&){
-                try { // if a >= b cannot be resolved, try b <= a, which is equivalent
-                    value = this->resolve("__le__", rhs, {lhs});
-                } catch(std::runtime_error&){
-                    throw;
-                }
-            }
-            GC.pushObject(value);
-            break;
-
-        case TokenType::LeftShift: // a << b
-            value = this->resolve("__lshift__", lhs, args);
-            GC.pushObject(value);
-            break;
-
-        case TokenType::RightShift: // a >> b
-            value = this->resolve("__rshift__", lhs, args);
-            GC.pushObject(value);
-            break;
-
-        case TokenType::Or: // a or b
-            /*
-             *  try to do short-circuit: if after evaluating the left operand, 
-             *  the result of the logical expression is known, 
-             *  do not evaluate the right operand
-            */
-            value = isTruthy(lhs) ? lhs : rhs;
-            break;
-        
-        case TokenType::And: // a and b
-            /*
-             *  try to do short-circuit: if after evaluating the left operand, 
-             *  the result of the logical expression is known, 
-             *  do not evaluate the right operand
-            */
-           value = !isTruthy(lhs) ? lhs : rhs;
-           break;
-
-        default:
-            throw std::logic_error("Unsupported binary operator");
-    }
+    PyObject* value = this->evalBinary(node->op.type, lhs, rhs);
+    GC.pushObject(value);
     lhs->decRefCount();
     rhs->decRefCount();
-
     return value;
 }
 
@@ -399,7 +449,7 @@ PyObject* Interpreter::visitAssignNode(AssignNode* node) {
     Scope* context = nullptr;
     std::string name;
 
-    if(lhs->is_name_node()){
+    if(lhs->is_name_node()){ 
 
         name = lhs->unwrap_name_node()->get_lexeme();
         context = this->currentContext();
@@ -412,7 +462,7 @@ PyObject* Interpreter::visitAssignNode(AssignNode* node) {
         context = object->getContext();
 
     } else {
-        throw std::runtime_error("Unsupported target expression");
+        throw RuntimeError("Unsupported target expression");
     }
     
     PyObject* value = node->value->accept(this);
@@ -424,63 +474,7 @@ PyObject* Interpreter::visitAssignNode(AssignNode* node) {
     } else {
         PyObject* lhs_value = context->get(name);
         lhs_value->incRefCount();
-
-        std::vector<PyObject*> args = {value};
-
-        switch(node->op.type){
-            case TokenType::PlusEqual: // a += b
-                // TODO: __iadd__ in-place add
-                value = this->resolve("__add__", lhs_value, args);
-                break;
-            
-            case TokenType::MinusEqual: // a -= b
-                // TODO: __isub__
-                value = this->resolve("__sub__", lhs_value, args);
-                break;
-
-            case TokenType::StarEqual: // a *= b
-                // TODO: __imul__
-                value = this->resolve("__mul__", lhs_value, args);
-                break;
-            
-            case TokenType::SlashEqual: // a /= b
-                // TODO: __itruediv__
-                value = this->resolve("__truediv__", lhs_value, args);
-                break;
-
-            case TokenType::ModEqual: // a %= b
-                // TODO: __imod__
-                value = this->resolve("__mod__", lhs_value, args);
-                break;
-
-            case TokenType::AndEqual: // a &= b
-                // TODO: __iand__
-                value = this->resolve("__and__", lhs_value, args);
-                break;
-
-            case TokenType::OrEqual: // a |= b
-                // TODO: __ior__
-                value = this->resolve("__or__", lhs_value, args);
-                break;
-
-            case TokenType::XorEqual: // a ^= b
-                // TODO: __ixor__
-                value = this->resolve("__xor__", lhs_value, args);
-                break;
-            
-            case TokenType::LeftShiftEqual: // a <<= b
-                // TODO: __ilshift__
-                value = this->resolve("__lshift__", lhs_value, args);
-                break;
-            
-            case TokenType::RightShiftEqual: // a >>= b
-                // TODO: __irshift__
-                value = this->resolve("__rshift__", lhs_value, args);
-                break;
-            
-            default:
-                throw std::runtime_error("Unsupported assignment operator");
-        }
+        value = this->evalBinary(this->assignment_to_binary(node->op.type), lhs_value, value);
         context->define(name, value);
         lhs_value->decRefCount();
     }
@@ -498,7 +492,7 @@ PyObject* Interpreter::visitNameNode(NameNode* node){
 PyObject* Interpreter::visitBooleanNode(BooleanNode* node){
     
     bool bl = node->value;
-    PyObject* value = new PyBool(bl);
+    PyObject* value = PyObject::create_bool(bl, this->bool_type);
     GC.pushObject(value);
     return value;
 }
@@ -506,7 +500,7 @@ PyObject* Interpreter::visitBooleanNode(BooleanNode* node){
 PyObject* Interpreter::visitStringNode(StringNode* node){
     
     const std::string& lexeme = node->get_lexeme();
-    PyObject* value = new PyStr(lexeme);
+    PyObject* value = PyObject::create_string(lexeme, this->str_type);
     GC.pushObject(value);
     return value;
 }
@@ -519,19 +513,34 @@ PyObject* Interpreter::visitUnaryOpNode(UnaryOpNode* node){
     switch(node->op.type){
         
         case TokenType::Not: // not a
-            value = new PyBool(!isTruthy(rhs_value));
+            value = PyObject::create_bool(!isTruthy(rhs_value), this->bool_type);
             break;
         
         case TokenType::Minus: // -a
-            value = this->resolve("__neg__", rhs_value);
+            if(isNumeric(rhs_value)) {
+                if(rhs_value->is_float_type()) {
+                    value = PyObject::create_float(-rhs_value->as_float(), this->float_type);
+                } else {
+                    value = PyObject::create_int(-getInteger(rhs_value), this->int_type);
+                }
+            } else {
+                value = this->resolve("__neg__", rhs_value);
+            }
             break;
 
         case TokenType::Tilde: // ~a
-            value = this->resolve("__invert__", rhs_value);
+            if(rhs_value->is_float_type()) {
+                throw TypeError("unsupported operand type for ~");
+            }
+            if(rhs_value->is_int_type() || rhs_value->is_bool_type()) {
+                value = PyObject::create_int(~getInteger(rhs_value), this->int_type);
+            } else {
+                value = this->resolve("__invert__", rhs_value);
+            }
             break;
         
         default:
-            throw std::logic_error("Unsupported unary operator");
+            throw RuntimeError("Unsupported unary operator");
     }
     GC.pushObject(value);
     return value;
@@ -539,7 +548,7 @@ PyObject* Interpreter::visitUnaryOpNode(UnaryOpNode* node){
 
 PyObject* Interpreter::visitNullNode(NullNode* expr){
 
-    PyObject* value = new PyNone();
+    PyObject* value = PyObject::create_none(this->none_type);
     GC.pushObject(value);
     return value;
 }
@@ -554,52 +563,34 @@ PyObject* Interpreter::visitCallNode(CallNode* expr) {
         arguments.push_back(argNode->accept(this));
     }
     
-    if(callee->is_klass_type()){
-
-        PyClass* klass = callee->unwrap_class_obj();
-
-        PyInstance* instance = new PyInstance(klass);
-
-        PyObject* initMethod = nullptr;
-
-        try {
-            initMethod = instance->find("__init__");
-        
-        } catch(const std::runtime_error&){
-            ; // if no constructor is present, just ignore
-        }
-
-        if(initMethod && initMethod->is_fn_type()){
-            PyFunction* target = initMethod->unwrap_function_obj();
-            target->bind(instance)->call(arguments, this);
-        }
-
-        return instance;
-    
-    } else {
-
-        PyObject* callable = callee->find("__call__");
-
-        if(callable->is_builtin_fn_type()){
-            return callable->unwrap_builtin_fn_obj()->call(arguments, this);
-
-        } else if(callable->is_fn_type()){
-            return callable->unwrap_function_obj()->call(arguments, this);
-        
-        } else if(callable->is_method_wrapper_type()){
-            return callable->unwrap_method_obj()->call(arguments, this);
-
-        } else {
-            throw std::runtime_error("Object is not callable");
-        }
+    if(callee->is_type_type()) {
+        return callee->unwrap_type_obj()->call(arguments, this);
     }
-    return new PyNone();
+    
+    if(callee->is_callable_type()) {
+        this->validate_call_arity(callee, arguments.size());
+        return callee->call_callable(arguments, this);
+    }
+
+    PyObject* callable = callee->find("__call__");
+    if(callable != nullptr && callable->is_fn_type()) {
+        PyObject* bound_callable = callable->bind_callable(callee, this->method_wrapper_type, "__call__");
+        this->validate_call_arity(bound_callable, arguments.size());
+        return bound_callable->call_callable(arguments, this);
+    }
+
+    if(callable != nullptr && callable->is_callable_type()) {
+        this->validate_call_arity(callable, arguments.size());
+        return callable->call_callable(arguments, this);
+    }
+    throw TypeError("Object is not callable");
 }
 
 PyObject* Interpreter::visitReturnNode(ReturnNode* node) {
     
     AstNode* value = node->value;
-    PyObject* retValue = value ? value->accept(this) : new PyNone();
+    PyObject* retValue = value ? value->accept(this) : PyObject::create_none(this->none_type);
     throw ReturnException(retValue);
-    return new PyNone(); // unreachable
+    
+    return PyObject::create_none(this->none_type); // unreachable
 }

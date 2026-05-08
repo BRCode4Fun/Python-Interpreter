@@ -11,7 +11,7 @@
 
 #ifdef DEBUG
 inline void show_tokens(const std::vector<Token>& tokens) {
-    for (const auto& token : tokens) {
+    for (const Token& token : tokens) {
         std::cout << token << '\n';
     }
     std::cout << std::flush;

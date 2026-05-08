@@ -1,4 +1,5 @@
 #include "parser.hpp"
+#include "../exceptions/python_errors.hpp"
 
 Parser::Parser(const std::vector<Token>& tokens) : tokens(tokens) {}
 
@@ -89,9 +90,9 @@ AstNode* Parser::parseFunctionDef(){
     consume(TokenType::RightParen);
     consume(TokenType::Colon);
 
-    isInsideFunc++;
+    ++isInsideFunc;
     AstNode* body = parseSuite();
-    isInsideFunc--;
+    --isInsideFunc;
 
     return new FunctionNode(fname, parameters, body);
 }
@@ -160,7 +161,9 @@ AstNode* Parser::parseReturnStmt() {
     /*
      *  return_stmt ::= "return" (expression)?
     */
-    if(!isInsideFunc) error("Return outside Function.");
+    if(!isInsideFunc) {
+        throw SyntaxError("Error at line " + std::to_string(peek().line) + ": Return outside Function.");
+    }
     
     Token keyword = previous();
     AstNode* expr = match({TokenType::Newline, TokenType::Semicolon}) ? 
@@ -172,7 +175,9 @@ AstNode* Parser::parseBreakStmt() {
     /*
      *  break_stmt ::= "break"
     */
-    if(!isInsideLoop) error("Break outside Loop.");
+    if(!isInsideLoop) {
+        throw SyntaxError("Error at line " + std::to_string(peek().line) + ": Break outside Loop.");
+    }
     
     Token keyword = previous();
     return new BreakNode(keyword);
@@ -182,7 +187,9 @@ AstNode* Parser::parseContinueStmt() {
     /*
      *  continue_stmt ::= "continue"
     */
-    if(!isInsideLoop) error("Continue outside Loop.");
+    if(!isInsideLoop) {
+        throw SyntaxError("Error at line " + std::to_string(peek().line) + ": Continue outside Loop.");
+    }
     
     Token keyword = previous();
     return new ContinueNode(keyword);
@@ -232,7 +239,7 @@ AstNode* Parser::parseSuite() {
             if(node->is_block_node()) {
                 BlockNode* block = node->unwrap_block_node();
                 
-                for(auto stmt : block->statements) {
+                for(AstNode* stmt : block->statements) {
                     stmts.push_back(stmt);
                 }
             } else {
@@ -325,8 +332,7 @@ AstNode* Parser::parseAssign() {
         if(left->is_name_node() or left->is_property_node()) {
             return new AssignNode(left, right, op);
         } else {
-            error("Invalid compound assignment.");
-            return nullptr;
+            throw SyntaxError("Error at line " + std::to_string(peek().line) + ": Invalid compound assignment.");
         }
     }
     return left;
@@ -503,11 +509,11 @@ AstNode* Parser::parseTerm() {
     /*
      *  power ::= unary ("**" power)*
     
-    auto left = parseUnary();
+    AstNode* left = parseUnary();
     
     if (match(TokenType::DoubleStar)) {
-        auto op = previous();
-        auto right = parsePower();
+        Token op = previous();
+        AstNode* right = parsePower();
         left = new BinaryOpNode(left, op.lexeme, right);
     }
     return left;
@@ -601,8 +607,7 @@ AstNode* Parser::parseAtom() {
             case TokenType::Name: {
                 return new NameNode(tk);
             } default: {
-                error("Expected a primary expression");
-                return nullptr; 
+                throw SyntaxError("Error at line " + std::to_string(peek().line) + ": Expected a primary expression");
             }
         }
     }
@@ -611,9 +616,7 @@ AstNode* Parser::parseAtom() {
 Token Parser::consume(TokenType type) {
     if (match(type)) return previous();
     else {
-        error("Expected " + std::to_string(type) + "\n");
-       // cout << "But got  " <<  peek().type <<  endl;
-        return Token(TokenType::Error, "", 0);
+        throw SyntaxError("Error at line " + std::to_string(peek().line) + ": Expected " + std::to_string(type));
     }
 }
 
@@ -630,7 +633,7 @@ bool Parser::match(std::initializer_list<TokenType> types) {
     
     if(isAtEnd()) return false;
     
-    for(const auto& type : types) {
+    for(const TokenType& type : types) {
         if(peek().type == type) {
             ++current;
             return true;
@@ -655,7 +658,3 @@ Token Parser::advance() {
     return tokens[current++];
 }
 
-void Parser::error(const std::string& message) {
-    std::cerr << "Error at line " << peek().line << ": " << message << std::endl;
-    exit(EXIT_FAILURE);
-}

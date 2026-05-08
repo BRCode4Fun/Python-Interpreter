@@ -3,9 +3,18 @@ class Number:
         self._n = n
     
     def __add__(self, other):
-        return Number(self._n + other.getN())
+        return Number(self._n + other.get_value())
+
+    def __str__(self):
+        return str(self._n)
+
+    def __eq__(self, other):
+        return self._n == other.get_value()
+
+    def __lt__(self, other):
+        return self._n < other.get_value()
     
-    def getN(self):
+    def get_value(self):
         return self._n
     
 n1 = Number(3)
@@ -15,7 +24,11 @@ n4 = Number(9)
 
 n5 = n1.__add__(n2).__add__(n3).__add__(n4)
 
-print(n5.getN())
+n6 = n1 + n2 + n3 + n4
+
+print(n5)
+print(n6)
+print(n5 == n6)
 
 #########################################################
 
@@ -63,13 +76,13 @@ def main():
     tree = BinaryTree()
     
     # Insert values into the binary tree
-    tree.insert(5)
-    tree.insert(3)
-    tree.insert(8)
-    tree.insert(2)
-    tree.insert(4)
-    tree.insert(7)
-    tree.insert(9)
+    tree.insert(Number(5))
+    tree.insert(Number(3))
+    tree.insert(Number(8))
+    tree.insert(Number(2))
+    tree.insert(Number(4))
+    tree.insert(Number(7))
+    tree.insert(Number(9))
 
     # Perform inorder traversal by printing values
     print("Inorder traversal:")

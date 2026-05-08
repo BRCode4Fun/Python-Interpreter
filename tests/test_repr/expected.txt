@@ -1,0 +1,7 @@
+None
+True
+False
+10
+2.0
+'abc'
+<class 'type'>

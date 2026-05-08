@@ -1,0 +1,10 @@
+False
+True
+False
+True
+None
+True
+2
+2.0
+<class 'type'>
+WithBool:True

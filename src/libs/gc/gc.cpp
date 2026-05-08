@@ -3,7 +3,7 @@
 
 void GarbageCollector::freeUnused() {    
 
-    for(auto object : objects) {
+    for(PyObject* object : objects) {
                         
         if(object->getRefCount() == 0) {
 
@@ -18,11 +18,13 @@ void GarbageCollector::freeUnused() {
 }
 
 void GarbageCollector::pushObject(PyObject* value) {
-
-    if(nAllocs >= 50){
-        freeUnused();
-        nAllocs = 0;
+    if(value == nullptr) {
+        return;
     }
+    if(std::find(objects.begin(), objects.end(), value) != objects.end()) {
+        return;
+    }
+
     nAllocs++;
     objects.push_back(value); 
 

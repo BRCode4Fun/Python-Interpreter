@@ -1,13 +1,23 @@
 # Detect OS
 ifeq ($(OS),Windows_NT)
-    # Windows settings
-    SRCS := $(shell powershell -Command "Get-ChildItem -Recurse -Filter *.cpp | Select-Object -ExpandProperty FullName" | tr '\r\n' ' ')
     OUTPUT := main.exe
 else
-    # Unix-like settings (Linux, macOS, etc.)
-    SRCS := $(shell find . -name "*.cpp")
     OUTPUT := main
 endif
+
+# Recursive wildcard to collect source files using relative paths.
+# This avoids issues with spaces in absolute paths on Windows.
+rwildcard = $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
+SRCS := $(call rwildcard,src/,*.cpp)
+SRCS := $(filter-out \
+    src/libs/value/pyBool.cpp \
+    src/libs/value/pyClass.cpp \
+    src/libs/value/pyFloat.cpp \
+    src/libs/value/pyInstance.cpp \
+    src/libs/value/pyInt.cpp \
+    src/libs/value/pyNone.cpp \
+    src/libs/value/pyStr.cpp, \
+    $(SRCS))
 
 # Set the compiler and compiler flags
 CC := g++
