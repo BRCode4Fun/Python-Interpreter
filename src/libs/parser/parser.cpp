@@ -1,29 +1,29 @@
 #include "parser.hpp"
-#include "../exceptions/python_errors.hpp"
+#include "../exceptions/python_exceptions.hpp"
 
 Parser::Parser(const std::vector<Token>& tokens) : tokens(tokens) {}
 
-ProgramNode* Parser::parse() {
-    return parseProgram();
+std::unique_ptr<ProgramNode> Parser::parse() {
+    return parse_program();
 }
 
-ProgramNode* Parser::parseProgram() {
+std::unique_ptr<ProgramNode> Parser::parse_program() {
     /*
      *   program ::= (statement | NEWLINE)* $
     */
-    std::vector<AstNode*> statements;
-    while (!isAtEnd()) {
+    std::vector<std::unique_ptr<AstNode>> statements;
+    while (!is_at_end()) {
         if(match(TokenType::Newline)){
             continue;
         } else {
-            statements.push_back(parseStmt());
+            statements.push_back(parse_stmt());
         }
     }
-    BlockNode* block = new BlockNode(statements);
-    return new ProgramNode(block);
+    auto block = std::make_unique<BlockNode>(std::move(statements));
+    return std::make_unique<ProgramNode>(std::move(block));
 }
 
-AstNode* Parser::parseStmt() {
+std::unique_ptr<AstNode> Parser::parse_stmt() {
     /*
      *    statement ::= stmt_list NEWLINE
      *                  | compound_stmt
@@ -33,48 +33,42 @@ AstNode* Parser::parseStmt() {
      *                      | for_stmt      TODO
      *                      | try_stmt      TODO
      *                      | with_stmt     TODO
-     *                      | funcdef       
-     *                      | classdef      
+     *                      | funcdef
+     *                      | classdef
     */
     if (match(TokenType::If)){
-        return parseIfStmt();
-        
+        return parse_if_stmt();
+
     } else if (match(TokenType::While)){
-        return parseWhileStmt();
-        
+        return parse_while_stmt();
+
     } else if (match(TokenType::Def)){
-        return parseFunctionDef();
-            
+        return parse_function_def();
+
     } else if (match(TokenType::Class)) {
-        return parseClassDef();
-    
+        return parse_class_def();
+
     } else {
-        std::vector<AstNode*> stmtList = parseStmtList();
+        std::unique_ptr<AstNode> stmt_list = parse_stmt_list();
         while(match(TokenType::Newline)) continue;
-        
-        if(stmtList.size() == 1) {
-            return stmtList[0];
-        } else {
-            return new BlockNode(stmtList);
-        }
+        return stmt_list;
     }
 }
 
-std::vector<AstNode*> Parser::parseParameterList() {
+std::vector<std::unique_ptr<AstNode>> Parser::parse_parameter_list() {
     /*
      *   parameter_list ::= identifier ("," identifier)*    // keep simple for now
     */
-    std::vector<AstNode*> parameters;
+    std::vector<std::unique_ptr<AstNode>> parameters;
     do {
         Token tk = consume(TokenType::Name);
-        AstNode* pname = new NameNode(tk);
-        parameters.push_back(pname);      
+        parameters.push_back(std::make_unique<NameNode>(tk));
     } while (match(TokenType::Comma));
-    
+
     return parameters;
 }
 
-AstNode* Parser::parseFunctionDef(){
+std::unique_ptr<AstNode> Parser::parse_function_def(){
     /*
      *   funcdef ::= "def" funcname "(" (parameter_list)? ")" ":" suite
      *   funcname ::= identifier
@@ -82,255 +76,259 @@ AstNode* Parser::parseFunctionDef(){
     Token fname = consume(TokenType::Name);
     consume(TokenType::LeftParen);
 
-    std::vector<AstNode*> parameters;
-    
+    std::vector<std::unique_ptr<AstNode>> parameters;
+
     if (peek().type != TokenType::RightParen) {
-       parameters = parseParameterList();   
+       parameters = parse_parameter_list();
     }
     consume(TokenType::RightParen);
     consume(TokenType::Colon);
 
-    ++isInsideFunc;
-    AstNode* body = parseSuite();
-    --isInsideFunc;
+    ++function_depth;
+    std::unique_ptr<AstNode> body = parse_suite();
+    --function_depth;
 
-    return new FunctionNode(fname, parameters, body);
+    return std::make_unique<FunctionNode>(fname, std::move(parameters), std::move(body));
 }
 
-AstNode* Parser::parseClassDef(){
+std::unique_ptr<AstNode> Parser::parse_class_def(){
     /*
     *   classdef  ::= "class" classname (inheritance)? ":" suite // TODO inheritance
     *   classname ::= identifier
     */
     Token kname = consume(TokenType::Name);
     consume(TokenType::Colon);
-    AstNode* body = parseSuite();
-    
-    return new ClassNode(kname, body);
+    std::unique_ptr<AstNode> body = parse_suite();
+
+    return std::make_unique<ClassNode>(kname, std::move(body));
 }
 
-std::vector<AstNode*> Parser::parseStmtList() {
+std::unique_ptr<AstNode> Parser::parse_stmt_list() {
     /*
      *    stmt_list ::= simple_stmt (";" simple_stmt)* (";")?
     */
-    std::vector<AstNode*> stmts;
-    
-    stmts.push_back(parseSimpleStmt());
-    
+    std::vector<std::unique_ptr<AstNode>> stmts;
+
+    stmts.push_back(parse_simple_stmt());
+
     while(match(TokenType::Semicolon)){
         if(peek().type == TokenType::Newline) break;
-        stmts.push_back(parseSimpleStmt());
+        stmts.push_back(parse_simple_stmt());
     }
     if(peek().type == TokenType::Semicolon) ++current;
-    
-    return stmts;
+
+    if(stmts.size() == 1) {
+        return std::move(stmts[0]);
+    }
+    return std::make_unique<BlockNode>(std::move(stmts));
 }
 
-AstNode* Parser::parseSimpleStmt() {
+std::unique_ptr<AstNode> Parser::parse_simple_stmt() {
     /*
      *  simple_stmt ::= assignment_stmt
      *                   | assert_stmt     TODO
      *                   | pass_stmt       TODO
      *                   | del_stmt        TODO
-     *                   | print_stmt      
-     *                   | return_stmt     
+     *                   | print_stmt
+     *                   | return_stmt
      *                   | yield_stmt      TODO
      *                   | raise_stmt      TODO
-     *                   | break_stmt      
-     *                   | continue_stmt   
+     *                   | break_stmt
+     *                   | continue_stmt
      *                   | import_stmt     TODO
      *                   | global_stmt     TODO
      *
     */
      if (match(TokenType::Print)) {
-        return parsePrintStmt();
+        return parse_print_stmt();
     } else if(match(TokenType::Return)){
-        return parseReturnStmt();
+        return parse_return_stmt();
     } else if(match(TokenType::Break)){
-        return parseBreakStmt();
+        return parse_break_stmt();
     } else if(match(TokenType::Continue)){
-        return parseContinueStmt();
+        return parse_continue_stmt();
     } else if(match(TokenType::Pass)) {
-        return parsePassStmt();
+        return parse_pass_stmt();
     } else {
-        return parseAssign();
+        return parse_assign();
     }
 }
 
-AstNode* Parser::parseReturnStmt() {
+std::unique_ptr<AstNode> Parser::parse_return_stmt() {
     /*
      *  return_stmt ::= "return" (expression)?
     */
-    if(!isInsideFunc) {
+    if(!function_depth) {
         throw SyntaxError("Error at line " + std::to_string(peek().line) + ": Return outside Function.");
     }
-    
+
     Token keyword = previous();
-    AstNode* expr = match({TokenType::Newline, TokenType::Semicolon}) ? 
-                    nullptr : parseExpr();
-    return new ReturnNode(keyword, expr);
+    std::unique_ptr<AstNode> expr = match({TokenType::Newline, TokenType::Semicolon}) ?
+                    std::unique_ptr<AstNode>{} : parse_expr();
+    return std::make_unique<ReturnNode>(keyword, std::move(expr));
 }
 
-AstNode* Parser::parseBreakStmt() {
+std::unique_ptr<AstNode> Parser::parse_break_stmt() {
     /*
      *  break_stmt ::= "break"
     */
-    if(!isInsideLoop) {
+    if(!loop_depth) {
         throw SyntaxError("Error at line " + std::to_string(peek().line) + ": Break outside Loop.");
     }
-    
+
     Token keyword = previous();
-    return new BreakNode(keyword);
+    return std::make_unique<BreakNode>(keyword);
 }
 
-AstNode* Parser::parseContinueStmt() {
+std::unique_ptr<AstNode> Parser::parse_continue_stmt() {
     /*
      *  continue_stmt ::= "continue"
     */
-    if(!isInsideLoop) {
+    if(!loop_depth) {
         throw SyntaxError("Error at line " + std::to_string(peek().line) + ": Continue outside Loop.");
     }
-    
+
     Token keyword = previous();
-    return new ContinueNode(keyword);
+    return std::make_unique<ContinueNode>(keyword);
 }
 
-AstNode* Parser::parsePassStmt() {
+std::unique_ptr<AstNode> Parser::parse_pass_stmt() {
     /*
      *  pass_stmt ::= "pass"
     */
     Token keyword = previous();
-    return new PassNode(keyword);
+    return std::make_unique<PassNode>(keyword);
 }
 
-AstNode* Parser::parsePrintStmt() {
+std::unique_ptr<AstNode> Parser::parse_print_stmt() {
     /*
      *    print_stmt ::= "print" "(" (expression)? ")"
     */
     consume(TokenType::LeftParen);
-    
-    AstNode* expr = nullptr;
-    
-    if(peek().type != TokenType::RightParen) {
-        expr = parseExpr();
-    } consume(TokenType::RightParen);
 
-    return new PrintNode(expr);
+    std::unique_ptr<AstNode> expr;
+    if(peek().type != TokenType::RightParen) {
+        expr = parse_expr();
+    }
+    consume(TokenType::RightParen);
+
+    return std::make_unique<PrintNode>(std::move(expr));
 }
 
-AstNode* Parser::parseSuite() {
+std::unique_ptr<AstNode> Parser::parse_suite() {
     /*
      *    suite ::= NEWLINE* INDENT statement+ DEDENT
      *              | stmt_list NEWLINE
     */
     if(match(TokenType::Newline)) {
-        
+
         // consumes '\n'
         while(match(TokenType::Newline)) continue;
 
         consume(TokenType::Indent);
-        
-        std::vector<AstNode*> stmts;
-        stmts.push_back(parseStmt());
-    
+
+        std::vector<std::unique_ptr<AstNode>> stmts;
+        stmts.push_back(parse_stmt());
+
         while(peek().type != TokenType::Dedent) {
-            AstNode* node = parseStmt();
-            
+            std::unique_ptr<AstNode> node = parse_stmt();
+
             if(node->is_block_node()) {
                 BlockNode* block = node->unwrap_block_node();
-                
-                for(AstNode* stmt : block->statements) {
-                    stmts.push_back(stmt);
+
+                for(auto& stmt : block->statements) {
+                    stmts.push_back(std::move(stmt));
                 }
             } else {
-                stmts.push_back(node);
+                stmts.push_back(std::move(node));
             }
         }
         consume(TokenType::Dedent);
-        
-        return new BlockNode(stmts);
+
+        return std::make_unique<BlockNode>(std::move(stmts));
 
     } else {
-        std::vector<AstNode*> stmtList = parseStmtList();
+        std::unique_ptr<AstNode> stmt_list = parse_stmt_list();
         consume(TokenType::Newline);
-        return new BlockNode(stmtList);
+        return stmt_list;
     }
 }
 
-AstNode* Parser::parseIfStmt() {
+std::unique_ptr<AstNode> Parser::parse_if_stmt() {
     /*
      *    if_stmt ::= "if" expression ":" suite
      *                ("elif" expression ":" suite)*
      *                ("else" ":" suite)?
     */
-    AstNode* cond = parseExpr();
+    std::unique_ptr<AstNode> cond = parse_expr();
     consume(TokenType::Colon);
-    AstNode* trueBranch = parseSuite();
+    std::unique_ptr<AstNode> true_branch = parse_suite();
 
-    std::vector<std::pair<AstNode*, AstNode*>> elifBranches;
+    std::vector<std::pair<std::unique_ptr<AstNode>, std::unique_ptr<AstNode>>> elif_branches;
     while(match(TokenType::Elif)) {
-        AstNode* elifCond = parseExpr();
+        std::unique_ptr<AstNode> elif_cond = parse_expr();
         consume(TokenType::Colon);
-        AstNode* elifSuite = parseSuite();
-        elifBranches.emplace_back(elifCond, elifSuite);
+        std::unique_ptr<AstNode> elif_suite = parse_suite();
+        elif_branches.emplace_back(std::move(elif_cond), std::move(elif_suite));
     }
-    
-    AstNode* elseBranch = nullptr;
+
+    std::unique_ptr<AstNode> else_branch;
     if(match(TokenType::Else)) {
         consume(TokenType::Colon);
-        elseBranch = parseSuite();
+        else_branch = parse_suite();
     }
-    
-    return new IfNode(cond, trueBranch, elifBranches, elseBranch);
+
+    return std::make_unique<IfNode>(
+        std::move(cond), std::move(true_branch), std::move(elif_branches), std::move(else_branch));
 }
 
-AstNode* Parser::parseWhileStmt() {
+std::unique_ptr<AstNode> Parser::parse_while_stmt() {
     /*
      *   while_stmt ::= "while" expression ":" suite
      *                  ("else" ":" suite)?  //TODO
     */
-    AstNode* cond = parseExpr();
+    std::unique_ptr<AstNode> cond = parse_expr();
     consume(TokenType::Colon);
-    isInsideLoop++;
-    AstNode* body = parseSuite();
-    isInsideLoop--;
+    loop_depth++;
+    std::unique_ptr<AstNode> body = parse_suite();
+    loop_depth--;
 
-    return new WhileNode(cond, body);
+    return std::make_unique<WhileNode>(std::move(cond), std::move(body));
 }
 
-AstNode* Parser::parseAssignSimple() {
+std::unique_ptr<AstNode> Parser::parse_assign_simple() {
     /*
      *  assign_simple ::= expression ("=" assign_stmt)* // TODO target
     */
-    AstNode* left = parseExpr();
-    
+    std::unique_ptr<AstNode> left = parse_expr();
+
     if(match(TokenType::Equals)) {
         Token op = previous();
-        AstNode* right = parseAssignSimple();
-        return new AssignNode(left, right, op);
+        std::unique_ptr<AstNode> right = parse_assign_simple();
+        return std::make_unique<AssignNode>(std::move(left), std::move(right), op);
     }
     return left;
 }
 
-AstNode* Parser::parseAssign() {
+std::unique_ptr<AstNode> Parser::parse_assign() {
     /*
      *  assign_stmt ::= assign_simple | augmented_assignment_stmt
      *  augmented_assignment_stmt ::= expression augop expression // TODO target, expression_list
-     *  augop ::= "+="  | "-=" ¦ "*=" | "/=" 
+     *  augop ::= "+="  | "-=" ¦ "*=" | "/="
      *          ¦ "%="  | "&=" | "|=" ¦ "^="
      *          | "<<=" | ">>="
     */
-    AstNode* left = parseAssignSimple();
-    
+    std::unique_ptr<AstNode> left = parse_assign_simple();
+
     if(match({TokenType::PlusEqual, TokenType::MinusEqual,
-              TokenType::StarEqual, TokenType::SlashEqual, TokenType::ModEqual, 
+              TokenType::StarEqual, TokenType::SlashEqual, TokenType::ModEqual,
               TokenType::AndEqual, TokenType::OrEqual, TokenType::XorEqual,
               TokenType::LeftShiftEqual, TokenType::RightShiftEqual})) {
         Token op = previous();
-        AstNode* right = parseExpr();
-        
+        std::unique_ptr<AstNode> right = parse_expr();
+
         if(left->is_name_node() or left->is_property_node()) {
-            return new AssignNode(left, right, op);
+            return std::make_unique<AssignNode>(std::move(left), std::move(right), op);
         } else {
             throw SyntaxError("Error at line " + std::to_string(peek().line) + ": Invalid compound assignment.");
         }
@@ -338,221 +336,207 @@ AstNode* Parser::parseAssign() {
     return left;
 }
 
-AstNode* Parser::parseExpr() {
+std::unique_ptr<AstNode> Parser::parse_expr() {
     /*
-     *  expression ::= conditional_expression 
+     *  expression ::= conditional_expression
      *                 | lambda_form // TODO
     */
-    return parseConditionalExpr();
+    return parse_conditional_expr();
 }
 
-AstNode* Parser::parseConditionalExpr() {
+std::unique_ptr<AstNode> Parser::parse_conditional_expr() {
     /*
      *  conditional_expression ::= disjunction ("if" disjunction "else" expression)?
     */
-    AstNode* left = parseDisjunction();
-    
+    std::unique_ptr<AstNode> left = parse_disjunction();
+
     if(match(TokenType::If)) {
-        AstNode* condition = parseDisjunction();
+        std::unique_ptr<AstNode> condition = parse_disjunction();
         consume(TokenType::Else);
-        AstNode* right = parseExpr();
-        left = new TernaryOpNode(condition, left, right);
+        std::unique_ptr<AstNode> right = parse_expr();
+        left = std::make_unique<TernaryOpNode>(std::move(condition), std::move(left), std::move(right));
     }
     return left;
 }
 
-AstNode* Parser::parseDisjunction() {
+std::unique_ptr<AstNode> Parser::parse_disjunction() {
     /*
      *  disjunction ::= conjunction ("or" conjunction)*
     */
-    AstNode* left = parseConjunction();
-    
+    std::unique_ptr<AstNode> left = parse_conjunction();
+
     while (match(TokenType::Or)) {
         Token op = previous();
-        AstNode* right = parseConjunction();
-        left = new BinaryOpNode(left, op, right);
+        std::unique_ptr<AstNode> right = parse_conjunction();
+        left = std::make_unique<BinaryOpNode>(std::move(left), op, std::move(right));
     }
     return left;
 }
 
-AstNode* Parser::parseConjunction() {
+std::unique_ptr<AstNode> Parser::parse_conjunction() {
     /*
      *  conjunction ::= inversion ("and" inversion)*
     */
-    AstNode* left = parseInversion();
-    
+    std::unique_ptr<AstNode> left = parse_inversion();
+
     while (match(TokenType::And)) {
         Token op = previous();
-        AstNode* right = parseInversion();
-        left = new BinaryOpNode(left, op, right);
+        std::unique_ptr<AstNode> right = parse_inversion();
+        left = std::make_unique<BinaryOpNode>(std::move(left), op, std::move(right));
     }
     return left;
 }
 
-AstNode* Parser::parseInversion() {
+std::unique_ptr<AstNode> Parser::parse_inversion() {
     /*
      *   inversion ::= "not" inversion
      *                | comparison
     */
     if (match(TokenType::Not)) {
         Token op = previous();
-        AstNode* right = parseInversion();
-        return new UnaryOpNode(op, right);
+        std::unique_ptr<AstNode> right = parse_inversion();
+        return std::make_unique<UnaryOpNode>(op, std::move(right));
     } else {
-        return parseComparison();
+        return parse_comparison();
     }
 }
 
-AstNode* Parser::parseComparison() {
+std::unique_ptr<AstNode> Parser::parse_comparison() {
     /*
      *   comparison ::= factor (comp_operator factor)*
      *   comp_operator ::= "<" | ">" | "==" | ">=" | "<=" | "!="
                            | "is" ("not")? | ("not")? "in"  // TODO
     */
-    AstNode* left = parseBitwiseOr();
-    
-    while (match({TokenType::Less, TokenType::Greater, 
-                  TokenType::EqualEqual, TokenType::GreaterEqual, 
+    std::unique_ptr<AstNode> left = parse_bitwise_or();
+
+    while (match({TokenType::Less, TokenType::Greater,
+                  TokenType::EqualEqual, TokenType::GreaterEqual,
                   TokenType::LessEqual, TokenType::BangEqual})) {
         Token op = previous();
-        AstNode* right = parseBitwiseOr();
-        left = new BinaryOpNode(left, op, right);
+        std::unique_ptr<AstNode> right = parse_bitwise_or();
+        left = std::make_unique<BinaryOpNode>(std::move(left), op, std::move(right));
     }
     return left;
 }
 
-AstNode* Parser::parseBitwiseOr() {
-    /*  
+std::unique_ptr<AstNode> Parser::parse_bitwise_or() {
+    /*
      *    bitwise_or ::= bitwise_xor ("|" bitwise_xor)*
     */
-    AstNode* left = parseBitwiseXor();
-    
+    std::unique_ptr<AstNode> left = parse_bitwise_xor();
+
     while(match(TokenType::Pipe)) {
         Token op = previous();
-        AstNode* right = parseBitwiseXor();
-        left = new BinaryOpNode(left, op, right);
+        std::unique_ptr<AstNode> right = parse_bitwise_xor();
+        left = std::make_unique<BinaryOpNode>(std::move(left), op, std::move(right));
     }
     return left;
 }
 
-AstNode* Parser::parseBitwiseXor() {
-    /*  
+std::unique_ptr<AstNode> Parser::parse_bitwise_xor() {
+    /*
      *    bitwise_xor ::= bitwise_and ("^" bitwise_and)*
     */
-    AstNode* left = parseBitwiseAnd();
-    
+    std::unique_ptr<AstNode> left = parse_bitwise_and();
+
     while(match(TokenType::Caret)) {
         Token op = previous();
-        AstNode* right = parseBitwiseAnd();
-        left = new BinaryOpNode(left, op, right);
+        std::unique_ptr<AstNode> right = parse_bitwise_and();
+        left = std::make_unique<BinaryOpNode>(std::move(left), op, std::move(right));
     }
     return left;
 }
 
-AstNode* Parser::parseBitwiseAnd() {
+std::unique_ptr<AstNode> Parser::parse_bitwise_and() {
     /*
      *   bitwise_and ::= shift_expr ("&" shift_expr)*
     */
-    AstNode* left = parseShiftExpr();
+    std::unique_ptr<AstNode> left = parse_shift_expr();
 
     while (match(TokenType::Ampersand)) {
         Token op = previous();
-        AstNode* right = parseShiftExpr();
-        left = new BinaryOpNode(left, op, right);
+        std::unique_ptr<AstNode> right = parse_shift_expr();
+        left = std::make_unique<BinaryOpNode>(std::move(left), op, std::move(right));
     }
     return left;
 }
 
-AstNode* Parser::parseShiftExpr() {
+std::unique_ptr<AstNode> Parser::parse_shift_expr() {
     /*
      *   shift_expr ::= factor (("<<" | ">>") factor)*
     */
-    AstNode* left = parseFactor();
+    std::unique_ptr<AstNode> left = parse_factor();
 
     while (match({TokenType::LeftShift, TokenType::RightShift})) {
         Token op = previous();
-        AstNode* right = parseFactor();
-        left = new BinaryOpNode(left, op, right);
+        std::unique_ptr<AstNode> right = parse_factor();
+        left = std::make_unique<BinaryOpNode>(std::move(left), op, std::move(right));
     }
     return left;
 }
 
-AstNode* Parser::parseFactor() {
+std::unique_ptr<AstNode> Parser::parse_factor() {
     /*
      *   factor ::= term (("+" | "-") term)*
     */
-    AstNode* left = parseTerm();
-    
+    std::unique_ptr<AstNode> left = parse_term();
+
     while (match({TokenType::Plus, TokenType::Minus})) {
         Token op = previous();
-        AstNode* right = parseTerm();
-        left = new BinaryOpNode(left, op, right);
+        std::unique_ptr<AstNode> right = parse_term();
+        left = std::make_unique<BinaryOpNode>(std::move(left), op, std::move(right));
     }
     return left;
 }
 
-AstNode* Parser::parseTerm() {
+std::unique_ptr<AstNode> Parser::parse_term() {
     /*
      *   term ::= unary (("*" | "/" | "%") unary)*
     */
-    AstNode* left = parseUnary();
-    
+    std::unique_ptr<AstNode> left = parse_unary();
+
     while (match({TokenType::Star, TokenType::Slash, TokenType::Mod})) {
         Token op = previous();
-        AstNode* right = parseUnary();
-        left = new BinaryOpNode(left, op, right);
+        std::unique_ptr<AstNode> right = parse_unary();
+        left = std::make_unique<BinaryOpNode>(std::move(left), op, std::move(right));
     }
     return left;
 }
 
-/*AstNode* Parser::parsePower() {
-    /*
-     *  power ::= unary ("**" power)*
-    
-    AstNode* left = parseUnary();
-    
-    if (match(TokenType::DoubleStar)) {
-        Token op = previous();
-        AstNode* right = parsePower();
-        left = new BinaryOpNode(left, op.lexeme, right);
-    }
-    return left;
-}*/
-
-AstNode* Parser::parseUnary() {
+std::unique_ptr<AstNode> Parser::parse_unary() {
     /*
      *   unary ::= (("+" | "-" | "~") unary) | primary
     */
     if (match({TokenType::Minus, TokenType::Tilde})) {
         Token op = previous();
-        AstNode* right = parseUnary();
-        return new UnaryOpNode(op, right);
-        
+        std::unique_ptr<AstNode> right = parse_unary();
+        return std::make_unique<UnaryOpNode>(op, std::move(right));
+
     } else if (match(TokenType::Plus)) {
-        return parseUnary();
-        
+        return parse_unary();
+
     } else {
-        return parsePrimary();
+        return parse_primary();
     }
 }
 
-AstNode* Parser::parseCall(AstNode* callee) {
-    /* 
+std::unique_ptr<AstNode> Parser::parse_call(std::unique_ptr<AstNode> callee) {
+    /*
      *  call ::= primary "(" (argument_list)? ")"
     */
-    std::vector<AstNode*> args;
+    std::vector<std::unique_ptr<AstNode>> args;
 
     if(peek().type != TokenType::RightParen) {
         do {
-            args.push_back(parseExpr());
+            args.push_back(parse_expr());
         } while(match(TokenType::Comma));
     }
     consume(TokenType::RightParen);
-    
-    return new CallNode(callee, args);
+
+    return std::make_unique<CallNode>(std::move(callee), std::move(args));
 }
 
-AstNode* Parser::parsePrimary() {
+std::unique_ptr<AstNode> Parser::parse_primary() {
     /*
      *   primary ::= atom | attributeref
      *               | subscription | slicing | call
@@ -560,16 +544,16 @@ AstNode* Parser::parsePrimary() {
      *   subscription ::= primary "[" expression_list "]"    // TODO
      *   slicing ::= simple_slicing | extended_slicing       // TODO
     */
-    AstNode* left = parseAtom();
-    
+    std::unique_ptr<AstNode> left = parse_atom();
+
     while(true) {
         if(match(TokenType::LeftParen)) {
-            left = parseCall(left);
-        
+            left = parse_call(std::move(left));
+
         } else if(match(TokenType::Dot)) {
-            AstNode* right = new NameNode(consume(TokenType::Name));
-            left = new PropertyNode(left, right);
-        
+            std::unique_ptr<AstNode> right = std::make_unique<NameNode>(consume(TokenType::Name));
+            left = std::make_unique<PropertyNode>(std::move(left), std::move(right));
+
         } else {
             break;
         }
@@ -577,35 +561,35 @@ AstNode* Parser::parsePrimary() {
     return left;
 }
 
-AstNode* Parser::parseAtom() {
+std::unique_ptr<AstNode> Parser::parse_atom() {
     /*
      *  atom ::= identifier | literal | enclosure
-     *  literal ::= stringliteral | integer | floatnumber 
+     *  literal ::= stringliteral | integer | floatnumber
      *             | "None" | "True" | "False"
      *  enclosure ::= "(" expression ")"
     */
     if (match(TokenType::LeftParen)) {
-        AstNode* expr = parseExpr();
+        std::unique_ptr<AstNode> expr = parse_expr();
         consume(TokenType::RightParen);
         return expr;
     } else {
         Token tk = advance();
-        
+
         switch(tk.type) {
             case TokenType::Int:
-                return new IntNode(tk);
+                return std::make_unique<IntNode>(tk);
             case TokenType::Float:
-                return new FloatNode(tk);
+                return std::make_unique<FloatNode>(tk);
             case TokenType::True:
-                return new BooleanNode(true);
+                return std::make_unique<BooleanNode>(true);
             case TokenType::False:
-                return new BooleanNode(false);
+                return std::make_unique<BooleanNode>(false);
             case TokenType::None:
-                return new NullNode(tk);
+                return std::make_unique<NullNode>(tk);
             case TokenType::String:
-                return new StringNode(tk);
+                return std::make_unique<StringNode>(tk);
             case TokenType::Name: {
-                return new NameNode(tk);
+                return std::make_unique<NameNode>(tk);
             } default: {
                 throw SyntaxError("Error at line " + std::to_string(peek().line) + ": Expected a primary expression");
             }
@@ -614,14 +598,16 @@ AstNode* Parser::parseAtom() {
 }
 
 Token Parser::consume(TokenType type) {
-    if (match(type)) return previous();
+    if (match(type)) {
+        return previous();
+    }
     else {
         throw SyntaxError("Error at line " + std::to_string(peek().line) + ": Expected " + std::to_string(type));
     }
 }
 
 bool Parser::match(TokenType type) {
-    if (isAtEnd() || peek().type != type) {
+    if (is_at_end() || peek().type != type) {
         return false;
     } else {
         ++current;
@@ -630,9 +616,9 @@ bool Parser::match(TokenType type) {
 }
 
 bool Parser::match(std::initializer_list<TokenType> types) {
-    
-    if(isAtEnd()) return false;
-    
+
+    if(is_at_end()) return false;
+
     for(const TokenType& type : types) {
         if(peek().type == type) {
             ++current;
@@ -642,19 +628,18 @@ bool Parser::match(std::initializer_list<TokenType> types) {
     return false;
 }
 
-bool Parser::isAtEnd() const {
+bool Parser::is_at_end() const {
     return peek().type == TokenType::EndOfFile;
 }
 
-Token Parser::peek() const {
+const Token& Parser::peek() const {
     return tokens[current];
 }
 
-Token Parser::previous() const {
+const Token& Parser::previous() const {
     return tokens[(current > 0) ? current - 1 : 0];
 }
 
-Token Parser::advance() {
+const Token& Parser::advance() {
     return tokens[current++];
 }
-

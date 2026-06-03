@@ -3,8 +3,8 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <utility>
 #include "../token/token.hpp"
-//#include "../value/pyInstance.hpp"
 
 using llf = long double;
 using lld = long long int;
@@ -15,11 +15,11 @@ class NodeVisitor;
 // Define the AST node types
 enum class AstNodeType {
     // Root
-    Program, 
-    
+    Program,
+
     // Group Statements
     Block,
-    
+
     // Statements
     Print, While, Break, Continue,
     If, Function, Return,
@@ -35,14 +35,13 @@ enum class AstNodeType {
     Int, Float, Boolean, Null
 };
 
-
 class AstNode {
 
 public:
 
     AstNode(AstNodeType type) : type(type) {}
-    
-    virtual ~AstNode() {}
+
+    virtual ~AstNode() = default;
 
     bool is_name_node() { return type == AstNodeType::Name; }
     bool is_property_node() { return type == AstNodeType::AttrRef; }
@@ -50,7 +49,7 @@ public:
     bool is_function_node() { return type == AstNodeType::Function; }
 
     virtual PyObject* accept(NodeVisitor* visitor) = 0;
-    
+
     class ProgramNode*   unwrap_program_node();
     class BlockNode*     unwrap_block_node();
     class TernaryOpNode* unwrap_ternary_op_node();
@@ -78,333 +77,312 @@ public:
     AstNodeType type;
 };
 
-
 class PrintNode : public AstNode {
 
 public:
 
-    PrintNode(AstNode* args) 
-      : AstNode(AstNodeType::Print),  args(args) {}
+    explicit PrintNode(std::unique_ptr<AstNode> args)
+      : AstNode(AstNodeType::Print), args(std::move(args)) {}
 
-    AstNode* args;
+    std::unique_ptr<AstNode> args;
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
-
 
 class BlockNode : public AstNode {
 
 public:
 
-    BlockNode(const std::vector<AstNode*> statements)
-      : AstNode(AstNodeType::Block), statements(statements) {}
-      
-    std::vector<AstNode*> statements;
-    
+    explicit BlockNode(std::vector<std::unique_ptr<AstNode>> statements_in)
+      : AstNode(AstNodeType::Block), statements(std::move(statements_in)) {}
+
+    std::vector<std::unique_ptr<AstNode>> statements;
+
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
-
 
 class ProgramNode : public AstNode {
 
 public:
 
-    ProgramNode(BlockNode* body) 
-      : AstNode(AstNodeType::Program), body(body) {}
-    
-    BlockNode* body;
-    
+    explicit ProgramNode(std::unique_ptr<BlockNode> body_in)
+      : AstNode(AstNodeType::Program), body(std::move(body_in)) {}
+
+    std::unique_ptr<BlockNode> body;
+
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
-
 
 class TernaryOpNode : public AstNode {
 
 public:
 
-    TernaryOpNode(AstNode* condition, AstNode* left, AstNode* right) 
-      : AstNode(AstNodeType::TernaryOp), 
-        cond(condition), left(left), right(right) {}
+    TernaryOpNode(std::unique_ptr<AstNode> condition, std::unique_ptr<AstNode> left_in, std::unique_ptr<AstNode> right_in)
+      : AstNode(AstNodeType::TernaryOp),
+        cond(std::move(condition)), left(std::move(left_in)), right(std::move(right_in)) {}
 
-    AstNode *cond, *left, *right;
+    std::unique_ptr<AstNode> cond, left, right;
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
-
 
 class BinaryOpNode : public AstNode {
 
 public:
 
-    BinaryOpNode(AstNode* left, Token op, AstNode* right)
-      : AstNode(AstNodeType::BinaryOp), 
-        left(left), op(op), right(right) {}
+    BinaryOpNode(std::unique_ptr<AstNode> left_in, Token op, std::unique_ptr<AstNode> right_in)
+      : AstNode(AstNodeType::BinaryOp),
+        left(std::move(left_in)), op(op), right(std::move(right_in)) {}
 
     Token op;
-    AstNode *left, *right;
+    std::unique_ptr<AstNode> left, right;
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
-
 
 class UnaryOpNode : public AstNode {
 
 public:
-    
-    UnaryOpNode(Token op, AstNode* right) 
-      : AstNode(AstNodeType::UnaryOp), 
-        op(op), right(right) {}
+
+    UnaryOpNode(Token op, std::unique_ptr<AstNode> right_in)
+      : AstNode(AstNodeType::UnaryOp),
+        op(op), right(std::move(right_in)) {}
 
     Token op;
-    AstNode* right;
+    std::unique_ptr<AstNode> right;
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
-
 
 class IntNode : public AstNode {
 
 public:
-    
-    IntNode(Token value) 
+
+    explicit IntNode(Token value)
       : AstNode(AstNodeType::Int), value(value) {}
 
     Token value; // TODO: implement the BigInt class
-    
+
     const std::string& get_lexeme() { return value.lexeme; }
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
-
 
 class FloatNode : public AstNode {
 
 public:
-    
-    FloatNode(Token value)
+
+    explicit FloatNode(Token value)
       : AstNode(AstNodeType::Float), value(value) {}
 
     Token value;
-    
+
     const std::string& get_lexeme() { return value.lexeme; }
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
-
 
 class NameNode : public AstNode {
 
 public:
-    
-    NameNode(Token name) 
+
+    explicit NameNode(Token name)
       : AstNode(AstNodeType::Name), value(name) {}
 
     Token value;
-    
+
     const std::string& get_lexeme() { return value.lexeme; }
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
-
 
 class StringNode : public AstNode {
 
 public:
-    
-    StringNode(Token value) 
+
+    explicit StringNode(Token value)
       : AstNode(AstNodeType::String), value(value) {}
-    
+
     Token value;
-    
+
     const std::string& get_lexeme() { return value.lexeme; }
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
-
 
 class BooleanNode : public AstNode {
 
 public:
 
-    BooleanNode(bool value) 
+    explicit BooleanNode(bool value)
       : AstNode(AstNodeType::Boolean), value(value) {}
-    
+
     bool value;
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
-
 class ReturnNode : public AstNode {
 
 public:
 
-    ReturnNode(Token keyword, AstNode* value) 
-      : AstNode(AstNodeType::Return), kwd(keyword), value(value) {}
-    
+    ReturnNode(Token keyword, std::unique_ptr<AstNode> value_in)
+      : AstNode(AstNodeType::Return), kwd(keyword), value(std::move(value_in)) {}
+
     Token kwd;
-    AstNode* value;
+    std::unique_ptr<AstNode> value;
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
-
 
 class NullNode : public AstNode {
 
 public:
-    
-    NullNode(Token none) : AstNode(AstNodeType::Null), kwd(none) {}
-    
+
+    explicit NullNode(Token none) : AstNode(AstNodeType::Null), kwd(none) {}
+
     Token kwd;
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
-
 class CallNode : public AstNode {
 
 public:
-    
-    CallNode(AstNode* caller, const std::vector<AstNode*>& args) 
-      : AstNode(AstNodeType::Call), caller(caller), args(args) {}
 
-    AstNode* caller;
-    std::vector<AstNode*> args;
+    CallNode(std::unique_ptr<AstNode> caller_in, std::vector<std::unique_ptr<AstNode>> args_in)
+      : AstNode(AstNodeType::Call), caller(std::move(caller_in)), args(std::move(args_in)) {}
+
+    std::unique_ptr<AstNode> caller;
+    std::vector<std::unique_ptr<AstNode>> args;
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
-
 class AssignNode : public AstNode {
 public:
-    AssignNode(AstNode* name, AstNode* value, Token op) 
-      : AstNode(AstNodeType::Assign), name(name), value(value), op(op) {}
+    AssignNode(std::unique_ptr<AstNode> name_in, std::unique_ptr<AstNode> value_in, Token op)
+      : AstNode(AstNodeType::Assign), name(std::move(name_in)), value(std::move(value_in)), op(op) {}
 
-    AstNode *name, *value;
+    std::unique_ptr<AstNode> name, value;
     Token op;
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
-
 class WhileNode : public AstNode {
 public:
 
-    WhileNode(AstNode* cond, AstNode* body) 
-      : AstNode(AstNodeType::While), cond(cond), body(body) {}
+    WhileNode(std::unique_ptr<AstNode> cond_in, std::unique_ptr<AstNode> body_in)
+      : AstNode(AstNodeType::While), cond(std::move(cond_in)), body(std::move(body_in)) {}
 
-    AstNode *cond, *body;
+    std::unique_ptr<AstNode> cond, body;
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
-
 
 class BreakNode : public AstNode {
 
 public:
 
-    BreakNode(Token keyword) 
+    explicit BreakNode(Token keyword)
       : AstNode(AstNodeType::Break), kwd(keyword) {}
-    
+
     Token kwd;
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
-
 
 class ContinueNode : public AstNode {
 
 public:
 
-    ContinueNode(Token keyword) 
+    explicit ContinueNode(Token keyword)
       : AstNode(AstNodeType::Continue), kwd(keyword) {}
-    
+
     Token kwd;
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
-
 
 class PassNode : public AstNode {
 
 public:
 
-    PassNode(Token keyword) 
+    explicit PassNode(Token keyword)
       : AstNode(AstNodeType::Pass), kwd(keyword) {}
-    
+
     Token kwd;
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
 
-
 class FunctionNode : public AstNode {
 
 public:
 
-    FunctionNode(Token fname, std::vector<AstNode*> params, AstNode* body)
-        : AstNode(AstNodeType::Function), 
-          fname(fname), params(params), body(body) {}
-   
+    FunctionNode(Token fname, std::vector<std::unique_ptr<AstNode>> params_in, std::unique_ptr<AstNode> body_in)
+        : AstNode(AstNodeType::Function),
+          fname(fname), params(std::move(params_in)), body(std::move(body_in)) {}
+
     const std::string& get_name() const { return fname.lexeme; };
-    const std::vector<AstNode*>& get_params() const { return params; }
-    AstNode* get_body() const { return body; }
+    const std::vector<std::unique_ptr<AstNode>>& get_params() const { return params; }
+    AstNode* get_body() const { return body.get(); }
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 
 private:
     Token fname;
-    std::vector<AstNode*> params;
-    AstNode* body;
+    std::vector<std::unique_ptr<AstNode>> params;
+    std::unique_ptr<AstNode> body;
 };
-
 
 class ClassNode : public AstNode {
 
 public:
 
-    ClassNode(Token kname, AstNode* body)
-        : AstNode(AstNodeType::Class), kname(kname), body(body) {}
-   
+    ClassNode(Token kname, std::unique_ptr<AstNode> body_in)
+        : AstNode(AstNodeType::Class), kname(kname), body(std::move(body_in)) {}
+
     const std::string& get_name() const { return kname.lexeme; }
-    AstNode* get_body() const { return body; }
+    AstNode* get_body() const { return body.get(); }
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 
 private:
     Token kname;
-    AstNode* body;
+    std::unique_ptr<AstNode> body;
 };
-
 
 class PropertyNode : public AstNode {
 
 public:
-    
-    PropertyNode(AstNode* object, AstNode* attr)
-        : AstNode(AstNodeType::AttrRef), object(object), attribute(attr) {}
+
+    PropertyNode(std::unique_ptr<AstNode> object_in, std::unique_ptr<AstNode> attr_in)
+        : AstNode(AstNodeType::AttrRef), object(std::move(object_in)), attribute(std::move(attr_in)) {}
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
-    
-    AstNode *object, *attribute;
-};
 
+    std::unique_ptr<AstNode> object, attribute;
+};
 
 class IfNode : public AstNode {
 
 public:
 
-    IfNode(AstNode* cond, AstNode* trueBranch, 
-           const std::vector<std::pair<AstNode*, AstNode*>>& elifBranches, 
-           AstNode* elseBranch) : AstNode(AstNodeType::If), cond(cond), 
-          trueBranch(trueBranch), elifBranches(elifBranches), elseBranch(elseBranch) {}
+    IfNode(std::unique_ptr<AstNode> cond_in, std::unique_ptr<AstNode> true_branch_in,
+           std::vector<std::pair<std::unique_ptr<AstNode>, std::unique_ptr<AstNode>>> elif_branches_in,
+           std::unique_ptr<AstNode> else_branch_in)
+        : AstNode(AstNodeType::If), cond(std::move(cond_in)),
+          true_branch(std::move(true_branch_in)),
+          elif_branches(std::move(elif_branches_in)),
+          else_branch(std::move(else_branch_in)) {}
 
-    AstNode *cond, *trueBranch, *elseBranch;
-    std::vector<std::pair<AstNode*, AstNode*>> elifBranches;
+    std::unique_ptr<AstNode> cond, true_branch, else_branch;
+    std::vector<std::pair<std::unique_ptr<AstNode>, std::unique_ptr<AstNode>>> elif_branches;
 
     virtual PyObject* accept(NodeVisitor* visitor) override;
 };
-
 
 class NodeVisitor {
 
@@ -412,28 +390,28 @@ public:
 
     ~NodeVisitor() = default;
 
-    virtual PyObject* visitProgramNode(ProgramNode* node) = 0;
-    virtual PyObject* visitBlockNode(BlockNode* node) = 0;
-    virtual PyObject* visitPrintNode(PrintNode* node) = 0;
-    virtual PyObject* visitWhileNode(WhileNode* node) = 0;
-    virtual PyObject* visitBreakNode(BreakNode* node) = 0;
-    virtual PyObject* visitContinueNode(ContinueNode* node) = 0;
-    virtual PyObject* visitPassNode(PassNode* node) = 0;
-    virtual PyObject* visitIfNode(IfNode* node) = 0;
-    virtual PyObject* visitAssignNode(AssignNode* node) = 0;
-    virtual PyObject* visitTernaryOpNode(TernaryOpNode* node) = 0;
-    virtual PyObject* visitBinaryOpNode(BinaryOpNode* node) = 0;
-    virtual PyObject* visitUnaryOpNode(UnaryOpNode* node) = 0;
-    virtual PyObject* visitIntNode(IntNode* node) = 0;
-    virtual PyObject* visitFloatNode(FloatNode* node) = 0;
-    virtual PyObject* visitNameNode(NameNode* node) = 0;
-    virtual PyObject* visitStringNode(StringNode* node) = 0;
-    virtual PyObject* visitBooleanNode(BooleanNode* node) = 0;
-    virtual PyObject* visitNullNode(NullNode* node) = 0;
-    virtual PyObject* visitFunctionNode(FunctionNode* node) = 0;
-    virtual PyObject* visitCallNode(CallNode* node) = 0;
-    virtual PyObject* visitReturnNode(ReturnNode* node) = 0;
-    virtual PyObject* visitClassNode(ClassNode* node) = 0;
-    virtual PyObject* visitPropertyNode(PropertyNode* node) = 0;
+    virtual PyObject* visit_program_node(ProgramNode* node) = 0;
+    virtual PyObject* visit_block_node(BlockNode* node) = 0;
+    virtual PyObject* visit_print_node(PrintNode* node) = 0;
+    virtual PyObject* visit_while_node(WhileNode* node) = 0;
+    virtual PyObject* visit_break_node(BreakNode* node) = 0;
+    virtual PyObject* visit_continue_node(ContinueNode* node) = 0;
+    virtual PyObject* visit_pass_node(PassNode* node) = 0;
+    virtual PyObject* visit_if_node(IfNode* node) = 0;
+    virtual PyObject* visit_assign_node(AssignNode* node) = 0;
+    virtual PyObject* visit_ternary_op_node(TernaryOpNode* node) = 0;
+    virtual PyObject* visit_binary_op_node(BinaryOpNode* node) = 0;
+    virtual PyObject* visit_unary_op_node(UnaryOpNode* node) = 0;
+    virtual PyObject* visit_int_node(IntNode* node) = 0;
+    virtual PyObject* visit_float_node(FloatNode* node) = 0;
+    virtual PyObject* visit_name_node(NameNode* node) = 0;
+    virtual PyObject* visit_string_node(StringNode* node) = 0;
+    virtual PyObject* visit_boolean_node(BooleanNode* node) = 0;
+    virtual PyObject* visit_null_node(NullNode* node) = 0;
+    virtual PyObject* visit_function_node(FunctionNode* node) = 0;
+    virtual PyObject* visit_call_node(CallNode* node) = 0;
+    virtual PyObject* visit_return_node(ReturnNode* node) = 0;
+    virtual PyObject* visit_class_node(ClassNode* node) = 0;
+    virtual PyObject* visit_property_node(PropertyNode* node) = 0;
 };
 

@@ -1,12 +1,13 @@
 #pragma once
 
+#include <memory>
 #include <vector>
 #include <string>
 #include <sstream>
 #include <stdexcept>
-#include <functional>
 
-class Scope;
+#include "../scope/scope.hpp"
+
 class Interpreter;
 class PyTypeObject;
 class FunctionNode;
@@ -14,14 +15,29 @@ class FunctionNode;
 using llf = long double;
 using lld = long long int;
 
+/*
+ * Memory model (high level):
+ *
+ * - PyObject lifetime is manual `new`/`delete` plus an explicit ref-count field (`rc`). Scopes and
+ *   the interpreter bump `rc` when a name binds to a value; `Scope::~Scope` and redefinitions
+ *   call `dec_ref_count`. Values with `rc == 0` are not automatically freed unless they were
+ *   registered with the interpreter's `GarbageCollector` (see `Interpreter::track_temp` /
+ *   `maybe_collect`) — there is no cycle-tracing collector.
+ *
+ * - Each object owns its attribute/namespace table via `std::unique_ptr<Scope> scope` (RAII).
+ *   Payload primitives and callables store extra data in `void* data` and free it in `delete_data`.
+ *
+ * - Callables use `CallableData`: nested functions may `clone_chain` the lexical environment into
+ *   `closure_owned`; top-level functions may keep `closure_borrowed` pointing at a live frame that
+ *   outlives the function only when that invariant holds at the call site.
+ */
 class PyObject {
 
 public:
-    PyObject(
-        PyTypeObject* type_obj = nullptr,
-        void* data = nullptr,
-        Scope* context = nullptr
-    );
+    using NativeCallableFn = PyObject* (*)(std::vector<PyObject*>&, Interpreter*);
+
+    PyObject(PyTypeObject* type_obj = nullptr, void* data = nullptr);
+    PyObject(PyTypeObject* type_obj, void* data, std::unique_ptr<Scope> namespace_scope);
     virtual ~PyObject();
     
     virtual inline bool is_str_type() const { return this->ob_type == str_type_ref; }
@@ -38,12 +54,12 @@ public:
     virtual inline bool is_callable_type() const { return this->is_fn_type() || this->is_builtin_fn_type() || this->is_method_wrapper_type(); }
     virtual inline bool is_type_type() const { return false; }
 
-    void incRefCount();
-    void decRefCount();
-    int getRefCount();
+    void inc_ref_count();
+    void dec_ref_count();
+    int get_ref_count();
     
-    Scope* getContext();
-    const Scope* getContext() const;
+    Scope* get_context();
+    const Scope* get_context() const;
     void set_type(PyTypeObject* type_obj);
     PyTypeObject* get_type() const;
     
@@ -69,14 +85,16 @@ public:
     class PyTypeObject* unwrap_type_obj();
 
     static PyObject* create_native_callable(
-        std::function<PyObject*(std::vector<PyObject*>&, Interpreter*)> functor,
+        NativeCallableFn function_ptr,
         size_t arity,
         PyTypeObject* callable_type
     );
     static PyObject* create_user_function(
         FunctionNode* declaration,
         Scope* closure,
-        PyTypeObject* function_type
+        PyTypeObject* function_type,
+        /** If true, heap-own a snapshot of the scope chain (nested defs); if false, borrow closure (module-level). */
+        bool snapshot_closure_environment
     );
     PyObject* bind_callable(
         PyObject* instance,
@@ -103,14 +121,19 @@ public:
         PyTypeObject* method_wrapper_type
     );
 
-protected:
-    int rc; // reference counting, for garbage collection
+    /** Clears static type/singleton pointers after runtime teardown (e.g. interpreter shutdown). */
+    static void clear_runtime_statics();
 
-    void* data; // internal data for the object
-    virtual void deleteData();
-    
-    // each object has its own scope and type
-    Scope* scope;
+protected:
+    /** Interpreter / Scope adjusted refcount; GC may delete when this hits 0 (if the object was tracked). */
+    int rc;
+
+    /** Type-specific heap payload (primitives, CallableData, etc.); released in `delete_data`. */
+    void* data;
+    virtual void delete_data();
+
+    /** Per-object namespace (attributes, class/instance dict); owned for the object's lifetime. */
+    std::unique_ptr<Scope> scope;
     PyTypeObject* ob_type = nullptr; 
 
     // core types
@@ -128,7 +151,7 @@ protected:
     static PyObject* true_singleton_ref;
     static PyObject* false_singleton_ref;
 
-    // for function and callable objects
+    /** Heap-allocated callable payload; owned by the PyObject via `data` and deleted in `delete_data`. */
     struct CallableData {
         enum class Kind {
             Native,
@@ -137,13 +160,19 @@ protected:
         };
 
         Kind kind = Kind::Native;
-        std::function<PyObject*(std::vector<PyObject*>&, Interpreter*)> native;
+        NativeCallableFn native = nullptr;
         FunctionNode* declaration = nullptr;
-        Scope* closure = nullptr;
+        /** Snapshot of lexical Scope chain (owns clones); used when the function must outlive its frame. */
+        std::unique_ptr<Scope> closure_owned;
+        /** Non-owning view of a still-live frame; caller must guarantee lifetime (e.g. module-level). */
+        Scope* closure_borrowed = nullptr;
+        Scope* closure_env() const {
+            return closure_owned ? closure_owned.get() : closure_borrowed;
+        }
         PyObject* bound_instance = nullptr;
         std::string wrapper_attribute_name;
         size_t arity = 0;
     };
 
-    virtual void registerMethods(){}
+    virtual void register_methods(){}
 };

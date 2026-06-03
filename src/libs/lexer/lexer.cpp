@@ -1,8 +1,8 @@
 #include <stdexcept>
 #include <iostream>
 #include <fstream>
-#include "./lexer.hpp"
-#include "../exceptions/python_errors.hpp"
+#include "lexer.hpp"
+#include "../exceptions/python_exceptions.hpp"
 
 Lexer::Lexer(const std::string& source) 
     : source(source), current(0), line(1) {
@@ -36,101 +36,101 @@ Lexer::Lexer(const std::string& source)
     };
 }
 
-std::vector<Token> Lexer::scanTokens() {
+std::vector<Token> Lexer::scan_tokens() {
 
-    isBlock = false;
-    indentLevels.push(0); // Initial indentation level
+    is_block = false;
+    indent_levels.push(0); // Initial indentation level
     tokens.clear();
     
-    handleIndentation(); // at the beginning
+    handle_indentation(); // at the beginning
     
-    while (!isAtEnd()) {
+    while (!is_at_end()) {
         start = current;
-        scanToken();
+        scan_token();
     }
     tokens.push_back(Token(TokenType::EndOfFile, "", line));
     
     return tokens;
 }
 
-void Lexer::scanToken() {
+void Lexer::scan_token() {
     
     char c = advance();
    
     switch (c) {
         case ':':
-            addToken(TokenType::Colon);         
+            add_token(TokenType::Colon);         
             break;
         case '(':
-            addToken(TokenType::LeftParen);
+            add_token(TokenType::LeftParen);
             break;
         case ')':
-            addToken(TokenType::RightParen);
+            add_token(TokenType::RightParen);
             break;
         case '{':
-            addToken(TokenType::LeftBrace);
-            isBlock = true;
+            add_token(TokenType::LeftBrace);
+            is_block = true;
             break;
         case '}':
-            addToken(TokenType::RightBrace);
-            isBlock = false;
+            add_token(TokenType::RightBrace);
+            is_block = false;
             break;
         case ',':
-            addToken(TokenType::Comma);
+            add_token(TokenType::Comma);
             break;
         case '.':
-            addToken(TokenType::Dot);
+            add_token(TokenType::Dot);
             break;
         case '-':
-            addToken(match('=') ? TokenType::MinusEqual : TokenType::Minus);
+            add_token(match('=') ? TokenType::MinusEqual : TokenType::Minus);
             break;
         case '+':
-            addToken(match('=') ? TokenType::PlusEqual : TokenType::Plus);
+            add_token(match('=') ? TokenType::PlusEqual : TokenType::Plus);
             break;
         case ';':
-            addToken(TokenType::Semicolon);
+            add_token(TokenType::Semicolon);
             break;
         case '*':
-            addToken(match('*') ? TokenType::DoubleStar : 
+            add_token(match('*') ? TokenType::DoubleStar : 
                      match('=') ? TokenType::StarEqual : TokenType::Star);
             break;
         case '/':
-            addToken(match('/') ? TokenType::DoubleSlash : 
+            add_token(match('/') ? TokenType::DoubleSlash : 
                      match('=') ? TokenType::SlashEqual : TokenType::Slash);
             break;
         case '%':
-            addToken(match('=') ? TokenType::ModEqual : TokenType::Mod);
+            add_token(match('=') ? TokenType::ModEqual : TokenType::Mod);
             break;
         case '|':
-            addToken(match('=') ? TokenType::OrEqual : TokenType::Pipe);
+            add_token(match('=') ? TokenType::OrEqual : TokenType::Pipe);
             break;
         case '&':
-            addToken(match('=') ? TokenType::AndEqual : TokenType::Ampersand);
+            add_token(match('=') ? TokenType::AndEqual : TokenType::Ampersand);
             break;
         case '^':
-            addToken(match('=') ? TokenType::XorEqual : TokenType::Caret);
+            add_token(match('=') ? TokenType::XorEqual : TokenType::Caret);
             break;
         case '~':
-            addToken(TokenType::Tilde);
+            add_token(TokenType::Tilde);
             break;
         case '!':
-            addToken(match('=') ? TokenType::BangEqual : TokenType::Bang);
+            add_token(match('=') ? TokenType::BangEqual : TokenType::Bang);
             break;
         case '=':
-            addToken(match('=') ? TokenType::EqualEqual : TokenType::Equals);
+            add_token(match('=') ? TokenType::EqualEqual : TokenType::Equals);
             break;
         case '<':
-            addToken(match('<') ? 
+            add_token(match('<') ? 
                         (match('=') ? TokenType::LeftShiftEqual : TokenType::LeftShift) : 
                      match('=') ? TokenType::LessEqual : TokenType::Less);
             break;
         case '>':
-            addToken(match('>') ? 
+            add_token(match('>') ? 
                         (match('=') ? TokenType::RightShiftEqual : TokenType::RightShift) : 
                      match('=') ? TokenType::GreaterEqual : TokenType::Greater);
             break;
          case '#':
-            while (peek() != '\n' && !isAtEnd()) advance();
+            while (peek() != '\n' && !is_at_end()) advance();
             break;    
         case ' ':
         case '\t':
@@ -139,19 +139,19 @@ void Lexer::scanToken() {
             break;
         case '\n':
             line++;
-            addToken(TokenType::Newline);
+            add_token(TokenType::Newline);
             start = current;
-            handleIndentation();
+            handle_indentation();
             break;
         case '\"':
         case '\'':
-            handleString(c);
+            handle_string(c);
             break;
         default:
             if (isdigit(c)) {
-                handleNumber();
+                handle_number();
             } else if (isalpha(c) or c == '_') {
-                handleIdentifier();
+                handle_identifier();
             } else {
                 throw SyntaxError("Unexpected character.");
             }
@@ -159,7 +159,7 @@ void Lexer::scanToken() {
     }
 }
 
-void Lexer::handleNumber() {
+void Lexer::handle_number() {
     /*
      *    number ::= integer | floatnumber
      *    integer ::= decimalinteger
@@ -167,17 +167,17 @@ void Lexer::handleNumber() {
     */
     while (isdigit(peek())) advance();    
     
-    bool hasDecimal = false;
+    bool has_decimal = false;
     if (peek() == '.') {
-        hasDecimal = true;
+        has_decimal = true;
         do {
           advance();
         } while (isdigit(peek()));
     }
-    addToken(hasDecimal ? TokenType::Float : TokenType::Int);
+    add_token(has_decimal ? TokenType::Float : TokenType::Int);
 }
 
-void Lexer::handleIdentifier() {
+void Lexer::handle_identifier() {
     /*
      *   identifier ::= (letter | "_") (letter | digit | "_")*
      *   letter ::= lowercase | uppercase
@@ -201,22 +201,22 @@ void Lexer::handleIdentifier() {
         case TokenType::While:
         case TokenType::Def: 
         case TokenType::Class: { 
-            isBlock = true; 
+            is_block = true; 
             break;
         }
         default: break;
     }
-    addToken(type);
+    add_token(type);
 }
 
-void Lexer::handleString(char quoteType){
+void Lexer::handle_string(char quote_type){
     /*
      *  string ::= "'" <any source character except "'" or newline> "'"
      *             | '"' <any source character except '"' or newline> '"'
      * // TODO: add escape sequences and multi-line strings
     */
     char c;
-    while(c = peek(), c != quoteType && c != '\n') advance();
+    while(c = peek(), c != quote_type && c != '\n') advance();
     if(peek() == '\n') {
         throw SyntaxError("Unterminated string at line " + std::to_string(line));
     }
@@ -226,12 +226,12 @@ void Lexer::handleString(char quoteType){
     std::string value = start < current - 2 ? 
                         source.substr(start + 1, current - start - 2) : "";
     
-    addToken(TokenType::String, value);
+    add_token(TokenType::String, value);
 }
 
 bool Lexer::match(char expected) {
 
-    if (isAtEnd() || source[current] != expected) {
+    if (is_at_end() || source[current] != expected) {
         return false;
     } else {
         ++current;
@@ -241,13 +241,13 @@ bool Lexer::match(char expected) {
 
 char Lexer::peek() const {
 
-    if (isAtEnd()) {
+    if (is_at_end()) {
         return '\0';
     }
     return source[current];
 }
 
-char Lexer::peekNext() const {
+char Lexer::peek_next() const {
     if (current + 1 >= source.length()) {
         return '\0';
     }
@@ -258,28 +258,28 @@ char Lexer::advance() {
     return source[current++];
 }
 
-bool Lexer::isAtEnd() const {
+bool Lexer::is_at_end() const {
     return current >= source.length();
 }
 
-void Lexer::addToken(TokenType type) {
-    addToken(type, "");
+void Lexer::add_token(TokenType type) {
+    add_token(type, "");
 }
 
-void Lexer::addToken(TokenType type, const std::string& lexeme) {
+void Lexer::add_token(TokenType type, const std::string& lexeme) {
     std::string text = (type == TokenType::String) ? 
                         lexeme : source.substr(start, current - start);
     tokens.push_back(Token(type, text, line));
 }
 
-bool isWhitespace(char c) {
+bool is_whitespace(char c) {
     return c == ' ' or c == '\t';
 }
 
-void Lexer::handleIndentation() {
+void Lexer::handle_indentation() {
     
     int indent = 0;
-    while (isWhitespace(peek())) {
+    while (is_whitespace(peek())) {
         indent++;
         advance();
     }
@@ -287,25 +287,25 @@ void Lexer::handleIndentation() {
         // Only whitespaces, ignore the line
         return;
     }
-    if(indent and not isBlock) {
+    if(indent and not is_block) {
         throw SyntaxError("Unexpected indentation at line " + std::to_string(line));
     }
-    int prevIndentLevel = indentLevels.top();
+    int previous_indent_level = indent_levels.top();
     
-    if(indent > prevIndentLevel) {
-        indentLevels.push(indent);
-        addToken(TokenType::Indent);
-    } else if(indent < prevIndentLevel){
-        while(not indentLevels.empty() and indent < indentLevels.top()) {
-            addToken(TokenType::Dedent);
-            indentLevels.pop();
+    if(indent > previous_indent_level) {
+        indent_levels.push(indent);
+        add_token(TokenType::Indent);
+    } else if(indent < previous_indent_level){
+        while(not indent_levels.empty() and indent < indent_levels.top()) {
+            add_token(TokenType::Dedent);
+            indent_levels.pop();
         }
-        if (indentLevels.empty() or indent != indentLevels.top()) {
+        if (indent_levels.empty() or indent != indent_levels.top()) {
             throw SyntaxError("Inconsistent indentation at line " + std::to_string(line));
         }
-    } /*else if(indent == prevIndentLevel) {
+    } /*else if(indent == previous_indent_level) {
         // dont generate Indent token
     }*/
-    if(indentLevels.top() == 0) isBlock = false;
+    if(indent_levels.top() == 0) is_block = false;
 }
 

@@ -6,9 +6,6 @@
 #include "../libs/ast/ast.hpp"
 #include "../libs/interpreter/interpreter.hpp"
 
-#pragma GCC optimize("Ofast")
-#pragma GCC target("avx,avx2,fma")
-
 #ifdef DEBUG
 inline void show_tokens(const std::vector<Token>& tokens) {
     for (const Token& token : tokens) {
@@ -28,18 +25,19 @@ int main(int argc, char* argv[]) {
     }
 
     const char* const filename = argv[1];
-    std::ifstream inputFile(filename);
+    std::ifstream input_file(filename);
 
-    if (!inputFile) {
+    if (!input_file) {
         std::cerr << "Error: could not open file '" << filename << "'\n";
         return 1;
     }
 
-    std::string source((std::istreambuf_iterator<char>(inputFile)), {});
+    std::string source((std::istreambuf_iterator<char>(input_file)), {});
 
+    std::unique_ptr<ProgramNode> ast_root;
     try {
         Lexer lexer(source);
-        std::vector<Token> tokens = lexer.scanTokens();
+        std::vector<Token> tokens = lexer.scan_tokens();
 
         #ifdef DEBUG
             /* To define DEBUG, use `make DEBUG=1` when compiling */
@@ -47,11 +45,12 @@ int main(int argc, char* argv[]) {
         #endif
 
         Parser parser(tokens);
-        ProgramNode* root = parser.parse();
+        ast_root = parser.parse();
 
         Interpreter interpreter;
-        interpreter.interpret(root);
-        
+        interpreter.interpret(ast_root.get());
+        interpreter.collect_garbage();
+
     } catch (const std::runtime_error& err) {
         std::cerr << err.what() << '\n';
         return EXIT_FAILURE;

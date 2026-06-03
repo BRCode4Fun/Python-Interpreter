@@ -26,10 +26,10 @@ print("Hello, 'world'!")
 print('Hello, "world"!')
 
 # String concatenation with numbers
-#print('Number: ' + str(10))
+print('Number: ' + str(10))
 
 # String concatenation with boolean
-#print('Is it true? ' + str(True))
+print('Is it true? ' + str(True))
 
 # String concatenation with None
-#print('Value: ' + str(None))
+print('Value: ' + str(None))

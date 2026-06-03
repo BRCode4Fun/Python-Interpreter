@@ -8,4 +8,6 @@ Helloworld
 Multiple concatenations: Hello, world! Welcome to Python!
 Hello, 'world'!
 Hello, "world"!
-
+Number: 10
+Is it true? True
+Value: None

@@ -1,6 +1,6 @@
 #include <iostream>
 #include "ast.hpp"
-#include "../exceptions/python_errors.hpp"
+#include "../exceptions/python_exceptions.hpp"
 
 ProgramNode* AstNode::unwrap_program_node() {
     if (type == AstNodeType::Program) {
@@ -190,7 +190,7 @@ PyObject* AssignNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "AssignNode" << "\n";
     #endif
-    PyObject* value = visitor->visitAssignNode(this);
+    PyObject* value = visitor->visit_assign_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "AssignNode" << "\n";
     #endif
@@ -201,7 +201,7 @@ PyObject* CallNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "CallNode" << "\n";
     #endif
-    PyObject* value = visitor->visitCallNode(this);
+    PyObject* value = visitor->visit_call_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "CallNode" << "\n";
     #endif
@@ -212,7 +212,7 @@ PyObject* BinaryOpNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "BinaryOpNode" << "\n";
     #endif
-    PyObject* value = visitor->visitBinaryOpNode(this);
+    PyObject* value = visitor->visit_binary_op_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "BinaryOpNode" << "\n";
     #endif
@@ -223,7 +223,7 @@ PyObject* TernaryOpNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "TernaryOpNode" << "\n";
     #endif
-    PyObject* value = visitor->visitTernaryOpNode(this);
+    PyObject* value = visitor->visit_ternary_op_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "TernaryOpNode" << "\n";
     #endif
@@ -234,7 +234,7 @@ PyObject* NameNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "NameNode" << "\n";
     #endif
-    PyObject* value = visitor->visitNameNode(this);
+    PyObject* value = visitor->visit_name_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "NameNode" << "\n";
     #endif
@@ -245,7 +245,7 @@ PyObject* StringNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "StringNode" << "\n";
     #endif
-    PyObject* value = visitor->visitStringNode(this);
+    PyObject* value = visitor->visit_string_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "StringNode" << "\n";
     #endif
@@ -256,7 +256,7 @@ PyObject* BooleanNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "BooleanNode" << "\n";
     #endif
-    PyObject* value = visitor->visitBooleanNode(this);
+    PyObject* value = visitor->visit_boolean_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "BooleanNode" << "\n";
     #endif
@@ -267,7 +267,7 @@ PyObject* UnaryOpNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "UnaryOpNode" << "\n";
     #endif
-    PyObject* value = visitor->visitUnaryOpNode(this);
+    PyObject* value = visitor->visit_unary_op_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "UnaryOpNode" << "\n";
     #endif
@@ -278,7 +278,7 @@ PyObject* IntNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "IntNode" << "\n";
     #endif
-    PyObject* value = visitor->visitIntNode(this);
+    PyObject* value = visitor->visit_int_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "IntNode" << "\n";
     #endif
@@ -289,7 +289,7 @@ PyObject* FloatNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "FloatNode" << "\n";
     #endif
-    PyObject* value = visitor->visitFloatNode(this);
+    PyObject* value = visitor->visit_float_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "FloatNode" << "\n";
     #endif
@@ -300,7 +300,7 @@ PyObject* ProgramNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "ProgramNode" << "\n";
     #endif
-    PyObject* value = visitor->visitProgramNode(this);
+    PyObject* value = visitor->visit_program_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "ProgramNode" << "\n";
     #endif
@@ -311,7 +311,7 @@ PyObject* PrintNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "PrintNode" << "\n";
     #endif
-    PyObject* value = visitor->visitPrintNode(this);
+    PyObject* value = visitor->visit_print_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "PrintNode" << "\n";
     #endif
@@ -322,7 +322,7 @@ PyObject* NullNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "NullNode" << "\n";
     #endif
-    PyObject* value = visitor->visitNullNode(this);
+    PyObject* value = visitor->visit_null_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "NullNode" << "\n";
     #endif
@@ -333,7 +333,7 @@ PyObject* BlockNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "BlockNode" << "\n";
     #endif
-    PyObject* value = visitor->visitBlockNode(this);
+    PyObject* value = visitor->visit_block_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "BlockNode" << "\n";
     #endif
@@ -344,7 +344,7 @@ PyObject* WhileNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "WhileNode" << "\n";
     #endif
-    PyObject* value = visitor->visitWhileNode(this);
+    PyObject* value = visitor->visit_while_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "WhileNode" << "\n";
     #endif
@@ -355,7 +355,7 @@ PyObject* BreakNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "BreakNode" << "\n";
     #endif
-    PyObject* value = visitor->visitBreakNode(this);
+    PyObject* value = visitor->visit_break_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "BlockNode" << "\n";
     #endif
@@ -366,7 +366,7 @@ PyObject* ContinueNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "ContinueNode" << "\n";
     #endif
-    PyObject* value = visitor->visitContinueNode(this);
+    PyObject* value = visitor->visit_continue_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "ContinueNode" << "\n";
     #endif
@@ -377,7 +377,7 @@ PyObject* PassNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "PassNode" << "\n";
     #endif
-    PyObject* value = visitor->visitPassNode(this);
+    PyObject* value = visitor->visit_pass_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "PassNode" << "\n";
     #endif
@@ -388,7 +388,7 @@ PyObject* IfNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "IfNode" << "\n";
     #endif
-    PyObject* value = visitor->visitIfNode(this);
+    PyObject* value = visitor->visit_if_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "IfNode" << "\n";
     #endif
@@ -399,7 +399,7 @@ PyObject* FunctionNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "FunctionNode" << "\n";
     #endif
-    PyObject* value = visitor->visitFunctionNode(this);
+    PyObject* value = visitor->visit_function_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "FunctionNode" << "\n";
     #endif
@@ -410,7 +410,7 @@ PyObject* ClassNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "ClassNode" << "\n";
     #endif
-    PyObject* value = visitor->visitClassNode(this);
+    PyObject* value = visitor->visit_class_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "ClassNode" << "\n";
     #endif
@@ -421,7 +421,7 @@ PyObject* PropertyNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "PropertyNode" << "\n";
     #endif
-    PyObject* value = visitor->visitPropertyNode(this);
+    PyObject* value = visitor->visit_property_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "PropertyNode" << "\n";
     #endif
@@ -432,10 +432,9 @@ PyObject* ReturnNode::accept(NodeVisitor* visitor) {
     #ifdef DEBUG
         std::cout << "visiting " << "ReturnNode" << "\n";
     #endif
-    PyObject* value = visitor->visitReturnNode(this);
+    PyObject* value = visitor->visit_return_node(this);
     #ifdef DEBUG
         std::cout << "exiting " << "ReturnNode" << "\n";
     #endif
     return value;
 }
-

@@ -1,7 +1,8 @@
 #pragma once
 
+#include <memory>
 #include <vector>
-#include "./pyObject.hpp"
+#include "./py_object.hpp"
 
 class PyTypeObject : public PyObject {
 public:
@@ -9,7 +10,7 @@ public:
         const std::string& name,
         PyTypeObject* metatype,
         const std::vector<PyTypeObject*>& bases = {},
-        Scope* context = nullptr
+        std::unique_ptr<Scope> context = nullptr
     );
 
     inline bool is_type_type() const override { return true; }
@@ -28,6 +29,6 @@ public:
 private:
     std::string type_name;
     std::vector<PyTypeObject*> bases;
-    void registerMethods() override;
-    void deleteData() override {}
+    void register_methods() override;
+    void delete_data() override {}
 };

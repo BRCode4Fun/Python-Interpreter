@@ -1,13 +1,19 @@
 #include <cstdint>
 #include <stdexcept>
-
-#include "./pyObject.hpp"
-#include "./pyTypeObject.hpp"
+#include "py_object.hpp"
+#include "py_type_object.hpp"
 #include "../ast/ast.hpp"
 #include "../exceptions/runtime_exceptions.hpp"
-#include "../exceptions/python_errors.hpp"
+#include "../exceptions/python_exceptions.hpp"
 #include "../interpreter/interpreter.hpp"
 #include "../scope/scope.hpp"
+
+/*
+ * PyObject allocation: most values are `new PyObject(...)` with `rc` starting at 0. Call sites
+ * bind them into a `Scope` (which increments `rc`) or hand them to the GC via `track_temp` so a
+ * later sweep can `delete` unreachable objects. Singletons (`None`, booleans) are created once,
+ * bumped once, and never collected through the normal path.
+ */
 
 PyTypeObject* PyObject::none_type_ref = nullptr;
 PyTypeObject* PyObject::int_type_ref = nullptr;
@@ -22,20 +28,41 @@ PyObject* PyObject::none_singleton_ref = nullptr;
 PyObject* PyObject::true_singleton_ref = nullptr;
 PyObject* PyObject::false_singleton_ref = nullptr;
 
-PyObject::PyObject(PyTypeObject* type_obj, void* data, Scope* context)
+PyObject::PyObject(PyTypeObject* type_obj, void* data)
+    : rc(0),
+      data(data),
+      ob_type(type_obj),
+      scope(std::make_unique<Scope>()) {}
+
+PyObject::PyObject(PyTypeObject* type_obj, void* data, std::unique_ptr<Scope> namespace_scope)
     : rc(0), data(data), ob_type(type_obj) {
-    this->scope = context ? context : new Scope();
+    if(namespace_scope) {
+        scope = std::move(namespace_scope);
+    } else {
+        scope = std::make_unique<Scope>();
+    }
 }
 
 PyObject::~PyObject() {
-    deleteData();
+    /* Break static singleton/type back-pointers before releasing `data` / implicit `scope` dtor. */
+    if(this == none_singleton_ref) {
+        none_singleton_ref = nullptr;
+    }
+    if(this == true_singleton_ref) {
+        true_singleton_ref = nullptr;
+    }
+    if(this == false_singleton_ref) {
+        false_singleton_ref = nullptr;
+    }
+    delete_data();
 }
 
-void PyObject::deleteData() {
+void PyObject::delete_data() {
     if(this->data == nullptr) {
         return;
     }
 
+    /* Each branch matches how `create_*` allocated `data`; must stay in sync with constructors. */
     if(this->is_int_type()) {
         delete static_cast<lld*>(this->data);
     } else if(this->is_float_type()) {
@@ -45,17 +72,24 @@ void PyObject::deleteData() {
     } else if(this->is_str_type()) {
         delete static_cast<std::string*>(this->data);
     } else if(this->is_fn_type() || this->is_builtin_fn_type() || this->is_method_wrapper_type()) {
-        delete static_cast<CallableData*>(this->data);
+        CallableData* payload = static_cast<CallableData*>(this->data);
+        if(payload != nullptr) {
+            /* Drop owned closure tree; borrowed pointer is non-owning — do not delete the frame. */
+            payload->closure_owned.reset();
+            payload->closure_borrowed = nullptr;
+            delete payload;
+        }
     }
     this->data = nullptr;
 }
 
-void PyObject::incRefCount(){ ++this->rc; }
-void PyObject::decRefCount() { if(rc > 0) --this->rc; }
-int PyObject::getRefCount() { return this->rc; }
+/* Refcount is authoritative for "in use" from the Scope/binding perspective; GC uses it at sweep time. */
+void PyObject::inc_ref_count(){ ++this->rc; }
+void PyObject::dec_ref_count() { if(rc > 0) --this->rc; }
+int PyObject::get_ref_count() { return this->rc; }
 
-Scope* PyObject::getContext() { return this->scope; }
-const Scope* PyObject::getContext() const { return this->scope; }
+Scope* PyObject::get_context() { return this->scope.get(); }
+const Scope* PyObject::get_context() const { return this->scope.get(); }
 
 void PyObject::set_type(PyTypeObject* type_obj) { this->ob_type = type_obj; }
 PyTypeObject* PyObject::get_type() const { return this->ob_type; }
@@ -90,13 +124,28 @@ void PyObject::register_core_types(
     }
 }
 
+/* Called after VM Scope teardown — global runtime refs must no longer be used. */
+void PyObject::clear_runtime_statics() {
+    none_type_ref = nullptr;
+    int_type_ref = nullptr;
+    float_type_ref = nullptr;
+    bool_type_ref = nullptr;
+    str_type_ref = nullptr;
+    function_type_ref = nullptr;
+    builtin_fn_type_ref = nullptr;
+    method_wrapper_type_ref = nullptr;
+    none_singleton_ref = nullptr;
+    true_singleton_ref = nullptr;
+    false_singleton_ref = nullptr;
+}
+
 void PyObject::define(const std::string& name, PyObject* object) {
     this->scope->define(name, object);
 }
 
 PyObject* PyObject::find(const std::string& name) {
     if(this->scope->empty()) {
-        this->registerMethods();
+        this->register_methods();
     }
 
     try {
@@ -113,7 +162,7 @@ PyObject* PyObject::create_none(PyTypeObject* none_type) {
     PyTypeObject* resolved = none_type != nullptr ? none_type : none_type_ref;
     if(none_singleton_ref == nullptr) {
         none_singleton_ref = new PyObject(resolved, nullptr);
-        none_singleton_ref->incRefCount();
+        none_singleton_ref->inc_ref_count();
     } else if(resolved != nullptr && none_singleton_ref->ob_type != resolved) {
         none_singleton_ref->set_type(resolved);
     }
@@ -132,7 +181,7 @@ PyObject* PyObject::create_bool(bool value, PyTypeObject* bool_type) {
     PyObject*& singleton = value ? true_singleton_ref : false_singleton_ref;
     if(singleton == nullptr) {
         singleton = new PyObject(bool_type ? bool_type : bool_type_ref, new bool(value));
-        singleton->incRefCount();
+        singleton->inc_ref_count();
     } else if(singleton->get_type() == nullptr && (bool_type != nullptr || bool_type_ref != nullptr)) {
         singleton->set_type(bool_type ? bool_type : bool_type_ref);
     }
@@ -144,22 +193,33 @@ PyObject* PyObject::create_string(const std::string& value, PyTypeObject* str_ty
 }
 
 PyObject* PyObject::create_native_callable(
-    std::function<PyObject*(std::vector<PyObject*>&, Interpreter*)> functor,
+    NativeCallableFn function_ptr,
     size_t arity,
     PyTypeObject* callable_type
 ) {
     CallableData* payload = new CallableData();
     payload->kind = CallableData::Kind::Native;
-    payload->native = functor;
+    payload->native = function_ptr;
     payload->arity = arity;
     return new PyObject(callable_type, payload);
 }
 
-PyObject* PyObject::create_user_function(FunctionNode* declaration, Scope* closure, PyTypeObject* function_type) {
+PyObject* PyObject::create_user_function(
+    FunctionNode* declaration,
+    Scope* closure,
+    PyTypeObject* function_type,
+    bool snapshot_closure_environment
+) {
     CallableData* payload = new CallableData();
     payload->kind = CallableData::Kind::UserDefined;
     payload->declaration = declaration;
-    payload->closure = closure;
+    if(snapshot_closure_environment) {
+        /* Own a deep copy so the callable survives after the interpreter pops the defining frame. */
+        payload->closure_owned = Scope::clone_chain(closure);
+    } else {
+        /* Caller keeps the enclosing Scope alive (e.g. module globals) for the borrow to stay valid. */
+        payload->closure_borrowed = closure;
+    }
     payload->arity = declaration->get_params().size();
     return new PyObject(function_type ? function_type : function_type_ref, payload);
 }
@@ -178,7 +238,8 @@ PyObject* PyObject::bind_callable(
     bound->kind = CallableData::Kind::BoundMethod;
     bound->native = source->native;
     bound->declaration = source->declaration;
-    bound->closure = source->closure;
+    bound->closure_owned.reset();
+    bound->closure_borrowed = source->closure_env();
     bound->arity = source->arity;
     bound->bound_instance = instance;
     bound->wrapper_attribute_name = wrapper_attribute_name;
@@ -195,8 +256,18 @@ PyObject* PyObject::call_callable(std::vector<PyObject*>& args, Interpreter* int
         throw RuntimeError("Invalid callable payload");
     }
 
-    if(payload->kind == CallableData::Kind::BoundMethod && payload->bound_instance != nullptr) {
-        args.insert(args.begin(), payload->bound_instance);
+    /* BoundMethod needs [receiver] + user args. 
+     * Build bound_args locally: avoid mutating the caller's vector 
+     * (insert(begin,…) shifts everything O(n) and leaves stale extra slots if reused). */
+    std::vector<PyObject*> bound_args;
+    std::vector<PyObject*>* call_args = &args;
+    const bool prepend_receiver =
+        payload->kind == CallableData::Kind::BoundMethod && payload->bound_instance != nullptr;
+    if(prepend_receiver) {
+        bound_args.reserve(args.size() + 1u);
+        bound_args.push_back(payload->bound_instance);
+        bound_args.insert(bound_args.end(), args.begin(), args.end());
+        call_args = &bound_args;
     }
 
     const bool is_native_call =
@@ -204,30 +275,42 @@ PyObject* PyObject::call_callable(std::vector<PyObject*>& args, Interpreter* int
         || (payload->kind == CallableData::Kind::BoundMethod && static_cast<bool>(payload->native));
 
     if(is_native_call) {
-        return payload->native ? payload->native(args, interpreter) : PyObject::create_none();
+        PyObject* ret =
+            payload->native ? payload->native(*call_args, interpreter) : PyObject::create_none();
+        if(interpreter != nullptr && ret != nullptr) {
+            interpreter->track_temp(ret);
+        }
+        return ret;
     }
 
     if(payload->declaration == nullptr) {
-        return PyObject::create_none();
+        PyObject* ret = PyObject::create_none();
+        if(interpreter != nullptr) {
+            interpreter->track_temp(ret);
+        }
+        return ret;
     }
 
-    const std::vector<AstNode*>& params = payload->declaration->get_params();
+    const std::vector<std::unique_ptr<AstNode>>& params = payload->declaration->get_params();
 
-    Scope* fnCallEnv = new Scope(payload->closure);
-    interpreter->pushContext(fnCallEnv);
+    interpreter->push_owned(std::make_unique<Scope>(payload->closure_env()));
     for(size_t idx = 0; idx < params.size(); ++idx) {
-        const std::string& paramName = params[idx]->unwrap_name_node()->get_lexeme();
-        interpreter->defineOnContext(paramName, args[idx]);
+        const std::string& param_name = params[idx]->unwrap_name_node()->get_lexeme();
+        interpreter->define_on_context(param_name, (*call_args)[idx]);
     }
 
-    PyObject* retValue = nullptr;
+    PyObject* ret_value = nullptr;
     try {
         payload->declaration->get_body()->accept(interpreter);
     } catch(ReturnException& re) {
-        retValue = re.value;
+        ret_value = re.value;
     }
-    interpreter->popContext();
-    return retValue ? retValue : PyObject::create_none();
+    interpreter->pop_context();
+    PyObject* ret = ret_value ? ret_value : PyObject::create_none();
+    if(interpreter != nullptr && ret != nullptr) {
+        interpreter->track_temp(ret);
+    }
+    return ret;
 }
 
 size_t PyObject::expected_call_arity() const {

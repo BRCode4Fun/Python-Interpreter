@@ -1,20 +1,19 @@
-#include "./interpreter.hpp"
-#include <cmath>
-#include <sstream>
-#include "../token/token.hpp"
-#include "../token/tokentype.hpp"
-#include "../exceptions/runtime_exceptions.hpp" // break, continue, return
-#include "../exceptions/python_errors.hpp"
-#include "../value/primitives.hpp"
-#include "../value/runtime_types.hpp"
+#include <iostream>
+#include "interpreter.hpp"
+#include "../token/token_type.hpp"
 
-Interpreter::Interpreter() {
+#include "../exceptions/runtime_exceptions.hpp" // break, continue, return
+#include "../exceptions/python_exceptions.hpp"
+#include "../value/primitives.hpp"
+#include "../value/py_object.hpp"
+#include "../value/runtime_types.hpp"
     
-    Scope* builtins = new Scope();
-    pushContext(builtins);
-    Scope* globals = new Scope(builtins);
-    pushContext(globals);
-    RuntimeTypes types = initialize_runtime_types(builtins, this);
+Interpreter::Interpreter() {
+    root_builtins_ = std::make_unique<Scope>();
+    push_borrowed(root_builtins_.get());
+    root_globals_ = std::make_unique<Scope>(root_builtins_.get());
+    push_borrowed(root_globals_.get());
+    RuntimeTypes types = initialize_runtime_types(root_builtins_.get(), this);
     this->object_type = types.object_type;
     this->type_type = types.type_type;
     this->none_type = types.none_type;
@@ -25,6 +24,37 @@ Interpreter::Interpreter() {
     this->function_type = types.function_type;
     this->builtin_fn_type = types.builtin_fn_type;
     this->method_wrapper_type = types.method_wrapper_type;
+}
+
+void Interpreter::push_borrowed(Scope* frame) {
+    context_stack.push_back({frame, nullptr});
+}
+
+void Interpreter::push_owned(std::unique_ptr<Scope> frame) {
+    Scope* p = frame.get();
+    context_stack.push_back({p, std::move(frame)});
+}
+
+void Interpreter::pop_context() {
+
+    if(context_stack.empty()) {
+        throw RuntimeError("Cannot pop context from empty stack");
+    }
+    context_stack.pop_back();
+}
+
+Interpreter::~Interpreter() {
+    collect_garbage();
+    /* Free heap frames flagged on push (e.g. each call_callable activation record). */
+    while(!context_stack.empty()) {
+        pop_context();
+    }
+    /* GC only tracked pointers; Scopes now tear down objects — clear registry before ~GarbageCollector to avoid dangling pointers. */
+    gc.relinquish_all_registrations();
+    root_globals_.reset();
+    root_builtins_.reset();
+    /* Static type/singleton refs would otherwise point at objects already destroyed by Scopes. */
+    PyObject::clear_runtime_statics();
 }
 
 PyObject* Interpreter::interpret(ProgramNode* node) {
@@ -42,8 +72,10 @@ PyObject* Interpreter::resolve(const std::string& method_name, PyObject* object,
     if(method_obj->is_fn_type()){
         PyObject* bound = method_obj->bind_callable(object, this->method_wrapper_type, method_name);
         this->validate_call_arity(bound, args.size());
-        return bound->call_callable(args, this);
-    
+        PyObject* result = bound->call_callable(args, this);
+        track_temp(bound);
+        return result;
+
     } else {
         std::string type_name = "unknown";
         if(object != nullptr && object->get_type() != nullptr) {
@@ -98,7 +130,7 @@ PyObject* Interpreter::negate_truthy_obj(PyObject* value) {
     if(value == nullptr) {
         return nullptr;
     }
-    return this->make_bool_obj(!this->isTruthy(value));
+    return this->make_bool_obj(!this->is_truthy(value));
 }
 
 void Interpreter::throw_missing_method_error(PyObject* object, const std::string& method_name) {
@@ -119,17 +151,17 @@ void Interpreter::validate_call_arity(PyObject* callable, size_t provided_arg_co
     }
 }
 
-inline const std::string& Interpreter::getString(PyObject* object){
+inline const std::string& Interpreter::get_string(PyObject* object){
     PyObject* text = this->resolve("__str__", object)->unwrap_str_obj();
     return text->as_string();
 }
 
-inline long long Interpreter::getInteger(PyObject* object){
+inline long long Interpreter::get_integer(PyObject* object){
     PyObject* numeric = this->resolve("__int__", object)->unwrap_int_obj();
     return numeric->as_int();
 }
 
-inline bool Interpreter::isTruthy(PyObject* object){
+inline bool Interpreter::is_truthy(PyObject* object){
     PyObject* boolean_method_value = this->try_resolve("__bool__", object);
     if(boolean_method_value != nullptr && boolean_method_value->is_bool_type()) {
         return boolean_method_value->as_bool();
@@ -142,16 +174,16 @@ inline bool Interpreter::isTruthy(PyObject* object){
     return true; // the single existence of an object is considered truthy by default
 }
 
-inline bool Interpreter::isNumeric(PyObject* object){
+inline bool Interpreter::is_numeric(PyObject* object){
     return object->is_int_type() || object->is_float_type() || object->is_bool_type();
 }
 
-inline long double Interpreter::toFloat(PyObject* object){
+inline long double Interpreter::to_float(PyObject* object){
     PyObject* float_value = this->resolve("__float__", object)->unwrap_float_obj();
     return float_value->as_float();
 }
 
-PyObject* Interpreter::evalBinary(TokenType op, PyObject* lhs, PyObject* rhs){
+PyObject* Interpreter::eval_binary(TokenType op, PyObject* lhs, PyObject* rhs){
     
     std::vector<PyObject*> args = {rhs};
     std::vector<PyObject*> reverse_args = {lhs};
@@ -259,61 +291,72 @@ PyObject* Interpreter::evalBinary(TokenType op, PyObject* lhs, PyObject* rhs){
     throw RuntimeError("Unsupported binary operator");
 }
 
-PyObject* Interpreter::visitPrintNode(PrintNode* node) {
+PyObject* Interpreter::visit_print_node(PrintNode* node) {
 
-    PyObject* argValue = node->args != nullptr ? 
-                            node->args[0].accept(this) : nullptr;
+    PyObject* arg_value = node->args ? node->args->accept(this) : nullptr;
 
-    if(argValue != nullptr) std::cout << getString(argValue);
+    if(arg_value != nullptr) std::cout << get_string(arg_value);
     
     std::cout << '\n' << std::flush;
 
     return PyObject::create_none(this->none_type);
 }
 
-PyObject* Interpreter::visitIntNode(IntNode* node){
+PyObject* Interpreter::visit_int_node(IntNode* node){
     
     const std::string& lexeme = node->get_lexeme();
     PyObject* value = PyObject::create_int(std::stoll(lexeme), this->int_type);
-    GC.pushObject(value);
+    track_temp(value);
     return value;
 }
 
-PyObject* Interpreter::visitFloatNode(FloatNode* node){
+PyObject* Interpreter::visit_float_node(FloatNode* node){
     
     const std::string& lexeme = node->get_lexeme();
     PyObject* value = PyObject::create_float(std::stold(lexeme), this->float_type);
-    GC.pushObject(value);
+    track_temp(value);
     return value;
 }
 
-PyObject* Interpreter::visitFunctionNode(FunctionNode* node){
+PyObject* Interpreter::visit_function_node(FunctionNode* node){
 
     const std::string& fname = node->get_name();
-    PyObject* value = PyObject::create_user_function(node, this->currentContext(), this->function_type);
-    this->defineOnContext(fname, value);
+    Scope* closure_tip = this->current_context();
+    /* Snapshot only for defs nested under an active call: that frame is deleted on pop; clone preserves the closure.
+     * Module-level and class body keep the live Scope (recursion / methods defined later). */
+    const bool snapshot_closure = (closure_tip != root_globals_.get())
+        && (closure_tip != active_class_scope_);
+    PyObject* value =
+        PyObject::create_user_function(node, closure_tip, this->function_type, snapshot_closure);
+    this->define_on_context(fname, value);
 
     return PyObject::create_none(this->none_type);
 }
 
-PyObject* Interpreter::visitClassNode(ClassNode* node) {
+PyObject* Interpreter::visit_class_node(ClassNode* node) {
     
-    Scope* context = this->currentContext();
-    Scope* classScope = new Scope(context);
+    Scope* context = this->current_context();
+    auto class_scope = std::make_unique<Scope>(context);
 
-    this->pushContext(classScope);
+    /* Nested classes: save/restore so active_class_scope_ always refers to the innermost body being executed. */
+    Scope* const prev_active_class_scope = active_class_scope_;
+    active_class_scope_ = class_scope.get();
+
+    this->push_borrowed(class_scope.get());
     node->get_body()->accept(this); // visit the class definition
-    this->popContext();
+    this->pop_context();
+
+    active_class_scope_ = prev_active_class_scope;
 
     const std::string& kname = node->get_name();
-    PyTypeObject* value = new PyTypeObject(kname, this->type_type, {this->object_type}, classScope);
+    PyTypeObject* value = new PyTypeObject(kname, this->type_type, {this->object_type}, std::move(class_scope));
 
     context->define(kname, value);
 
     return PyObject::create_none(this->none_type);
 }
 
-PyObject* Interpreter::visitPropertyNode(PropertyNode* node) {
+PyObject* Interpreter::visit_property_node(PropertyNode* node) {
     
     PyObject* tp_object = node->object->accept(this);
     
@@ -321,23 +364,29 @@ PyObject* Interpreter::visitPropertyNode(PropertyNode* node) {
         node->attribute->unwrap_name_node()->get_lexeme();
     
     PyObject* value = tp_object->find(target_name);
-    
-    return (value->is_fn_type() ? value->bind_callable(tp_object, this->method_wrapper_type, target_name) : value);
+
+    if(value->is_fn_type()) {
+        /* Do not track_temp(bound) here: visit_call may evaluate args after callee is known;
+         * a sweep could reclaim rc==0 wrappers still needed for call_callable(this). */
+        return value->bind_callable(tp_object, this->method_wrapper_type, target_name);
+    }
+    return value;
 }
 
-PyObject* Interpreter::visitBlockNode(BlockNode* node) {
+PyObject* Interpreter::visit_block_node(BlockNode* node) {
     
-    for(AstNode* stt : node->statements){
+    for(const std::unique_ptr<AstNode>& stt : node->statements){
         stt->accept(this);
+        maybe_collect();
     }
     return PyObject::create_none(this->none_type);
 }
 
-PyObject* Interpreter::visitWhileNode(WhileNode* node){
+PyObject* Interpreter::visit_while_node(WhileNode* node){
 
     PyObject* condition = node->cond->accept(this);
 
-    while(isTruthy(condition)){
+    while(is_truthy(condition)){
         try {
             node->body->accept(this);
         } catch(BreakException& be) {
@@ -345,77 +394,84 @@ PyObject* Interpreter::visitWhileNode(WhileNode* node){
         } catch(ContinueException& ce) {
             ; // goes back to evaluate the condition again
         }
+        track_temp(condition);
+        maybe_collect();
         condition = node->cond->accept(this);
     }
+    track_temp(condition);
+    maybe_collect();
     return PyObject::create_none(this->none_type);
 }
 
-PyObject* Interpreter::visitBreakNode(BreakNode* node) {
+PyObject* Interpreter::visit_break_node(BreakNode* node) {
     
     throw BreakException();
 
     return PyObject::create_none(this->none_type); // unreachable
 }
 
-PyObject* Interpreter::visitContinueNode(ContinueNode* node) {
+PyObject* Interpreter::visit_continue_node(ContinueNode* node) {
     
     throw ContinueException();
 
     return PyObject::create_none(this->none_type); // unreachable
 }
 
-PyObject* Interpreter::visitPassNode(PassNode* node) {
+PyObject* Interpreter::visit_pass_node(PassNode* node) {
     return PyObject::create_none(this->none_type); // pass
 }
 
-PyObject* Interpreter::visitIfNode(IfNode* node) {
+PyObject* Interpreter::visit_if_node(IfNode* node) {
 
     PyObject* cond = node->cond->accept(this);
-    
-    if(isTruthy(cond)){
-        return node->trueBranch->accept(this);
-        
-    } else {
-        for(const std::pair<AstNode*, AstNode*>& elif : node->elifBranches){
-            PyObject* elifCond = elif.first->accept(this);
-            if(isTruthy(elifCond)){
-                return elif.second->accept(this);
-            }
+
+    if(is_truthy(cond)){
+        track_temp(cond);
+        return node->true_branch->accept(this);
+
+    }
+    track_temp(cond);
+    for(const auto& elif : node->elif_branches){
+        PyObject* elif_cond = elif.first->accept(this);
+        if(is_truthy(elif_cond)){
+            track_temp(elif_cond);
+            return elif.second->accept(this);
         }
-        if(node->elseBranch != nullptr){
-            return node->elseBranch->accept(this);
-        }
+        track_temp(elif_cond);
+    }
+    if(node->else_branch){
+        return node->else_branch->accept(this);
     }
     return PyObject::create_none(this->none_type); // unreachable
 }
 
-PyObject* Interpreter::visitTernaryOpNode(TernaryOpNode* node) {
+PyObject* Interpreter::visit_ternary_op_node(TernaryOpNode* node) {
 
     PyObject* condition = node->cond->accept(this);
 
-    if(isTruthy(condition)){
+    if(is_truthy(condition)){
+        track_temp(condition);
         return node->left->accept(this);
-    } else {
-        return node->right->accept(this);
     }
-    return PyObject::create_none(this->none_type); // unreachable
+    track_temp(condition);
+    return node->right->accept(this);
 }
 
-PyObject* Interpreter::visitBinaryOpNode(BinaryOpNode* node)  {
+PyObject* Interpreter::visit_binary_op_node(BinaryOpNode* node)  {
     PyObject* lhs = node->left->accept(this);
-    lhs->incRefCount();
+    lhs->inc_ref_count();
     if(node->op.type == TokenType::Or) { // a or b
         /*
         *  try to do short-circuit: if after evaluating the left operand, 
         *  the result of the logical expression is known, 
         *  do not evaluate the right operand
         */
-        if(isTruthy(lhs)) {
-            lhs->decRefCount();
+        if(is_truthy(lhs)) {
+            lhs->dec_ref_count();
             return lhs;
         }
         PyObject* rhs = node->right->accept(this);
-        lhs->decRefCount();
+        lhs->dec_ref_count();
         return rhs;
     }
 
@@ -425,87 +481,87 @@ PyObject* Interpreter::visitBinaryOpNode(BinaryOpNode* node)  {
         *  the result of the logical expression is known, 
         *  do not evaluate the right operand
         */
-        if(!isTruthy(lhs)) {
-            lhs->decRefCount();
+        if(!is_truthy(lhs)) {
+            lhs->dec_ref_count();
             return lhs;
         }
         PyObject* rhs = node->right->accept(this);
-        lhs->decRefCount();
+        lhs->dec_ref_count();
         return rhs;
     }
 
     PyObject* rhs = node->right->accept(this);
-    rhs->incRefCount();
-    PyObject* value = this->evalBinary(node->op.type, lhs, rhs);
-    GC.pushObject(value);
-    lhs->decRefCount();
-    rhs->decRefCount();
+    rhs->inc_ref_count();
+    PyObject* value = this->eval_binary(node->op.type, lhs, rhs);
+    track_temp(value);
+    lhs->dec_ref_count();
+    rhs->dec_ref_count();
     return value;
 }
 
-PyObject* Interpreter::visitAssignNode(AssignNode* node) {
+PyObject* Interpreter::visit_assign_node(AssignNode* node) {
     
-    AstNode* lhs = node->name;
+    AstNode* lhs = node->name.get();
     Scope* context = nullptr;
     std::string name;
 
     if(lhs->is_name_node()){ 
 
         name = lhs->unwrap_name_node()->get_lexeme();
-        context = this->currentContext();
+        context = this->current_context();
     
     } else if(lhs->is_property_node()){
 
         PropertyNode* pprt = lhs->unwrap_property_node();
         PyObject* object = pprt->object->accept(this);
         name = pprt->attribute->unwrap_name_node()->get_lexeme();
-        context = object->getContext();
+        context = object->get_context();
 
     } else {
         throw RuntimeError("Unsupported target expression");
     }
     
     PyObject* value = node->value->accept(this);
-    value->incRefCount();
+    value->inc_ref_count();
 
     if(node->op.type == TokenType::Equals){ // a = b
         context->define(name, value);
     
     } else {
         PyObject* lhs_value = context->get(name);
-        lhs_value->incRefCount();
-        value = this->evalBinary(this->assignment_to_binary(node->op.type), lhs_value, value);
+        lhs_value->inc_ref_count();
+        value = this->eval_binary(this->assignment_to_binary(node->op.type), lhs_value, value);
         context->define(name, value);
-        lhs_value->decRefCount();
+        lhs_value->dec_ref_count();
     }
-    value->decRefCount();
+    value->dec_ref_count();
     
     return value; // allows cascading
 }
 
-PyObject* Interpreter::visitNameNode(NameNode* node){
+PyObject* Interpreter::visit_name_node(NameNode* node){
 
     const std::string& varname = node->get_lexeme();
-    return getFromContext(varname);
+    return get_from_context(varname);
 }
 
-PyObject* Interpreter::visitBooleanNode(BooleanNode* node){
+PyObject* Interpreter::visit_boolean_node(BooleanNode* node){
     
     bool bl = node->value;
     PyObject* value = PyObject::create_bool(bl, this->bool_type);
-    GC.pushObject(value);
+    track_temp(value);
     return value;
 }
 
-PyObject* Interpreter::visitStringNode(StringNode* node){
+PyObject* Interpreter::visit_string_node(StringNode* node){
     
     const std::string& lexeme = node->get_lexeme();
     PyObject* value = PyObject::create_string(lexeme, this->str_type);
-    GC.pushObject(value);
+    track_temp(value);
     return value;
 }
 
-PyObject* Interpreter::visitUnaryOpNode(UnaryOpNode* node){
+PyObject* Interpreter::visit_unary_op_node(UnaryOpNode* node){
 
     PyObject* rhs_value = node->right->accept(this);
     PyObject* value = nullptr;
@@ -513,15 +569,15 @@ PyObject* Interpreter::visitUnaryOpNode(UnaryOpNode* node){
     switch(node->op.type){
         
         case TokenType::Not: // not a
-            value = PyObject::create_bool(!isTruthy(rhs_value), this->bool_type);
+            value = PyObject::create_bool(!is_truthy(rhs_value), this->bool_type);
             break;
         
         case TokenType::Minus: // -a
-            if(isNumeric(rhs_value)) {
+            if(is_numeric(rhs_value)) {
                 if(rhs_value->is_float_type()) {
                     value = PyObject::create_float(-rhs_value->as_float(), this->float_type);
                 } else {
-                    value = PyObject::create_int(-getInteger(rhs_value), this->int_type);
+                    value = PyObject::create_int(-get_integer(rhs_value), this->int_type);
                 }
             } else {
                 value = this->resolve("__neg__", rhs_value);
@@ -533,7 +589,7 @@ PyObject* Interpreter::visitUnaryOpNode(UnaryOpNode* node){
                 throw TypeError("unsupported operand type for ~");
             }
             if(rhs_value->is_int_type() || rhs_value->is_bool_type()) {
-                value = PyObject::create_int(~getInteger(rhs_value), this->int_type);
+                value = PyObject::create_int(~get_integer(rhs_value), this->int_type);
             } else {
                 value = this->resolve("__invert__", rhs_value);
             }
@@ -542,55 +598,64 @@ PyObject* Interpreter::visitUnaryOpNode(UnaryOpNode* node){
         default:
             throw RuntimeError("Unsupported unary operator");
     }
-    GC.pushObject(value);
+    track_temp(value);
     return value;
 }
 
-PyObject* Interpreter::visitNullNode(NullNode* expr){
+PyObject* Interpreter::visit_null_node(NullNode* expr){
 
     PyObject* value = PyObject::create_none(this->none_type);
-    GC.pushObject(value);
+    track_temp(value);
     return value;
 }
 
-PyObject* Interpreter::visitCallNode(CallNode* expr) {
+PyObject* Interpreter::visit_call_node(CallNode* expr) {
     
     PyObject* callee = expr->caller->accept(this);
     
     std::vector<PyObject*> arguments;
     arguments.reserve(expr->args.size() + 1);
-    for(AstNode* argNode : expr->args){
-        arguments.push_back(argNode->accept(this));
+    for(const std::unique_ptr<AstNode>& arg_node : expr->args){
+        arguments.push_back(arg_node->accept(this));
     }
     
     if(callee->is_type_type()) {
-        return callee->unwrap_type_obj()->call(arguments, this);
+        PyObject* ret = callee->unwrap_type_obj()->call(arguments, this);
+        track_temp(callee);
+        return ret;
     }
     
     if(callee->is_callable_type()) {
         this->validate_call_arity(callee, arguments.size());
-        return callee->call_callable(arguments, this);
+        PyObject* ret = callee->call_callable(arguments, this);
+        track_temp(callee);
+        return ret;
     }
 
     PyObject* callable = callee->find("__call__");
     if(callable != nullptr && callable->is_fn_type()) {
         PyObject* bound_callable = callable->bind_callable(callee, this->method_wrapper_type, "__call__");
         this->validate_call_arity(bound_callable, arguments.size());
-        return bound_callable->call_callable(arguments, this);
+        PyObject* ret = bound_callable->call_callable(arguments, this);
+        track_temp(bound_callable);
+        track_temp(callee);
+        return ret;
     }
 
     if(callable != nullptr && callable->is_callable_type()) {
         this->validate_call_arity(callable, arguments.size());
-        return callable->call_callable(arguments, this);
+        PyObject* ret = callable->call_callable(arguments, this);
+        track_temp(callee);
+        return ret;
     }
     throw TypeError("Object is not callable");
 }
 
-PyObject* Interpreter::visitReturnNode(ReturnNode* node) {
+PyObject* Interpreter::visit_return_node(ReturnNode* node) {
     
-    AstNode* value = node->value;
-    PyObject* retValue = value ? value->accept(this) : PyObject::create_none(this->none_type);
-    throw ReturnException(retValue);
+    AstNode* value = node->value.get();
+    PyObject* ret_value = value ? value->accept(this) : PyObject::create_none(this->none_type);
+    throw ReturnException(ret_value);
     
     return PyObject::create_none(this->none_type); // unreachable
 }

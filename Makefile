@@ -21,12 +21,17 @@ SRCS := $(filter-out \
 
 # Set the compiler and compiler flags
 CC := g++
-CFLAGS := -std=c++20
+CFLAGS := -std=c++20 -Wno-unused-parameter
+
+# Release tuning (was #pragma GCC in main.cpp); skipped for DEBUG. Needs CPU with AVX2/FMA.
+ifndef DEBUG
+CFLAGS += -Ofast -mavx -mavx2 -mfma
+endif
 
 # Add DEBUG macro to CFLAGS
 ifdef DEBUG
 CFLAGS += -DDEBUG -Wall -Wextra -g
-CFLAGS += -Wno-unused-variable -Wno-unused-parameter -Wno-reorder
+CFLAGS += -Wno-unused-variable -Wno-reorder
 endif
 
 # Build rule

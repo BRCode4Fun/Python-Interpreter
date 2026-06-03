@@ -10,23 +10,23 @@ class Lexer {
 
 public:
     Lexer(const std::string& source);
-    std::vector<Token> scanTokens();
+    std::vector<Token> scan_tokens();
 
 private:
-    void scanToken();
+    void scan_token();
     char advance();
-    void addToken(TokenType type);
-    void addToken(TokenType type, const std::string& lexeme);
+    void add_token(TokenType type);
+    void add_token(TokenType type, const std::string& lexeme);
     bool match(char expected);
     char peek() const;
-    char peekNext() const;
-    bool isAtEnd() const;
+    char peek_next() const;
+    bool is_at_end() const;
 
-    void handleNumber();
-    void handleIdentifier();
-    void handleString(char quotedType);
-    void handleNewline();
-    void handleIndentation(); 
+    void handle_number();
+    void handle_identifier();
+    void handle_string(char quote_type);
+    void handle_newline();
+    void handle_indentation(); 
 
     const std::string& source;
     std::vector<Token> tokens;
@@ -34,6 +34,6 @@ private:
     long unsigned start = 0;
     long unsigned current = 0;
     unsigned int line = 1;
-    std::stack<int> indentLevels;
-    bool isBlock;
+    std::stack<int> indent_levels;
+    bool is_block;
 };
